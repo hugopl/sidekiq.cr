@@ -1,0 +1,7 @@
+name: sidekiq
+version: 0.1.0
+
+authors:
+  - Mike Perham <mike@contribsys.com>
+
+license: LGPL-3.0
