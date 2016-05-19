@@ -1,0 +1,8 @@
+#!/usr/bin/env crystal
+
+require "../src/sidekiq"
+
+s = Sidekiq.new
+s.run_server
+
+sleep

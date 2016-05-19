@@ -24,14 +24,14 @@ describe Sidekiq do
   describe "redis pooling" do
     it "works" do
       puts `redis-cli flushall`
-      r = Sidekiq::Connection.new
-      r.with do |conn|
+      r = Sidekiq::Pool.new
+      r.redis do |conn|
         conn.get("mike")
         conn.set("mike", "bob")
         conn.get("mike")
       end
 
-      p(r.with do |conn|
+      p(r.redis do |conn|
         conn.multi do |multi|
           multi.get("mike")
           multi.get("bob")

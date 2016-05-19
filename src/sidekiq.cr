@@ -1,19 +1,18 @@
-require "./pool/connection"
-require "./sidekiq/*"
+require "./sidekiq/pool"
+require "./sidekiq/version"
 
-require "redis"
+class Sidekiq
+  getter concurrency
 
-module Sidekiq
-  class Connection
-    # Set up Sidekiq to use the given ConnectionPool to connect to Redis
-    #
-    #     Sidekiq::Redis.new(ConnectionPool.new(capacity: 5, timeout: 5) { Redis.new("localhost", 6379) }
-    #
-    def initialize(@pool = ConnectionPool(Redis).new { Redis.new })
-    end
+  def initialize(@concurrency = 5, @pool = Sidekiq::Pool.new)
+  end
 
-    def with(&block : Redis -> Redis::RedisValue)
-      @pool.connection(&block)
+  def run_server
+    concurrency.times do |x|
+      spawn do
+        puts x
+        exit
+      end
     end
   end
 end
