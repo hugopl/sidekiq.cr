@@ -23,7 +23,6 @@ describe Sidekiq do
 
   describe "redis pooling" do
     it "works" do
-      puts `redis-cli flushall`
       r = Sidekiq::Pool.new
       r.redis do |conn|
         conn.get("mike")
@@ -31,12 +30,15 @@ describe Sidekiq do
         conn.get("mike")
       end
 
-      p(r.redis do |conn|
+      results = r.redis do |conn|
         conn.multi do |multi|
           multi.get("mike")
           multi.get("bob")
         end
-      end)
+      end
+      arr = results.as(Array)
+      arr[0]?.should eq("bob")
+      arr[1]?.should be_nil
     end
   end
 

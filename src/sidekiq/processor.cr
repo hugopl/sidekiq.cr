@@ -21,38 +21,25 @@ class Sidekiq
   class Processor
     include Util
 
-    attr_reader :thread
-    attr_reader :job
+    getter job : Sidekiq::BasicFetch::UnitOfWork
 
     def initialize(mgr)
       @mgr = mgr
       @down = false
       @done = false
       @job = nil
-      @thread = nil
-      @strategy = (mgr.options[:fetch] || Sidekiq::BasicFetch).new(mgr.options)
     end
 
-    def terminate(wait=false)
-      @done = true
-      return if !@thread
-      @thread.value if wait
+    def logger
+      @mgr.logger
     end
 
-    def kill(wait=false)
+    def terminate
       @done = true
-      return if !@thread
-      # unlike the other actors, terminate does not wait
-      # for the thread to finish because we don't know how
-      # long the job will take to finish.  Instead we
-      # provide a `kill` method to call after the shutdown
-      # timeout passes.
-      @thread.raise ::Sidekiq::Shutdown
-      @thread.value if wait
     end
 
     def start
-      @thread ||= safe_thread("processor", &method(:run))
+      @thread ||= safe_routine("processor", &method(:run))
     end
 
     def run
@@ -113,18 +100,18 @@ class Sidekiq
 
       ack = false
       begin
-        job = Sidekiq.load_json(jobstr)
+        job = JSON.parse(jobstr)
         klass  = job["class"].constantize
         worker = klass.new
         worker.jid = job["jid"]
 
         stats(worker, job, queue) do
-          Sidekiq.server_middleware.invoke(worker, job, queue) do
+          @mgr.server_middleware.invoke(worker, job, queue) do
             # Only ack if we either attempted to start this job or
             # successfully completed it. This prevents us from
             # losing jobs if a middleware raises an exception before yielding
             ack = true
-            execute_job(worker, cloned(job["args"]))
+            worker.perform(*(job["args"].clone))
           end
         end
         ack = true
@@ -141,38 +128,27 @@ class Sidekiq
       end
     end
 
-    def execute_job(worker, cloned_args)
-      worker.perform(*cloned_args)
-    end
-
     def thread_identity
-      @str ||= Thread.current.object_id.to_s(36)
+      @str ||= Fiber.current.object_id.to_s(36)
     end
 
-    WORKER_STATE = Concurrent::Map.new
-    PROCESSED = Concurrent::AtomicFixnum.new
-    FAILURE = Concurrent::AtomicFixnum.new
+    @@WORKER_STATE = Hash(String, Hash(String, String)).new
+    @@PROCESSED = 0
+    @@FAILURE = 0
 
     def stats(worker, job, queue)
       tid = thread_identity
-      WORKER_STATE[tid] = {:queue => queue, :payload => job, :run_at => Time.now.to_i }
+      @@WORKER_STATE[tid] = {"queue" => queue, "payload" => job, "run_at" => Time.now.to_i.to_s }
 
       begin
         yield
       rescue Exception
-        FAILURE.increment
+        @@FAILURE += 1
         raise
       ensure
-        WORKER_STATE.delete(tid)
-        PROCESSED.increment
+        @@WORKER_STATE.delete(tid)
+        @@PROCESSED += 1
       end
-    end
-
-    # Deep clone the arguments passed to the worker so that if
-    # the job fails, what is pushed back onto Redis hasn't
-    # been mutated by the worker.
-    def cloned(ary)
-      Marshal.load(Marshal.dump(ary))
     end
 
   end

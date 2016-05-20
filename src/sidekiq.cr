@@ -1,5 +1,9 @@
 require "./sidekiq/pool"
 require "./sidekiq/version"
+require "./sidekiq/job"
+require "./sidekiq/middleware"
+require "./sidekiq/client"
+require "./sidekiq/worker"
 
 class Sidekiq
   getter concurrency

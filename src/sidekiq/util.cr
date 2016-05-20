@@ -12,7 +12,7 @@ module Sidekiq
     def watchdog(last_words)
       yield
     rescue ex : Exception
-      handle_exception(ex, { context: last_words })
+      handle_exception(ex, { "context" => last_words })
       raise ex
     end
 
@@ -20,10 +20,6 @@ module Sidekiq
       spawn do
         watchdog(name, &block)
       end
-    end
-
-    def logger
-      Sidekiq.logger
     end
 
     def hostname
