@@ -1,7 +1,7 @@
 require "json"
 require "logger"
 
-class Sidekiq
+module Sidekiq
   module ExceptionHandler
     class Logger
       @output : ::Logger

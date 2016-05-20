@@ -1,4 +1,4 @@
-class Sidekiq
+module Sidekiq
   class Manager
     getter concurrency
     property fetcher

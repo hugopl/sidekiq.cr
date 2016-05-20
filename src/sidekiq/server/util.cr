@@ -1,4 +1,4 @@
-require "sidekiq/exception_handler"
+require "./sidekiq/server/exception_handler"
 
 module Sidekiq
   ##

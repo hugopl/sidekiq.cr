@@ -1,6 +1,6 @@
 require "secure_random"
 
-class Sidekiq
+module Sidekiq
   class Client
 
     DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain.new
@@ -44,6 +44,7 @@ class Sidekiq
     # thousands of jobs per second.  I don't recommend sharding unless you
     # cannot scale any other way (e.g. splitting your app into smaller apps).
     def initialize(@pool = @@default || Sidekiq::Pool.new)
+      @@default = @pool if @@default.nil?
     end
 
     ##

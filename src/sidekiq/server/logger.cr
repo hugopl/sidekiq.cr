@@ -1,6 +1,6 @@
 require "logger"
 
-class Sidekiq
+module Sidekiq
   class Logger
 
     @@context = Hash(UInt64, Array(String)).new

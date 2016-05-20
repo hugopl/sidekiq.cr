@@ -1,7 +1,7 @@
-require "sidekiq/util"
-require "sidekiq/fetch"
+require "./sidekiq/server/util"
+require "./sidekiq/server/fetch"
 
-class Sidekiq
+module Sidekiq
   ##
   # The Processor is a standalone fiber which:
   #

@@ -1,7 +1,7 @@
 require "pool/connection"
 require "redis"
 
-class Sidekiq
+module Sidekiq
   class Pool
     # Set up a pool of connections to Redis on localhost:6379:
     #

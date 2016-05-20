@@ -1,4 +1,4 @@
-class Sidekiq
+module Sidekiq
   class BasicFetch
     # We want the fetch operation to timeout every few seconds so we
     # can check if the process is shutting down.

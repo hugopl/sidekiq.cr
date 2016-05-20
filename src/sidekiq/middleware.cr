@@ -1,4 +1,4 @@
-class Sidekiq
+module Sidekiq
   #
   # Middleware is code configured to run before/after
   # a message is processed.  It is patterned after Rack

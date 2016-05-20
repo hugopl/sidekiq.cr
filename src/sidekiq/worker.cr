@@ -1,4 +1,4 @@
-class Sidekiq
+module Sidekiq
 
   ##
   # Include this module in your worker class and you can easily create
@@ -7,17 +7,22 @@ class Sidekiq
   # class HardWorker
   #   include Sidekiq::Worker
   #
-  #   def perform(*args)
+  #   perform_types(Int64, Int64, Float64)
+  #   def perform(a, b, c)
   #     # do some work
   #   end
   # end
   #
-  # Then in your app, you can do this:
+  # Note that you must annotate your perform method with the
+  # `perform_types` macro so that Sidekiq knows how to marshal
+  # your jobs at compile-time.  Only JSON::Type parameters are allowed!
   #
-  #   HardWorker.async.perform(1, 2, 3)
+  # To create a new job, you do this:
+  #
+  #   HardWorker.async.perform(1_i64, 2_i64, 3_f64)
   #
   module Worker
-    property jid : String?
+    property jid : String = ""
     property bid : String?
 
     macro included

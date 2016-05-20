@@ -1,6 +1,6 @@
 require "json"
 
-class Sidekiq
+module Sidekiq
   class Job
     @@jobtypes = Hash(String, -> Sidekiq::Worker).new
 
