@@ -16,10 +16,25 @@ class Sidekiq
   #
   #   HardWorker.async.perform(1, 2, 3)
   #
-  # Note that perform_async is a class method, perform is an instance method.
   module Worker
-    property jid
-    property? bid
+    property jid : String?
+    property bid : String?
+
+    macro included
+      extend Sidekiq::Worker::ClassMethods
+      Sidekiq::Job.register("{{@type}}", ->{ {{@type}}.new.as(Sidekiq::Worker) })
+    end
+
+    macro sidekiq_perform(*types)
+      def _perform(args : Array(JSON::Type))
+        tup = {
+        {% for type, index in types %}
+          args[{{index}}].as({{type}}),
+        {% end %}
+        }
+        perform(*tup)
+      end
+    end
 
     module ClassMethods
 

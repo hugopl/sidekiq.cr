@@ -2,10 +2,10 @@ require "json"
 
 class Sidekiq
   class Job
-    @@jobtypes = Hash(String, Sidekiq::Worker).new
+    @@jobtypes = Hash(String, -> Sidekiq::Worker).new
 
-    def self.register(klass)
-      @@jobtypes[klass.name] = klass
+    def self.register(name, klass)
+      @@jobtypes[name] = klass
     end
 
     JSON.mapping({
@@ -35,6 +35,18 @@ class Sidekiq
       @jid = SecureRandom.hex(12)
     end
 
+    def load(hash : Hash(String, JSON::Type))
+      self.queue = hash["queue"].to_s
+      self.klass = hash["class"].to_s
+      self.args = hash["args"].as(Array(JSON::Type))
+      self.jid = hash["jid"].to_s
+      self.bid = hash["bid"]?.try &.to_s
+      self.error_class = hash["error_class"]?.try &.to_s
+      self.error_message = hash["error_message"]?.try &.to_s
+      self.backtrace = hash["backtrace"]?.try &.to_s
+      self.retries = hash["retries"]?
+    end
+
     def client
       @client ||= Sidekiq::Client.new(Sidekiq::Pool.new)
     end
@@ -52,34 +64,18 @@ class Sidekiq
     end
 
     def execute
-      worker = @@jobtypes[klass].new
-      worker.jid = jid
-      worker.bid = bid
-      worker.perform(*args)
+      worker = @@jobtypes[klass].call
+      worker.jid = self.jid
+      worker.bid = self.bid
+      worker._perform(args)
     end
 
     def perform(*args)
       coer = [] of JSON::Type
-      args.each { |x| coer << coerce(x) }
+      args.each { |x| coer << x.as(JSON::Type) }
 
       @args = coer
       client.push(self)
-    end
-
-    def coerce(arg : Int32) : JSON::Type
-      val = 0_i64
-      val += arg
-      val
-    end
-
-    def coerce(arg : Float32) : JSON::Type
-      val = 0_f64
-      val += arg
-      val
-    end
-
-    def coerce(arg : JSON::Type) : JSON::Type
-      arg
     end
 
     def perform_bulk(args : Array(Array(JSON::Any)))
@@ -97,7 +93,8 @@ class Sidekiq
       ts = (interval < 1_000_000_000 ? (now.epoch + interval) : interval)
 
       coer = [] of JSON::Type
-      args.each { |x| coer << coerce(x) }
+      args.each { |x| coer << x.as(JSON::Type) }
+
       @args = coer
       @at = ts if ts > now.epoch_f
 
