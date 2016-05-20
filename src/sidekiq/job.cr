@@ -48,7 +48,7 @@ class Sidekiq
     end
 
     def client
-      @client ||= Sidekiq::Client.new(Sidekiq::Pool.new)
+      @client ||= Sidekiq::Client.new
     end
 
     def client=(cl : Sidekiq::Client)
@@ -78,8 +78,28 @@ class Sidekiq
       client.push(self)
     end
 
-    def perform_bulk(args : Array(Array(JSON::Any)))
-      client.push_bulk(self, args)
+    def perform_bulk(*args)
+      coer = [] of Array(JSON::Type)
+      args.each do |x|
+        foo = [] of JSON::Type
+        x.each do |arg|
+          foo << arg.as(JSON::Type)
+        end
+        coer << foo
+      end
+      client.push_bulk(self, coer)
+    end
+
+    def perform_bulk(args : Array(Array(JSON::Type)))
+      coer = [] of Array(JSON::Type)
+      args.each do |x|
+        foo = [] of JSON::Type
+        x.each do |arg|
+          foo << arg.as(JSON::Type)
+        end
+        coer << foo
+      end
+      client.push_bulk(self, coer)
     end
 
     # Run this job at or after the given instant in Time

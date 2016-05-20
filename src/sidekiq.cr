@@ -1,5 +1,5 @@
-require "./sidekiq/pool"
 require "./sidekiq/version"
+require "./sidekiq/pool"
 require "./sidekiq/job"
 require "./sidekiq/middleware"
 require "./sidekiq/client"

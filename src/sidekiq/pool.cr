@@ -10,14 +10,18 @@ class Sidekiq
     # or, to control the entire set of objects, pass a block which returns a ConnectionPool(Redis):
     #
     #    Sidekiq::Pool.new do
-    #      ConnectionPool.new(capacity: 5, timeout: 5) { Redis.new("localhost", 6379)
+    #      ConnectionPool(Redis).new(capacity: 5, timeout: 5) do
+    #        Redis.new(host: "localhost", port: 6379, password: "xyzzy")
+    #      end
     #    end
     #
-    def initialize(@capacity = 5)
-      @pool = ConnectionPool(Redis).new(capacity: @capacity) { Redis.new }
+    def initialize(capacity = 5)
+      @pool = ConnectionPool(Redis).new(capacity: capacity) do
+        Redis.new(host: "localhost", port: 6379)
+      end
     end
 
-    def initialize(@capacity = 5, &block)
+    def initialize(&block)
       @pool = yield
     end
 

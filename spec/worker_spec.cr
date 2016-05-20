@@ -3,10 +3,9 @@ require "./spec_helper"
 class MyWorker
   include Sidekiq::Worker
 
-  sidekiq_perform Int64, Int64, String
-
+  perform_types Int64, Int64, String
   def perform(a, b, c)
-    puts "hello world!"
+    #puts "hello world!"
   end
 end
 
@@ -15,6 +14,8 @@ describe Sidekiq::Worker do
     it "can create a basic job" do
       jid = MyWorker.async.perform(1_i64, 2_i64, "3")
       jid.should match /[a-f0-9]{24}/
+      pool = Sidekiq::Pool.new
+      pool.redis { |c| c.lpop("queue:default") }
     end
 
     it "can schedule a basic job" do
@@ -31,8 +32,24 @@ describe Sidekiq::Worker do
       hash = JSON.parse(str.to_s)
       job = Sidekiq::Job.new
       job.load(hash.as_h)
-      job.execute()
-      p job
+      job.execute
+    end
+
+    it "can persist in bulk" do
+      jids = MyWorker.async.perform_bulk([1_i64, 2_i64, "3"], [1_i64, 2_i64, "4"])
+      jids.size.should eq(2)
+      jids[0].should_not eq(jids[1])
+
+      pool = Sidekiq::Pool.new
+
+      size = pool.redis { |c| c.llen("queue:default") }
+      size.should eq(2)
+
+      str = pool.redis { |c| c.lpop("queue:default") }
+      hash = JSON.parse(str.to_s)
+      job = Sidekiq::Job.new
+      job.load(hash.as_h)
+      job.execute
     end
   end
 end

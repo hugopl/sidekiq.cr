@@ -25,14 +25,18 @@ class Sidekiq
       Sidekiq::Job.register("{{@type}}", ->{ {{@type}}.new.as(Sidekiq::Worker) })
     end
 
-    macro sidekiq_perform(*types)
+    macro perform_types(*types)
       def _perform(args : Array(JSON::Type))
-        tup = {
-        {% for type, index in types %}
-          args[{{index}}].as({{type}}),
+        {% if types.size == 0 %}
+          perform
+        {% else %}
+          tup = {
+          {% for type, index in types %}
+            args[{{index}}].as({{type}}),
+          {% end %}
+          }
+          perform(*tup)
         {% end %}
-        }
-        perform(*tup)
       end
     end
 

@@ -5,6 +5,11 @@ class Sidekiq
 
     DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain.new
 
+    @@default : Sidekiq::Pool?
+    def self.default=(pool)
+      @@default = pool
+    end
+
     ##
     # Define client-side middleware:
     #
@@ -33,12 +38,12 @@ class Sidekiq
     # Sidekiq jobs across several Redis instances (for scalability
     # reasons, e.g.)
     #
-    #   Sidekiq::Client.new(ConnectionPool.new { Redis.new })
+    #   Sidekiq::Client.new(Sidekiq::Pool.new)
     #
     # Generally this is only needed for very large Sidekiq installs processing
     # thousands of jobs per second.  I don't recommend sharding unless you
     # cannot scale any other way (e.g. splitting your app into smaller apps).
-    def initialize(@pool)
+    def initialize(@pool = @@default || Sidekiq::Pool.new)
     end
 
     ##
@@ -84,13 +89,15 @@ class Sidekiq
     # than the number given if the middleware stopped processing for one or more jobs.
     def push_bulk(job, allargs)
       payloads = allargs.map do |args|
-        copy = job.dup
-        copy.args = args
+        copy = Sidekiq::Job.new
         copy.jid = SecureRandom.hex(12)
-        result = middleware.invoke(job) do
-          !!job
+        copy.klass = job.klass
+        copy.queue = job.queue
+        copy.args = args
+        result = middleware.invoke(copy) do
+          !!copy
         end
-        result ? job : nil
+        result ? copy : nil
       end.compact
 
       raw_push(payloads) if !payloads.empty?
