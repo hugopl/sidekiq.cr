@@ -1,5 +1,6 @@
 #!/usr/bin/env crystal
 
+require "redis"
 require "../src/sidekiq"
 
 # This benchmark is an integration test which creates and
@@ -12,7 +13,6 @@ require "../src/sidekiq"
 #  - `crystal deps`
 #  - `crystal run --release bench/load.cr
 #
-
 
 r = Redis.new
 r.flushdb
@@ -57,6 +57,6 @@ spawn do
   end
 end
 
-s = Sidekiq::Server.new(concurrency: 25, logger: Logger.new(File.open("something.txt", "w")))
+s = Sidekiq::Server.new(concurrency: 25)
 s.start
 s.monitor

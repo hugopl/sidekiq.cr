@@ -21,7 +21,7 @@ Sidekiq.configure_server do |config|
   #config.redis = { driver: :hiredis, db: 13, port: 6379 }
   config.redis = { db: 13, port: 6379 }
   config.options[:queues] << 'default'
-  config.logger.level = Logger::ERROR
+  config.logger.level = Logger::INFO
   config.average_scheduled_poll_interval = 2
 end
 
