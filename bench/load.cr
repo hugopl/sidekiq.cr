@@ -1,6 +1,21 @@
-require "./src/sidekiq"
+#!/usr/bin/env crystal
 
-`redis-cli flushdb`
+require "../src/sidekiq"
+
+# This benchmark is an integration test which creates and
+# executes 100,000 no-op jobs through Sidekiq.  This is
+# useful for determining job overhead and raw throughput
+# on different platforms.
+#
+# Requirements:
+#  - Redis running on localhost:6379
+#  - `crystal deps`
+#  - `crystal run --release bench/load.cr
+#
+
+
+r = Redis.new
+r.flushdb
 
 class LoadWorker
   include Sidekiq::Worker
@@ -26,19 +41,22 @@ iter.times do
   LoadWorker.async.perform_bulk(args)
 end
 puts "Created #{count*iter} jobs in #{Time.now - a}"
-puts Process.rss
 
-require "./src/sidekiq/server"
+require "../src/sidekiq/server"
+a = Time.now
 
 spawn do
   loop do
-    r = Redis.new
     count = r.llen("queue:default")
+    if count == 0
+      puts "Done in #{Time.now - a}"
+      exit
+    end
     p [Time.now, count, Process.rss]
     sleep 1
   end
 end
 
-s = Sidekiq::Server.new(concurrency: 100, logger: Logger.new(File.open("something.txt", "w")))
+s = Sidekiq::Server.new(concurrency: 25, logger: Logger.new(File.open("something.txt", "w")))
 s.start
 s.monitor
