@@ -13,21 +13,21 @@ module Sidekiq
       def initialize(@output)
       end
 
-      def call(ex : Exception, ctxHash : Hash(String, JSON::Type)?)
+      def call(ex : Exception, ctxHash : Hash(String, JSON::Type)? = nil)
         @output.warn(ctxHash.to_json) if !ctxHash.empty?
         @output.warn "#{ex.class.name}: #{ex.message}"
         @output.warn ex.backtrace.join("\n") unless ex.backtrace.nil?
       end
     end
 
-    def handle_exception(server : Sidekiq::Server, ex : Exception, ctxHash : Hash(String, JSON::Type)?)
-      server.error_handlers.each do |handler|
+    def handle_exception(ctx : Sidekiq::Context, ex : Exception, ctxHash : Hash(String, JSON::Type)?)
+      ctx.error_handlers.each do |handler|
         begin
           handler.call(ex, ctxHash)
         rescue ex
-          puts "!!! ERROR HANDLER THREW AN ERROR !!!"
-          puts ex
-          puts ex.backtrace.join("\n") unless ex.backtrace.nil?
+          ctx.logger.error "!!! ERROR HANDLER THREW AN ERROR !!!"
+          ctx.logger.error ex
+          ctx.logger.error ex.backtrace.join("\n") unless ex.backtrace.nil?
         end
       end
     end

@@ -9,16 +9,16 @@ module Sidekiq
 
     EXPIRY = 60 * 60 * 24
 
-    def watchdog(svr, last_words)
+    def watchdog(ctx, last_words)
       yield
     rescue ex : Exception
-      handle_exception(svr, ex, { "context" => last_words })
+      handle_exception(ctx, ex, { "context" => last_words })
       raise ex
     end
 
-    def safe_routine(svr, name, &block)
+    def safe_routine(ctx, name, &block)
       spawn do
-        watchdog(svr, name, &block)
+        watchdog(ctx, name, &block)
       end
     end
 

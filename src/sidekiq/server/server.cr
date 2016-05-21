@@ -4,7 +4,7 @@ require "./processor"
 require "./middleware"
 
 module Sidekiq
-  class Server
+  class Server < Sidekiq::Context
     getter concurrency : Int32
     getter fetcher : Sidekiq::Fetch
     getter pool : Sidekiq::Pool
@@ -15,13 +15,20 @@ module Sidekiq
 
     def initialize(@queues = ["default"], @concurrency = 25, @logger = Sidekiq::Logger.build)
       @alive = true
-      @middleware = Sidekiq::Middleware::Chain.new
-      @middleware.add Sidekiq::Middleware::Logger.new
+      @middleware = default_middleware
+
       @pool = Sidekiq::Client.default = Sidekiq::Pool.new(@concurrency + 2)
       @fetcher = Sidekiq::BasicFetch.new(@pool.not_nil!, @queues)
       @error_handlers = [] of Sidekiq::ExceptionHandler::Base
       @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
       @processors = [] of Sidekiq::Processor
+    end
+
+    def default_middleware
+      Sidekiq::Middleware::Chain.new.tap do |c|
+        c.add Sidekiq::Middleware::Logger.new
+        c.add Sidekiq::Middleware::RetryJobs.new
+      end
     end
 
     def start

@@ -19,7 +19,7 @@ describe Sidekiq::Worker do
     end
 
     it "can schedule a basic job" do
-      jid = MyWorker.async.perform_in(60_i64, 1_i64, 2_i64, "3")
+      jid = MyWorker.async.perform_in(60.seconds, 1_i64, 2_i64, "3")
       jid.should match /[a-f0-9]{24}/
     end
 

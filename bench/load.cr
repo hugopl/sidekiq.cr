@@ -14,6 +14,9 @@ require "../src/sidekiq"
 #  - `crystal run --release bench/load.cr
 #
 
+puts "Compiled with #{{{`crystal -v`.stringify}}}"
+puts "Running on #{`uname -a`}"
+
 r = Redis.new
 r.flushdb
 

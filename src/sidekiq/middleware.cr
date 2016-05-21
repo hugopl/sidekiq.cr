@@ -2,6 +2,8 @@ module Sidekiq
 
   abstract class Context
     abstract def logger : ::Logger
+    abstract def pool : Sidekiq::Pool
+    abstract def error_handlers : Array(Sidekiq::ExceptionHandler::Base)
   end
 
   #

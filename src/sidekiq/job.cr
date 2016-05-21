@@ -1,6 +1,15 @@
 require "json"
 
 module Sidekiq
+  module EpochConverter
+    def self.to_json(value : Time, io : IO)
+      io << "%.6f" % value.epoch_f
+    end
+    def self.from_json(value : JSON::PullParser) : Time
+      Time.epoch_ms(value.read_float * 1000)
+    end
+  end
+
   class Job
     @@jobtypes = Hash(String, -> Sidekiq::Worker).new
 
@@ -12,15 +21,17 @@ module Sidekiq
       queue: String,
       args: Array(JSON::Type),
       klass: { key: "class", type: String }
-      created_at: Float64,
-      enqueued_at: Float64,
+      created_at: {type: Time, converter: EpochConverter},
+      enqueued_at: {type: Time, converter: EpochConverter},
       jid: String,
-      at: { type: Int64, nilable: true },
+      at: { type: Time, converter: EpochConverter, nilable: true },
       bid: { type: String, nilable: true },
-      retries: { type: JSON::Type, nilable: true },
+      retry: { type: JSON::Type, nilable: true },
       retry_count: { type: Int64, nilable: true },
       backtrace: { type: JSON::Type, nilable: true },
-      failed_at: { type: Float64, nilable: true },
+      dead: { type: Bool, nilable: true },
+      failed_at: {type: Time, converter: EpochConverter, nilable: true},
+      retried_at: {type: Time, converter: EpochConverter, nilable: true},
       error_class: { type: String, nilable: true },
       error_message: { type: String, nilable: true },
       error_backtrace: { type: Array(String), nilable: true },
@@ -30,8 +41,8 @@ module Sidekiq
       @queue = "default"
       @args = [] of JSON::Type
       @klass = ""
-      @created_at = Time.now.epoch_f
-      @enqueued_at = 0.0
+      @created_at = Time.now
+      @enqueued_at = Time.now
       @jid = SecureRandom.hex(12)
     end
 
@@ -43,8 +54,10 @@ module Sidekiq
       self.bid = hash["bid"]?.try &.to_s
       self.error_class = hash["error_class"]?.try &.to_s
       self.error_message = hash["error_message"]?.try &.to_s
-      self.backtrace = hash["backtrace"]?.try &.to_s
-      self.retries = hash["retries"]?
+      self.backtrace = hash["backtrace"]?
+      self.retry = hash["retry"]?
+      self.retry_count = hash["retry_count"]?.try &.as(Int64)
+      self.dead = hash["dead"]?.try &.as(Bool)
     end
 
     def client
@@ -53,14 +66,6 @@ module Sidekiq
 
     def client=(cl : Sidekiq::Client)
       @client = cl
-    end
-
-    def created
-      Time.epoch_ms((created_at * 1000).to_i)
-    end
-
-    def enqueued
-      Time.epoch_ms((enqueued_at * 1000).to_i)
     end
 
     def execute
@@ -107,16 +112,16 @@ module Sidekiq
       perform_in(interval.epoch_f, *args)
     end
 
-    # Run this job +interval+ seconds from now.
-    def perform_in(interval : Int64, *args)
+    # Run this job +interval+ from now.
+    def perform_in(interval : Time::Span, *args)
       now = Time.now
-      ts = (interval < 1_000_000_000 ? (now.epoch + interval) : interval)
+      ts = now + interval
 
       coer = [] of JSON::Type
       args.each { |x| coer << x.as(JSON::Type) }
 
       @args = coer
-      @at = ts if ts > now.epoch_f
+      @at = ts if ts > now
 
       client.push(self)
     end

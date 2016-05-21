@@ -121,13 +121,13 @@ module Sidekiq
         all = [] of Redis::RedisValue
         payloads.each do |hash|
           at, hash.at = hash.at, nil
-          all << at.to_s
+          all << "%.6f" % at.not_nil!.epoch_f
           all << hash.to_json
         end
         conn.zadd("schedule", all)
       else
         q = payloads.first.queue
-        now = Time.now.epoch_f
+        now = Time.now
         to_push = payloads.map do |entry|
           entry.enqueued_at = now
           entry.to_json

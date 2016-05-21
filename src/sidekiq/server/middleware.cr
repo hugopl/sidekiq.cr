@@ -1,4 +1,5 @@
 require "../middleware"
+require "./retry_jobs"
 
 class Sidekiq::Middleware::Logger < Sidekiq::Middleware::Entry
   def call(job, ctx)
