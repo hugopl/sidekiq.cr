@@ -31,6 +31,7 @@ module Sidekiq
       @chain ||= DEFAULT_MIDDLEWARE
     end
 
+    getter logger : ::Logger
     getter pool : Sidekiq::Pool
 
     # Sidekiq::Client normally uses the default Redis pool but you may
@@ -45,6 +46,7 @@ module Sidekiq
     # cannot scale any other way (e.g. splitting your app into smaller apps).
     def initialize(@pool = @@default || Sidekiq::Pool.new)
       @@default = @pool if @@default.nil?
+      @logger = ::Logger.new(STDOUT)
     end
 
     ##
@@ -66,7 +68,7 @@ module Sidekiq
     #   push('queue' => 'my_queue', 'class' => MyWorker, 'args' => ['foo', 1, :bat => 'bar'])
     #
     def push(job)
-      result = middleware.invoke(job) do
+      result = middleware.invoke(job, self) do
         !!job
       end
 
@@ -95,7 +97,7 @@ module Sidekiq
         copy.klass = job.klass
         copy.queue = job.queue
         copy.args = args
-        result = middleware.invoke(copy) do
+        result = middleware.invoke(copy, self) do
           !!copy
         end
         result ? copy : nil

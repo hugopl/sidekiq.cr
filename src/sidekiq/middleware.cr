@@ -1,4 +1,9 @@
 module Sidekiq
+
+  abstract class Context
+    abstract def logger : ::Logger
+  end
+
   #
   # Middleware is code configured to run before/after
   # a message is processed.  It is patterned after Rack
@@ -9,14 +14,16 @@ module Sidekiq
   # Middleware must be thread-safe.
   #
   module Middleware
-    abstract class Client
+
+    abstract class Entry
+      abstract def call(job, ctx, &block)
     end
 
     class Chain
-      property entries
+      property entries : Array(Entry)
 
       def initialize
-        @entries = [] of Client
+        @entries = [] of Entry
       end
 
       def remove(klass)
@@ -51,17 +58,17 @@ module Sidekiq
         entries.clear
       end
 
-      def invoke(job, &block)
+      def invoke(job, ctx, &block)
         chain = entries.map { |k| k }
-        next_link(chain, job, &block)
+        next_link(chain, job, ctx, &block)
       end
 
-      def next_link(chain, job, &block)
+      def next_link(chain, job, ctx, &block)
         if chain.empty?
           block.call
         else
-          chain.shift.call(job) do
-            next_link(chain, job, &block)
+          chain.shift.call(job, ctx) do
+            next_link(chain, job, ctx, &block)
           end
         end
       end

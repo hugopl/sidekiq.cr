@@ -1,30 +1,47 @@
 module Sidekiq
-  class BasicFetch
+  abstract class UnitOfWork
+    abstract def job : String
+    abstract def acknowledge : Bool
+    abstract def requeue : Bool
+  end
+
+  abstract class Fetch
+    abstract def retrieve_work : UnitOfWork
+    abstract def bulk_requeue(jobs : Array(UnitOfWork)) : Int32
+  end
+
+  class BasicFetch < ::Sidekiq::Fetch
     # We want the fetch operation to timeout every few seconds so we
     # can check if the process is shutting down.
     TIMEOUT = 2
 
-    UnitOfWork = Struct.new(:queue, :job, :pool) do
+    class UnitOfWork < ::Sidekiq::UnitOfWork
+      def initialize(@queue : String, @job : String, @pool : Sidekiq::Pool)
+      end
+
+      def job
+        @job
+      end
+
       def acknowledge
         # nothing to do
       end
 
       def queue_name
-        queue.sub(/.*queue:/, "")
+        @queue.sub(/.*queue:/, "")
       end
 
       def requeue
-        pool.redis do |conn|
-          conn.rpush("queue:#{queue_name}", job)
+        @pool.redis do |conn|
+          conn.rpush("queue:#{queue_name}", @job)
         end
       end
     end
 
-    getter pool
-    getter queues
-    getter logger
+    getter pool : Sidekiq::Pool
+    getter queues : Array(String)
 
-    def initialize(@logger, @pool, queues)
+    def initialize(@pool, queues)
       @queues = queues.map { |q| "queue:#{q}" }
       @strictly_ordered_queues = false
     end
@@ -32,12 +49,13 @@ module Sidekiq
     def strict!
       @strictly_ordered_queues = true
       @queues = @queues.uniq
-      @queues << TIMEOUT
     end
 
     def retrieve_work
-      name, job = @pool.redis { |conn| conn.brpop(*queues_cmd) }
-      UnitOfWork.new(name, job, pool) if work
+      arr = @pool.redis { |conn| conn.brpop(["queue:default"], 1) }.as(Array(Redis::RedisValue))
+      if arr.size == 2
+        UnitOfWork.new(arr[0].to_s, arr[1].to_s, pool)
+      end
     end
 
     # Creating the Redis#brpop command takes into account any
@@ -49,32 +67,29 @@ module Sidekiq
       if @strictly_ordered_queues
         @queues
       else
-        queues = @queues.shuffle.uniq
-        queues << TIMEOUT
-        queues
+        @queues.shuffle.uniq
       end
     end
 
     def bulk_requeue(inprogress : Array(UnitOfWork))
-      return if inprogress.empty?
+      return 0 if inprogress.empty?
 
-      logger.debug { "Re-queueing terminated jobs" }
       jobs_to_requeue = {} of String => Array(String)
       inprogress.each do |unit_of_work|
         jobs_to_requeue[unit_of_work.queue_name] ||= [] of String
         jobs_to_requeue[unit_of_work.queue_name] << unit_of_work.job
       end
 
+      count = 0
       pool.redis do |conn|
         conn.pipelined do
           jobs_to_requeue.each do |queue, jobs|
             conn.rpush("queue:#{queue}", jobs)
+            count += jobs.size
           end
         end
       end
-      logger.info("Pushed #{inprogress.size} jobs back to Redis")
-    rescue ex
-      logger.warn("Failed to requeue #{inprogress.size} jobs: #{ex.message}")
+      count
     end
 
   end

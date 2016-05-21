@@ -1,4 +1,4 @@
-require "./sidekiq/server/exception_handler"
+require "./exception_handler"
 
 module Sidekiq
   ##
@@ -9,16 +9,16 @@ module Sidekiq
 
     EXPIRY = 60 * 60 * 24
 
-    def watchdog(last_words)
+    def watchdog(svr, last_words)
       yield
     rescue ex : Exception
-      handle_exception(ex, { "context" => last_words })
+      handle_exception(svr, ex, { "context" => last_words })
       raise ex
     end
 
-    def safe_thread(name, &block)
+    def safe_routine(svr, name, &block)
       spawn do
-        watchdog(name, &block)
+        watchdog(svr, name, &block)
       end
     end
 

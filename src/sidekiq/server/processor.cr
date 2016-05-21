@@ -1,5 +1,5 @@
-require "./sidekiq/server/util"
-require "./sidekiq/server/fetch"
+require "./util"
+require "./fetch"
 
 module Sidekiq
   ##
@@ -21,12 +21,14 @@ module Sidekiq
   class Processor
     include Util
 
-    getter job : Sidekiq::BasicFetch::UnitOfWork
+    getter job : Sidekiq::UnitOfWork?
+    getter identity : String
 
-    def initialize(mgr)
+    def initialize(mgr : Sidekiq::Server)
+      @identity = ""
       @mgr = mgr
-      @down = false
       @done = false
+      @down = nil
       @job = nil
     end
 
@@ -39,7 +41,10 @@ module Sidekiq
     end
 
     def start
-      @thread ||= safe_routine("processor", &method(:run))
+      safe_routine(@mgr, "processor") do
+        @identity = Fiber.current.object_id.to_s(36)
+        run
+      end
     end
 
     def run
@@ -48,25 +53,24 @@ module Sidekiq
           process_one
         end
         @mgr.processor_stopped(self)
-      rescue Sidekiq::Shutdown
-        @mgr.processor_stopped(self)
+      #rescue Sidekiq::Shutdown
+        #@mgr.processor_stopped(self)
       rescue ex : Exception
         @mgr.processor_died(self, ex)
       end
     end
 
     def process_one
-      @job = fetch
-      process(@job) if @job
+      @job = x = fetch
+      process(x) if x
       @job = nil
     end
 
     def get_one
       begin
-        work = @strategy.retrieve_work
-        (logger.info { "Redis is online, #{Time.now - @down} sec downtime" }; @down = nil) if @down
+        work = @mgr.fetcher.retrieve_work
+        (logger.info { "Redis is online, #{Time.now - @down.not_nil!} sec downtime" }; @down = nil) if @down
         work
-      rescue Sidekiq::Shutdown
       rescue ex
         handle_fetch_exception(ex)
       end
@@ -96,57 +100,49 @@ module Sidekiq
 
     def process(work)
       jobstr = work.job
-      queue = work.queue_name
-
       ack = false
       begin
-        job = JSON.parse(jobstr)
-        klass  = job["class"].constantize
-        worker = klass.new
-        worker.jid = job["jid"]
+        hash = JSON.parse(jobstr)
+        job = Sidekiq::Job.new
+        job.load(hash.as_h)
 
-        stats(worker, job, queue) do
-          @mgr.server_middleware.invoke(worker, job, queue) do
+        stats(job, jobstr) do
+          @mgr.middleware.invoke(job, @mgr) do
             # Only ack if we either attempted to start this job or
             # successfully completed it. This prevents us from
             # losing jobs if a middleware raises an exception before yielding
             ack = true
-            worker.perform(*(job["args"].clone))
+            job.execute
           end
         end
         ack = true
-      rescue Sidekiq::Shutdown
+      #rescue Sidekiq::Shutdown
         # Had to force kill this job because it didn't finish
         # within the timeout.  Don't acknowledge the work since
         # we didn't properly finish it.
-        ack = false
+        #ack = false
       rescue ex : Exception
-        handle_exception(ex, job || { :job => jobstr })
-        raise
+        handle_exception(@mgr, ex, { "job" => jobstr })
+        raise ex
       ensure
         work.acknowledge if ack
       end
-    end
-
-    def thread_identity
-      @str ||= Fiber.current.object_id.to_s(36)
     end
 
     @@WORKER_STATE = Hash(String, Hash(String, String)).new
     @@PROCESSED = 0
     @@FAILURE = 0
 
-    def stats(worker, job, queue)
-      tid = thread_identity
-      @@WORKER_STATE[tid] = {"queue" => queue, "payload" => job, "run_at" => Time.now.to_i.to_s }
+    def stats(job, str)
+      @@WORKER_STATE[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s }
 
       begin
         yield
-      rescue Exception
+      rescue ex : Exception
         @@FAILURE += 1
-        raise
+        raise ex
       ensure
-        @@WORKER_STATE.delete(tid)
+        @@WORKER_STATE.delete(@identity)
         @@PROCESSED += 1
       end
     end
