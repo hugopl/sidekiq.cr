@@ -16,7 +16,10 @@ module Sidekiq
             # We need to go through the list one at a time to reduce the risk of something
             # going wrong between the time jobs are popped from the scheduled queue and when
             # they are pushed onto a work queue and losing the jobs.
-            while jobstr = conn.zrangebyscore(sorted_set, "-inf", nowstr, limit: [0, 1]).first do
+            loop do
+              results = conn.zrangebyscore(sorted_set, "-inf", nowstr, limit: [0, 1]).as(Array)
+              break if results.empty?
+              jobstr = results[0].as(String)
 
               # Pop item off the queue and add it to the work queue. If the job can't be popped from
               # the queue, it's because another process already popped it so we can move on to the
@@ -26,11 +29,12 @@ module Sidekiq
                 job = Sidekiq::Job.new
                 job.load(hash.as_h)
                 # A lot of work just to update the enqueued_at attribute :-(
-                Sidekiq::Client.push(job)
+                job.client.push(job)
                 count += 1
               end
             end
           end
+          nil
         end
         count
       end
@@ -46,8 +50,7 @@ module Sidekiq
 
       INITIAL_WAIT = 10
 
-      def initialize(ctx)
-        @ctx = ctx
+      def initialize
         @enq = Sidekiq::Scheduled::Enq.new
         @done = false
       end
@@ -56,23 +59,29 @@ module Sidekiq
         @done = true
       end
 
-      def start
-        safe_coroutine("scheduler") do
+      def context : Sidekiq::Context
+        @ctx.not_nil!
+      end
+
+      def start(ctx)
+        safe_routine(ctx, "scheduler") do
           initial_wait
 
           while !@done
-            enqueue
+            enqueue(ctx)
             wait
           end
-          @ctx.logger.info("Scheduler exiting...")
+          ctx.logger.info("Scheduler exiting...")
         end
       end
 
-      def enqueue
+      def enqueue(ctx : Sidekiq::Context)
+        @ctx = ctx
         begin
-          @enq.enqueue_jobs(@ctx)
+          context.logger.info("Scheduling...")
+          @enq.enqueue_jobs(context)
         rescue ex
-          handle_exception(@ctx, ex)
+          handle_exception(context, ex)
         end
       end
 

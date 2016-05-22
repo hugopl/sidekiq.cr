@@ -1,5 +1,11 @@
 module Sidekiq
 
+  module ExceptionHandler
+    abstract class Base
+      abstract def call(ex : Exception, ctxHash : Hash(String, JSON::Type)?)
+    end
+  end
+
   abstract class Context
     abstract def logger : ::Logger
     abstract def pool : Sidekiq::Pool

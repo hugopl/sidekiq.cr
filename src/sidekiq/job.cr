@@ -26,9 +26,9 @@ module Sidekiq
       jid: String,
       at: { type: Time, converter: EpochConverter, nilable: true },
       bid: { type: String, nilable: true },
-      retry: { type: JSON::Type, nilable: true },
+      retry: { type: JSON::Type, nilable: true }, # (Bool, Int64, Nil)
       retry_count: { type: Int64, nilable: true },
-      backtrace: { type: JSON::Type, nilable: true },
+      backtrace: { type: JSON::Type, nilable: true }, # (Bool, Int64, Nil)
       dead: { type: Bool, nilable: true },
       failed_at: {type: Time, converter: EpochConverter, nilable: true},
       retried_at: {type: Time, converter: EpochConverter, nilable: true},
@@ -44,6 +44,7 @@ module Sidekiq
       @created_at = Time.now
       @enqueued_at = Time.now
       @jid = SecureRandom.hex(12)
+      @retry = true
     end
 
     def load(hash : Hash(String, JSON::Type))
