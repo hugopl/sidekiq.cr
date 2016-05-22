@@ -6,6 +6,7 @@ require "./middleware"
 
 module Sidekiq
   class Server < Sidekiq::Context
+    getter environment : String
     getter concurrency : Int32
     getter fetcher : Sidekiq::Fetch
     getter scheduler : Sidekiq::Scheduled::Poller
@@ -15,7 +16,7 @@ module Sidekiq
     getter processors : Array(Sidekiq::Processor)
     getter logger : ::Logger
 
-    def initialize(@queues = ["default"], @concurrency = 25, @logger = Sidekiq::Logger.build)
+    def initialize(@environment = "development", @queues = ["default"], @concurrency = 25, @logger = Sidekiq::Logger.build)
       @alive = true
       @middleware = Sidekiq::Server.default_middleware
 
@@ -36,8 +37,40 @@ module Sidekiq
       @@chain
     end
 
+    def banner
+%{
+         m,
+         `$b
+    .ss,  $$:         .,d$
+    `$$P,d$P'    .,md$P"'
+     ,$$$$$bmmd$$$P^'
+   .d$$$$$$$$$$P'
+   $$^' `"^$$$'       ____  _     _      _    _
+   $:     ,$$:       / ___|(_) __| | ___| | _(_) __ _
+   `b     :$$        \___ \| |/ _` |/ _ \ |/ / |/ _` |
+          $$:         ___) | | (_| |  __/   <| | (_| |
+          $$         |____/|_|\__,_|\___|_|\_\_|\__, |
+        .d$$                                       |_|
+}
+    end
+
+    def print_banner
+      if STDOUT.tty? && environment == "development"
+        puts "\e[#{31}m"
+        puts banner
+        puts "\e[0m"
+      end
+    end
+
     def start
+      print_banner
+
+      logger.info "Sidekiq v#{Sidekiq::VERSION} in #{{{`crystal -v`.strip.stringify}}}"
+      logger.info Sidekiq::LICENSE
+      logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
       logger.info "Starting processing with #{concurrency} workers"
+
+      raise "You must register one or more workers to execute jobs!" unless Sidekiq::Job.valid?
       concurrency.times do
         p = Sidekiq::Processor.new(self)
         @processors << p

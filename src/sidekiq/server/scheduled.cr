@@ -78,7 +78,6 @@ module Sidekiq
       def enqueue(ctx : Sidekiq::Context)
         @ctx = ctx
         begin
-          context.logger.info("Scheduling...")
           @enq.enqueue_jobs(context)
         rescue ex
           handle_exception(context, ex)

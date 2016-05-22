@@ -11,6 +11,27 @@ you can port them to Crystal and take advantage of the much higher performance.
 
 This project is still very unstable.  Do not use except for fun.
 
+## Help wanted
+
+Things that do not exist but I welcome:
+
+* Travis build
+* [Data API](/mperham/sidekiq/wiki/API)
+* [Testing API](/mperham/sidekiq/wiki/Testing)
+* Web UI
+
+Things that do not exist and probably won't ever:
+
+* Support for daemonization, pidfiles, log rotation.
+* Delayed extensions
+
+## Compatibility
+
+The Ruby and Crystal versions of Sidekiq **must** remain data compatible in Redis.
+Both versions should be able to create and process jobs from each other.
+Their APIs **do not** and should not be identical but rather idiomatic to
+their respective languages.
+
 ## Installation
 
 Add sidekiq.cr to your shards.yml:

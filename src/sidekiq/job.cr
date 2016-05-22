@@ -13,6 +13,10 @@ module Sidekiq
   class Job
     @@jobtypes = Hash(String, -> Sidekiq::Worker).new
 
+    def self.valid?
+      @@jobtypes.size > 0
+    end
+
     def self.register(name, klass)
       @@jobtypes[name] = klass
     end
@@ -70,7 +74,10 @@ module Sidekiq
     end
 
     def execute
-      worker = @@jobtypes[klass].call
+      prc = @@jobtypes[klass]?
+      raise "No such worker: #{klass}" if prc.nil?
+
+      worker = prc.call
       worker.jid = self.jid
       worker.bid = self.bid
       worker._perform(args)
