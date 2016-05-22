@@ -10,7 +10,7 @@ you can port them to Crystal and take advantage of the much higher performance.
 Rough, initial benchmarks:
 
 Runtime | RSS | Time | Throughput
------------------------------------
+--------|-----|------|-------------
 MRI | 50MB | 22 | 4,500 jobs/sec
 MRI/hiredis | 50MB | 17 | 7,000 jobs/sec
 Crystal 0.17 | 17MB | 6 | 20,000 jobs/sec
