@@ -7,6 +7,14 @@ Crystal is statically-typed, compiled and **very fast** but retains a similar sy
 Ruby.  If you have Ruby jobs which are CPU-intensive or require very high throughput,
 you can port them to Crystal and take advantage of the much higher performance.
 
+Rough, initial benchmarks:
+
+Runtime | RSS | Time | Throughput
+-----------------------------------
+MRI | 50MB | 22 | 4,500 jobs/sec
+MRI/hiredis | 50MB | 17 | 7,000 jobs/sec
+Crystal 0.17 | 17MB | 6 | 20,000 jobs/sec
+
 # Note
 
 This project is still very unstable.  Do not use except for fun.
@@ -15,10 +23,11 @@ This project is still very unstable.  Do not use except for fun.
 
 Things that do not exist but I welcome:
 
-* Travis build
 * [Data API](/mperham/sidekiq/wiki/API)
 * [Testing API](/mperham/sidekiq/wiki/Testing)
 * Web UI
+
+See also [the issues](/mperham/sidekiq.cr/issues) for chores and other ideas to help.
 
 Things that do not exist and probably won't ever:
 
