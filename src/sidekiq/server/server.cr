@@ -35,9 +35,13 @@ module Sidekiq
       @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
 
       @pool = Sidekiq::Client.default = Sidekiq::Pool.new(@concurrency + 2)
-      @fetcher = Sidekiq::BasicFetch.new(@pool, @queues)
       @processors = [] of Sidekiq::Processor
       @scheduler = Sidekiq::Scheduled::Poller.new
+      @fetcher = Sidekiq::BasicFetch.new(@queues)
+    end
+
+    def redis=(pool : ConnectionPool(Redis))
+      @pool = Sidekiq::Client.default = Sidekiq::Pool.new(pool)
     end
 
     def start

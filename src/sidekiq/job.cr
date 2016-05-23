@@ -73,13 +73,14 @@ module Sidekiq
       @client = cl
     end
 
-    def execute
+    def execute(ctx : Sidekiq::Context)
       prc = @@jobtypes[klass]?
       raise "No such worker: #{klass}" if prc.nil?
 
       worker = prc.call
       worker.jid = self.jid
       worker.bid = self.bid
+      worker.logger = ctx.logger
       worker._perform(args)
     end
 

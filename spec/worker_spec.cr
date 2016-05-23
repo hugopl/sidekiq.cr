@@ -32,7 +32,7 @@ describe Sidekiq::Worker do
       hash = JSON.parse(str.to_s)
       job = Sidekiq::Job.new
       job.load(hash.as_h)
-      job.execute
+      job.execute(MockContext.new)
     end
 
     it "can persist in bulk" do
@@ -50,7 +50,7 @@ describe Sidekiq::Worker do
       hash = JSON.parse(str.to_s)
       job = Sidekiq::Job.new
       job.load(hash.as_h)
-      job.execute
+      job.execute(MockContext.new)
     end
   end
 end

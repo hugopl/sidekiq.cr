@@ -24,16 +24,11 @@ module Sidekiq
     getter job : Sidekiq::UnitOfWork?
     getter identity : String
 
-    def initialize(mgr : Sidekiq::Server)
+    def initialize(@mgr : Sidekiq::Server)
       @identity = ""
-      @mgr = mgr
       @done = false
       @down = nil
       @job = nil
-    end
-
-    def logger
-      @mgr.logger
     end
 
     def terminate
@@ -66,8 +61,8 @@ module Sidekiq
 
     def get_one
       begin
-        work = @mgr.fetcher.retrieve_work
-        (logger.info { "Redis is online, #{Time.now - @down.not_nil!} sec downtime" }; @down = nil) if @down
+        work = @mgr.fetcher.retrieve_work(@mgr)
+        (@mgr.logger.info { "Redis is online, #{Time.now - @down.not_nil!} sec downtime" }; @down = nil) if @down
         work
       rescue ex
         handle_fetch_exception(ex)
@@ -87,9 +82,9 @@ module Sidekiq
     def handle_fetch_exception(ex)
       if !@down
         @down = Time.now
-        logger.error("Error fetching job: #{ex}")
+        @mgr.logger.error("Error fetching job: #{ex}")
         ex.backtrace.each do |bt|
-          logger.error(bt)
+          @mgr.logger.error(bt)
         end
       end
       sleep(1)
@@ -110,7 +105,7 @@ module Sidekiq
             # successfully completed it. This prevents us from
             # losing jobs if a middleware raises an exception before yielding
             ack = true
-            job.execute
+            job.execute(@mgr)
           end
         end
         ack = true

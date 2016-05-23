@@ -1,3 +1,4 @@
+require "uri"
 require "pool/connection"
 require "redis"
 
@@ -15,14 +16,33 @@ module Sidekiq
     #      end
     #    end
     #
+    # Alternatively you can set environment variables to configure Redis:
+    #
+    #   MY_REDIS_URL=redis://:password@some.hostname.com:2435/
+    #   REDIS_PROVIDER=MY_REDIS_URL
+    #
+    # Note that you set REDIS_PROVIDER to the **name** of the variable which contains the URL.
+    #
     def initialize(capacity = 5)
+      hostname = "localhost"
+      port = 6379
+      password = nil
+
+      if ENV["REDIS_PROVIDER"]?
+        url = ENV[ENV["REDIS_PROVIDER"]]
+        redis_url = URI.parse(url)
+        hostname = redis_url.host.not_nil!
+        port = redis_url.port
+        password = redis_url.password
+      end
+
       @pool = ConnectionPool(Redis).new(capacity: capacity) do
-        Redis.new(host: "localhost", port: 6379)
+        Redis.new(host: hostname, port: port, password: password)
       end
     end
 
-    def initialize(&block)
-      @pool = yield
+    def initialize(pool : ConnectionPool(Redis))
+      @pool = pool
     end
 
     # Execute one or more Redis operations:

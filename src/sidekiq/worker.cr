@@ -24,6 +24,12 @@ module Sidekiq
   module Worker
     property jid : String = ""
     property bid : String?
+    property! logger : ::Logger
+
+    def logger
+      @logger = ::Logger.new(STDOUT) unless @logger
+      @logger.not_nil!
+    end
 
     macro included
       extend Sidekiq::Worker::ClassMethods

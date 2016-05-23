@@ -30,7 +30,6 @@ describe "Sidekiq::CLI" do
     logger.level = Logger::DEBUG
 
     cli = Sidekiq::CLI.new
-    svr = cli.start(logger)
-    svr.request_stop
+    svr = cli.create(logger)
   end
 end

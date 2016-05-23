@@ -6,8 +6,8 @@ module Sidekiq
   end
 
   abstract class Fetch
-    abstract def retrieve_work : UnitOfWork
-    abstract def bulk_requeue(jobs : Array(UnitOfWork)) : Int32
+    abstract def retrieve_work(ctx : Sidekiq::Context) : UnitOfWork
+    abstract def bulk_requeue(ctx : Sidekiq::Context, jobs : Array(UnitOfWork)) : Int32
   end
 
   class BasicFetch < ::Sidekiq::Fetch
@@ -16,7 +16,7 @@ module Sidekiq
     TIMEOUT = 2
 
     class UnitOfWork < ::Sidekiq::UnitOfWork
-      def initialize(@queue : String, @job : String, @pool : Sidekiq::Pool)
+      def initialize(@queue : String, @job : String, @ctx : Sidekiq::Context)
       end
 
       def job
@@ -32,16 +32,15 @@ module Sidekiq
       end
 
       def requeue
-        @pool.redis do |conn|
+        @ctx.pool.redis do |conn|
           conn.rpush("queue:#{queue_name}", @job)
         end
       end
     end
 
-    getter pool : Sidekiq::Pool
     getter queues : Array(String)
 
-    def initialize(@pool, queues)
+    def initialize(queues)
       @queues = queues.map { |q| "queue:#{q}" }
       @strictly_ordered_queues = false
     end
@@ -51,10 +50,10 @@ module Sidekiq
       @queues = @queues.uniq
     end
 
-    def retrieve_work
-      arr = @pool.redis { |conn| conn.brpop(["queue:default"], 1) }.as(Array(Redis::RedisValue))
+    def retrieve_work(ctx)
+      arr = ctx.pool.redis { |conn| conn.brpop(["queue:default"], 1) }.as(Array(Redis::RedisValue))
       if arr.size == 2
-        UnitOfWork.new(arr[0].to_s, arr[1].to_s, pool)
+        UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)
       end
     end
 
@@ -71,7 +70,7 @@ module Sidekiq
       end
     end
 
-    def bulk_requeue(inprogress : Array(Sidekiq::UnitOfWork))
+    def bulk_requeue(ctx, inprogress : Array(Sidekiq::UnitOfWork))
       return 0 if inprogress.empty?
 
       jobs_to_requeue = {} of String => Array(String)
@@ -81,7 +80,7 @@ module Sidekiq
       end
 
       count = 0
-      pool.redis do |conn|
+      ctx.pool.redis do |conn|
         conn.pipelined do
           jobs_to_requeue.each do |queue, jobs|
             conn.rpush("queue:#{queue}", jobs)

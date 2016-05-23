@@ -41,7 +41,7 @@ module Sidekiq
       @queues = ["default"] if @queues.empty?
     end
 
-    def start(logger = @logger)
+    def create(logger = @logger)
       # hack to avoid printing banner in test suite
       print_banner if logger == @logger
 
@@ -52,15 +52,20 @@ module Sidekiq
 
       logger.debug { self.inspect }
 
-      svr = Sidekiq::Server.new(concurrency: @concurrency,
-                              queues: @queues,
-                              environment: @environment,
-                              logger: logger)
-      svr.start
-      svr
+      Sidekiq::Server.new(concurrency: @concurrency,
+                          queues: @queues,
+                          environment: @environment,
+                          logger: logger)
     end
 
-    def monitor(svr)
+    def configure
+      x = create(logger)
+      yield x
+      x
+    end
+
+    def run(svr)
+      svr.start
       shutdown_started_at = nil
 
       Signal::INT.trap do
@@ -88,7 +93,7 @@ module Sidekiq
 
       if !svr.processors.empty?
         logger.info "Re-enqueuing #{svr.processors.size} busy jobs"
-        svr.fetcher.bulk_requeue(svr.processors.map { |p| p.job.not_nil! })
+        svr.fetcher.bulk_requeue(svr, svr.processors.map { |p| p.job }.compact)
       end
 
       logger.info "Done, bye!"
