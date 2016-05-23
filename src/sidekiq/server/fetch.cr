@@ -71,7 +71,7 @@ module Sidekiq
       end
     end
 
-    def bulk_requeue(inprogress : Array(UnitOfWork))
+    def bulk_requeue(inprogress : Array(Sidekiq::UnitOfWork))
       return 0 if inprogress.empty?
 
       jobs_to_requeue = {} of String => Array(String)

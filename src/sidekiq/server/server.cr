@@ -15,8 +15,16 @@ module Sidekiq
     getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
     getter processors : Array(Sidekiq::Processor)
     getter logger : ::Logger
+    getter labels : Array(String)
+    getter queues : Array(String)
+    getter tag : String
+    getter busy : Int32
 
-    def initialize(@environment = "development", @queues = ["default"], @concurrency = 25, @logger = Sidekiq::Logger.build)
+    def initialize(@environment = "development", @queues = ["default"],
+                   @concurrency = 25, @logger = Sidekiq::Logger.build)
+      @busy = 0
+      @tag = ""
+      @labels = [] of String
       @alive = true
       @middleware = Sidekiq::Server.default_middleware
 
@@ -24,7 +32,7 @@ module Sidekiq
       @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
 
       @pool = Sidekiq::Client.default = Sidekiq::Pool.new(@concurrency + 2)
-      @fetcher = Sidekiq::BasicFetch.new(@pool.not_nil!, @queues)
+      @fetcher = Sidekiq::BasicFetch.new(@pool, @queues)
       @processors = [] of Sidekiq::Processor
       @scheduler = Sidekiq::Scheduled::Poller.new
     end
@@ -33,43 +41,12 @@ module Sidekiq
       c.add Sidekiq::Middleware::Logger.new
       c.add Sidekiq::Middleware::RetryJobs.new
     end
+
     def self.default_middleware
       @@chain
     end
 
-    def banner
-%{
-         m,
-         `$b
-    .ss,  $$:         .,d$
-    `$$P,d$P'    .,md$P"'
-     ,$$$$$bmmd$$$P^'
-   .d$$$$$$$$$$P'
-   $$^' `"^$$$'       ____  _     _      _    _
-   $:     ,$$:       / ___|(_) __| | ___| | _(_) __ _
-   `b     :$$        \___ \| |/ _` |/ _ \ |/ / |/ _` |
-          $$:         ___) | | (_| |  __/   <| | (_| |
-          $$         |____/|_|\__,_|\___|_|\_\_|\__, |
-        .d$$                                       |_|
-}
-    end
-
-    def print_banner
-      if STDOUT.tty? && environment == "development"
-        puts "\e[#{31}m"
-        puts banner
-        puts "\e[0m"
-      end
-    end
-
     def start
-      print_banner
-
-      logger.info "Sidekiq v#{Sidekiq::VERSION} in #{{{`crystal -v`.strip.stringify}}}"
-      logger.info Sidekiq::LICENSE
-      logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
-      logger.info "Starting processing with #{concurrency} workers"
-
       raise "You must register one or more workers to execute jobs!" unless Sidekiq::Job.valid?
       concurrency.times do
         p = Sidekiq::Processor.new(self)
@@ -80,39 +57,25 @@ module Sidekiq
       scheduler.start(self)
     end
 
+    def stopping?
+      !@alive
+    end
+
+    def request_stop
+      @alive = false
+    end
+
     def processor_stopped(processor)
       @processors.delete(processor)
     end
 
     def processor_died(processor, ex)
       @processors.delete(processor)
+      return if stopping?
 
       p = Sidekiq::Processor.new(self)
       @processors << p
       p.start
-    end
-
-    def monitor
-      Signal::INT.trap do
-        @alive = false
-      end
-      Signal::TERM.trap do
-        @alive = false
-      end
-
-      logger.info "Press Ctrl-C to stop"
-      spawn do
-        while @alive
-          heartbeat
-          sleep 5
-        end
-      end
-
-      while @alive
-        sleep 1
-      end
-      logger.info "Done, bye!"
-      exit(0)
     end
 
     def heartbeat

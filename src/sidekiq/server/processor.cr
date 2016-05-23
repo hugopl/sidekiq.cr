@@ -49,12 +49,10 @@ module Sidekiq
 
     def run
       begin
-        while !@done
+        until @mgr.stopping?
           process_one
         end
         @mgr.processor_stopped(self)
-      #rescue Sidekiq::Shutdown
-        #@mgr.processor_stopped(self)
       rescue ex : Exception
         @mgr.processor_died(self, ex)
       end

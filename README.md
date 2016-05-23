@@ -4,8 +4,7 @@ Sidekiq is a well-regarded background job framework for Ruby.  Now we're
 bringing the awesomeness to Crystal, a Ruby-like language.  Why?  To
 give you options.  Ruby is friendly and flexible but not terribly fast.
 Crystal is statically-typed, compiled and **very fast** but retains a similar syntax to
-Ruby.  If you have Ruby jobs which are CPU-intensive or require very high throughput,
-you can port them to Crystal and take advantage of the much higher performance.
+Ruby.
 
 Rough, initial benchmarks:
 
@@ -14,6 +13,10 @@ Runtime | RSS | Time | Throughput
 MRI | 50MB | 22 | 4,500 jobs/sec
 MRI/hiredis | 50MB | 17 | 7,000 jobs/sec
 Crystal 0.17 | 17MB | 6 | 20,000 jobs/sec
+
+If you have jobs which are CPU-intensive or require very high throughput,
+Crystal is an excellent alternative to native Ruby extensions.  It
+compiles to a single executable so deployment is much easier than Ruby.
 
 # Note
 
