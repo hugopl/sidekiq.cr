@@ -1,16 +1,11 @@
 require "json"
 
 module Sidekiq
-  module EpochConverter
-    def self.to_json(value : Time, io : IO)
-      io << "%.6f" % value.epoch_f
-    end
-    def self.from_json(value : JSON::PullParser) : Time
-      Time.epoch_ms(value.read_float * 1000)
-    end
-  end
-
   class Job
+    #
+    # This global registration is a bit of a bloody hack.
+    # Unclear of a better way of doing it.
+    #
     @@jobtypes = Hash(String, -> Sidekiq::Worker).new
 
     def self.valid?
