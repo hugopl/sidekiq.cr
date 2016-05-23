@@ -1,7 +1,7 @@
 #!/usr/bin/env crystal
 
 require "redis"
-require "../src/sidekiq"
+require "../src/sidekiq/server/cli"
 
 # This benchmark is an integration test which creates and
 # executes 100,000 no-op jobs through Sidekiq.  This is
@@ -34,6 +34,7 @@ end
 
 iter = 10
 count = 10_000_i64
+total = iter * count
 
 a = Time.now
 iter.times do
@@ -52,14 +53,18 @@ spawn do
   loop do
     count = r.llen("queue:default")
     if count == 0
-      puts "Done in #{Time.now - a}"
+      b = Time.now
+      puts "Done in #{Time.now - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec"
       exit
     end
     p [Time.now, count, Process.rss]
-    sleep 1
+    sleep 0.5
   end
 end
 
-s = Sidekiq::Server.new(concurrency: 25)
-s.start
-s.monitor
+devnull = ::Logger.new(File.open("/dev/null", "w"))
+s = Sidekiq::CLI.new
+x = s.configure(devnull) do |config|
+  # nothing
+end
+s.run(x)

@@ -58,7 +58,7 @@ module Sidekiq
                           logger: logger)
     end
 
-    def configure
+    def configure(logger = @logger)
       x = create(logger)
       yield x
       x

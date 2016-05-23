@@ -1,6 +1,8 @@
 require "json"
+require "./core_ext"
 
 module Sidekiq
+
   class Job
     #
     # This global registration is a bit of a bloody hack.
