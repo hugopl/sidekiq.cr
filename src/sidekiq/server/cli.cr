@@ -15,10 +15,8 @@ module Sidekiq
       @environment = "development"
       @tag = ""
       @logger = Sidekiq::Logger.build
-    end
 
-    def setup
-      OptionParser.parse! do |parser|
+      OptionParser.parse(args) do |parser|
         parser.banner = "Usage: sidekiq [arguments]"
         parser.on("-c NUM", "Number of workers") { |c| @concurrency = c.to_i }
         parser.on("-e ENV", "Application environment") { |e| @environment = e }
@@ -39,26 +37,25 @@ module Sidekiq
         parser.on("-V", "Print version and exit") { |c| puts "Sidekiq #{Sidekiq::VERSION}"; exit }
         parser.on("-h", "--help", "Show this help") { puts parser }
       end
-    end
 
-    def validate
       @queues = ["default"] if @queues.empty?
     end
 
-    def start
-      validate
-      print_banner
+    def start(logger = @logger)
+      # hack to avoid printing banner in test suite
+      print_banner if logger == @logger
+
       logger.info "Sidekiq v#{Sidekiq::VERSION} in #{{{`crystal -v`.strip.stringify}}}"
       logger.info Sidekiq::LICENSE
       logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
       logger.info "Starting processing with #{@concurrency} workers"
 
-      logger.debug self.inspect
+      logger.debug { self.inspect }
 
       svr = Sidekiq::Server.new(concurrency: @concurrency,
                               queues: @queues,
                               environment: @environment,
-                              logger: @logger)
+                              logger: logger)
       svr.start
       svr
     end

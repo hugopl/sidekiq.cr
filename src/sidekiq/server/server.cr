@@ -26,7 +26,10 @@ module Sidekiq
       @tag = ""
       @labels = [] of String
       @alive = true
-      @middleware = Sidekiq::Server.default_middleware
+      @middleware = Sidekiq::Middleware::Chain.new.tap do |c|
+        c.add Sidekiq::Middleware::Logger.new
+        c.add Sidekiq::Middleware::RetryJobs.new
+      end
 
       @error_handlers = [] of Sidekiq::ExceptionHandler::Base
       @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
@@ -35,15 +38,6 @@ module Sidekiq
       @fetcher = Sidekiq::BasicFetch.new(@pool, @queues)
       @processors = [] of Sidekiq::Processor
       @scheduler = Sidekiq::Scheduled::Poller.new
-    end
-
-    @@chain : Sidekiq::Middleware::Chain = Sidekiq::Middleware::Chain.new.tap do |c|
-      c.add Sidekiq::Middleware::Logger.new
-      c.add Sidekiq::Middleware::RetryJobs.new
-    end
-
-    def self.default_middleware
-      @@chain
     end
 
     def start
@@ -76,6 +70,7 @@ module Sidekiq
       p = Sidekiq::Processor.new(self)
       @processors << p
       p.start
+      p
     end
 
     def heartbeat
