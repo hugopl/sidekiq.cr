@@ -122,21 +122,36 @@ module Sidekiq
       end
     end
 
-    @@WORKER_STATE = Hash(String, Hash(String, String)).new
-    @@PROCESSED = 0
-    @@FAILURE = 0
+    @@worker_state = Hash(String, Hash(String, String)).new
+    @@processed = 0
+    @@failure = 0
+
+    def self.worker_state
+      @@worker_state
+    end
+
+    def self.fetch_counts
+      p, f = @@processed, @@failure
+      @@processed = @@failure = 0
+      {p, f}
+    end
+
+    def self.reset_counts(p, f)
+      @@processed += p
+      @@failure += f
+    end
 
     def stats(job, str)
-      @@WORKER_STATE[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s }
+      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s }
 
       begin
         yield
       rescue ex : Exception
-        @@FAILURE += 1
+        @@failure += 1
         raise ex
       ensure
-        @@WORKER_STATE.delete(@identity)
-        @@PROCESSED += 1
+        @@worker_state.delete(@identity)
+        @@processed += 1
       end
     end
 

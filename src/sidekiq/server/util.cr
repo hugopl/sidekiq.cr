@@ -22,17 +22,6 @@ module Sidekiq
       end
     end
 
-    def hostname
-      ENV["DYNO"] || Socket.gethostname
-    end
-
-    def process_nonce
-      @@process_nonce ||= SecureRandom.hex(6)
-    end
-
-    def identity
-      @@identity ||= "#{hostname}:#{Process.pid}:#{process_nonce}"
-    end
 
     def fire_event(event, reverse=false)
       arr = Sidekiq.options[:lifecycle_events][event]

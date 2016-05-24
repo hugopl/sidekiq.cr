@@ -3,6 +3,7 @@ require "./fetch"
 require "./processor"
 require "./scheduled"
 require "./middleware"
+require "./heartbeat"
 
 module Sidekiq
   class Server < Sidekiq::Context
@@ -19,9 +20,15 @@ module Sidekiq
     getter queues : Array(String)
     getter tag : String
     getter busy : Int32
+    getter identity : String
+    getter hostname : String
 
     def initialize(@environment = "development", @queues = ["default"],
                    @concurrency = 25, @logger = Sidekiq::Logger.build)
+      # FIXME Crystal doesn't have Socket.gethostname yet
+      @hostname = ENV["DYNO"]? || `hostname`.strip
+      nonce = SecureRandom.hex(6)
+      @identity = "#{@hostname}:#{Process.pid}:#{nonce}"
       @busy = 0
       @tag = ""
       @labels = [] of String
@@ -38,6 +45,7 @@ module Sidekiq
       @processors = [] of Sidekiq::Processor
       @scheduler = Sidekiq::Scheduled::Poller.new
       @fetcher = Sidekiq::BasicFetch.new(@queues)
+      @heartbeat = Sidekiq::Heartbeat.new
     end
 
     def server_middleware
@@ -64,7 +72,8 @@ module Sidekiq
         p.start
       end
 
-      scheduler.start(self)
+      @scheduler.start(self)
+      @heartbeat.start(self)
     end
 
     def stopping?
@@ -89,7 +98,5 @@ module Sidekiq
       p
     end
 
-    def heartbeat
-    end
   end
 end
