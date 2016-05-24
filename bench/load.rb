@@ -21,7 +21,7 @@ Sidekiq.configure_server do |config|
   #config.redis = { driver: :hiredis, db: 13, port: 6379 }
   config.redis = { db: 13, port: 6379 }
   config.options[:queues] << 'default'
-  config.logger.level = Logger::INFO
+  config.logger.level = Logger::WARN
   config.average_scheduled_poll_interval = 2
 end
 
@@ -85,7 +85,8 @@ Monitoring = Thread.new do
       end
       Sidekiq.logger.error("RSS: #{Process.rss} Pending: #{total}")
       if total == 0
-        Sidekiq.logger.error("Done in #{Time.now - a}")
+        b = Time.now
+        Sidekiq.logger.error("Done in #{Time.now - a}: #{(iter*count) / (b - a).to_f} jobs/sec")
         exit(0)
       end
     end
