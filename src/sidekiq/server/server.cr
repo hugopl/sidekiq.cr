@@ -31,7 +31,7 @@ module Sidekiq
       @identity = "#{@hostname}:#{Process.pid}:#{nonce}"
       @busy = 0
       @tag = ""
-      @labels = [] of String
+      @labels = ["crystal"]
       @alive = true
       @middleware = Sidekiq::Middleware::Chain.new.tap do |c|
         c.add Sidekiq::Middleware::Logger.new
