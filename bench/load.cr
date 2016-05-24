@@ -1,5 +1,6 @@
 #!/usr/bin/env crystal
 
+require "colorize"
 require "redis"
 require "../src/sidekiq/server/cli"
 
@@ -19,6 +20,12 @@ puts "Running on #{`uname -a`}"
 
 r = Redis.new
 r.flushdb
+
+devnull = ::Logger.new(File.open("/dev/null", "w"))
+s = Sidekiq::CLI.new
+x = s.configure(devnull) do |config|
+  # nothing
+end
 
 class LoadWorker
   include Sidekiq::Worker
@@ -54,7 +61,7 @@ spawn do
     count = r.llen("queue:default")
     if count == 0
       b = Time.now
-      puts "Done in #{b - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec"
+      puts "Done in #{b - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec".colorize(:green)
       exit
     end
     p [Time.now, count, Process.rss]
@@ -62,9 +69,4 @@ spawn do
   end
 end
 
-devnull = ::Logger.new(File.open("/dev/null", "w"))
-s = Sidekiq::CLI.new
-x = s.configure(devnull) do |config|
-  # nothing
-end
 s.run(x)

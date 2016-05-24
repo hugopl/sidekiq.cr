@@ -54,10 +54,10 @@ module Sidekiq
 
     def validate
       raise "You must register one or more workers to execute jobs!" unless Sidekiq::Job.valid?
-      Sidekiq::Client.default_context = self
     end
 
     def start
+      validate
       concurrency.times do
         p = Sidekiq::Processor.new(self)
         @processors << p

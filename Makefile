@@ -8,4 +8,6 @@ bench:
 	crystal run --release bench/load.cr
 	ruby bench/load.rb
 
-.PHONY: test run bench
+all: test bench
+
+.PHONY: test run bench all

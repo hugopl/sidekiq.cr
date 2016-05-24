@@ -51,7 +51,7 @@ module Sidekiq
     def configure(logger = @logger)
       x = create(logger)
       yield x
-      x.validate
+      Sidekiq::Client.default_context = x
       x
     end
 
