@@ -7,6 +7,16 @@ describe Sidekiq do
     end
   end
 
+  describe "float formatting" do
+    it "preserves precision" do
+      time = 1464132168.59994102_f64
+      time.to_s.should eq("1464132168.59994102")
+
+      num = 1464132168.65_f64
+      num.to_s.should eq("1464132168.65000010")
+    end
+  end
+
   describe "pool" do
     it "works" do
       t = Time.now
