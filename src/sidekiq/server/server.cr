@@ -34,18 +34,30 @@ module Sidekiq
       @error_handlers = [] of Sidekiq::ExceptionHandler::Base
       @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
 
-      @pool = Sidekiq::Client.default = Sidekiq::Pool.new(@concurrency + 2)
+      @pool = Sidekiq::Pool.new(@concurrency + 2)
       @processors = [] of Sidekiq::Processor
       @scheduler = Sidekiq::Scheduled::Poller.new
       @fetcher = Sidekiq::BasicFetch.new(@queues)
     end
 
+    def server_middleware
+      middleware
+    end
+
+    def client_middleware
+      Sidekiq::Client.middleware
+    end
+
     def redis=(pool : ConnectionPool(Redis))
-      @pool = Sidekiq::Client.default = Sidekiq::Pool.new(pool)
+      @pool = Sidekiq::Pool.new(pool)
+    end
+
+    def validate
+      raise "You must register one or more workers to execute jobs!" unless Sidekiq::Job.valid?
+      Sidekiq::Client.default_context = self
     end
 
     def start
-      raise "You must register one or more workers to execute jobs!" unless Sidekiq::Job.valid?
       concurrency.times do
         p = Sidekiq::Processor.new(self)
         @processors << p

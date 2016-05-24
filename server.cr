@@ -19,14 +19,15 @@ class SomeMiddleware < Sidekiq::Middleware::Entry
   end
 end
 
-MyWorker.async.perform(1_i64)
-MyWorker.async.perform(2_i64)
-
 cli = Sidekiq::CLI.new
 server = cli.configure do |config|
-  config.middleware.add SomeMiddleware.new
+  config.server_middleware.add SomeMiddleware.new
   config.redis = ConnectionPool(Redis).new(capacity: 30) do
     Redis.new(host: "localhost", port: 6379)
   end
 end
+
+MyWorker.async.perform(1_i64)
+MyWorker.async.perform(2_i64)
+
 cli.run(server)

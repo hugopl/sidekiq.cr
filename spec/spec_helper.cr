@@ -16,3 +16,5 @@ class MockContext < Sidekiq::Context
     @error_handlers = [] of Sidekiq::ExceptionHandler::Base
   end
 end
+
+Sidekiq::Client.default_context = MockContext.new

@@ -18,8 +18,8 @@ require 'sidekiq/launcher'
 include Sidekiq::Util
 
 Sidekiq.configure_server do |config|
-  #config.redis = { driver: :hiredis, db: 13, port: 6379 }
-  config.redis = { db: 13, port: 6379 }
+  config.redis = { driver: :hiredis, db: 13, port: 6379 }
+  #config.redis = { db: 13, port: 6379 }
   config.options[:queues] << 'default'
   config.logger.level = Logger::WARN
   config.average_scheduled_poll_interval = 2
@@ -74,12 +74,12 @@ iter.times do
   Sidekiq::Client.push_bulk('class' => LoadWorker, 'args' => arr)
 end
 Sidekiq.logger.error "Created #{count*iter} jobs"
-a = Time.now
 
 Monitoring = Thread.new do
   watchdog("monitor thread") do
+    a = Time.now
     while true
-      sleep 1
+      sleep 0.2
       total = Sidekiq.redis do |conn|
         conn.llen "queue:default"
       end

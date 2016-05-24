@@ -1,13 +1,32 @@
 require "secure_random"
+require "./types"
 
 module Sidekiq
   class Client
+    class Context < Sidekiq::Context
+      property! pool
+      def logger
+        @parent.logger
+      end
+      def error_handlers
+        @parent.error_handlers
+      end
+      @pool : Sidekiq::Pool
+      @parent : Sidekiq::Context
+      def initialize(@parent)
+        @pool = @parent.pool
+      end
+    end
 
     DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain.new
 
-    @@default : Sidekiq::Pool?
-    def self.default=(pool)
-      @@default = pool
+    @@default : Sidekiq::Context?
+    def self.default_context=(ctx)
+      @@default = Sidekiq::Client::Context.new(ctx)
+    end
+
+    def self.middleware
+      DEFAULT_MIDDLEWARE
     end
 
     ##
@@ -31,22 +50,27 @@ module Sidekiq
       @chain ||= DEFAULT_MIDDLEWARE
     end
 
-    getter logger : ::Logger
-    getter pool : Sidekiq::Pool
+    @ctx : Sidekiq::Context
 
     # Sidekiq::Client normally uses the default Redis pool but you may
-    # pass a custom ConnectionPool if you want to shard your
+    # set a custom ConnectionPool if you want to shard your
     # Sidekiq jobs across several Redis instances (for scalability
     # reasons, e.g.)
     #
-    #   Sidekiq::Client.new(Sidekiq::Pool.new)
+    #   c = Sidekiq::Client.new(Sidekiq::Pool.new)
     #
     # Generally this is only needed for very large Sidekiq installs processing
     # thousands of jobs per second.  I don't recommend sharding unless you
     # cannot scale any other way (e.g. splitting your app into smaller apps).
-    def initialize(@pool = @@default || Sidekiq::Pool.new)
-      @@default = @pool if @@default.nil?
-      @logger = ::Logger.new(STDOUT)
+    def initialize(pool = nil)
+      raise "Sidekiq client has not been configured yet" unless @@default
+      @ctx = @@default.not_nil!
+      if pool
+        # FIXME dup does not work just yet
+        # https://github.com/crystal-lang/crystal/issues/2627
+        @ctx = @@default.dup.not_nil!
+        @ctx.pool = pool
+      end
     end
 
     ##
@@ -68,7 +92,7 @@ module Sidekiq
     #   push('queue' => 'my_queue', 'class' => MyWorker, 'args' => ['foo', 1, :bat => 'bar'])
     #
     def push(job)
-      result = middleware.invoke(job, self) do
+      result = middleware.invoke(job, @ctx) do
         !!job
       end
 
@@ -97,7 +121,7 @@ module Sidekiq
         copy.klass = job.klass
         copy.queue = job.queue
         copy.args = args
-        result = middleware.invoke(copy, self) do
+        result = middleware.invoke(copy, @ctx) do
           !!copy
         end
         result ? copy : nil
@@ -108,7 +132,7 @@ module Sidekiq
     end
 
     def raw_push(payloads)
-      @pool.redis do |conn|
+      @ctx.pool.redis do |conn|
         conn.multi do |multi|
           atomic_push(multi, payloads)
         end
@@ -121,7 +145,7 @@ module Sidekiq
         all = [] of Redis::RedisValue
         payloads.each do |hash|
           at, hash.at = hash.at, nil
-          all << "%.6f" % at.not_nil!.epoch_f
+          all << at.not_nil!.epoch_s
           all << hash.to_json
         end
         conn.zadd("schedule", all)

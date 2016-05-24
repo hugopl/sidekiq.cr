@@ -42,16 +42,6 @@ module Sidekiq
     end
 
     def create(logger = @logger)
-      # hack to avoid printing banner in test suite
-      print_banner if logger == @logger
-
-      logger.info "Sidekiq v#{Sidekiq::VERSION} in #{{{`crystal -v`.strip.stringify}}}"
-      logger.info Sidekiq::LICENSE
-      logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
-      logger.info "Starting processing with #{@concurrency} workers"
-
-      logger.debug { self.inspect }
-
       Sidekiq::Server.new(concurrency: @concurrency,
                           queues: @queues,
                           environment: @environment,
@@ -61,10 +51,20 @@ module Sidekiq
     def configure(logger = @logger)
       x = create(logger)
       yield x
+      x.validate
       x
     end
 
     def run(svr)
+      # hack to avoid printing banner in test suite
+      print_banner if logger == @logger
+      logger.info "Sidekiq v#{Sidekiq::VERSION} in #{{{`crystal -v`.strip.stringify}}}"
+      logger.info Sidekiq::LICENSE
+      logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
+      logger.info "Starting processing with #{@concurrency} workers"
+
+      logger.debug { self.inspect }
+
       svr.start
       shutdown_started_at = nil
 

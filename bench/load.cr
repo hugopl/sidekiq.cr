@@ -47,18 +47,18 @@ end
 puts "Created #{count*iter} jobs in #{Time.now - a}"
 
 require "../src/sidekiq/server"
-a = Time.now
 
 spawn do
+  a = Time.now
   loop do
     count = r.llen("queue:default")
     if count == 0
       b = Time.now
-      puts "Done in #{Time.now - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec"
+      puts "Done in #{b - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec"
       exit
     end
     p [Time.now, count, Process.rss]
-    sleep 0.5
+    sleep 0.2
   end
 end
 
