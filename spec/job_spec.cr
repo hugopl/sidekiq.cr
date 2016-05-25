@@ -6,7 +6,8 @@ describe Sidekiq::Job do
       r = Sidekiq::Pool.new
       str = r.redis do |conn|
         data = File.read("spec/queue.bin")
-        conn.restore("queue:default", 10000, data, true)
+        conn.del("queue:default")
+        conn.restore("queue:default", 10000, data, false)
         conn.llen("queue:default").should eq(1)
         conn.lpop("queue:default")
       end.as(String)
@@ -19,7 +20,8 @@ describe Sidekiq::Job do
       r = Sidekiq::Pool.new
       results = r.redis do |conn|
         data = File.read("spec/retry.bin")
-        conn.restore("retry", 10000, data, true)
+        conn.del("retry")
+        conn.restore("retry", 10000, data, false)
         conn.zcard("retry").should eq(1)
         conn.zrangebyscore("retry", "-inf", "inf")
       end.as(Array)

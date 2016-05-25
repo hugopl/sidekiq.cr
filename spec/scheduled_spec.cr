@@ -6,7 +6,7 @@ describe "scheduler" do
     POOL.redis do |conn|
       data = File.read("spec/retry.bin")
       conn.del("retry", "queue:default")
-      conn.restore("retry", 10000, data, true)
+      conn.restore("retry", 10000, data, false)
       conn.zcard("retry").should eq(1)
     end
 
