@@ -23,7 +23,7 @@ module Sidekiq
     #
     # Note that you set REDIS_PROVIDER to the **name** of the variable which contains the URL.
     #
-    def initialize(capacity = 5)
+    def initialize(capacity = 5, timeout = 5.0)
       hostname = "localhost"
       port = 6379
       password = nil
@@ -36,7 +36,7 @@ module Sidekiq
         password = redis_url.password
       end
 
-      @pool = ConnectionPool(Redis).new(capacity: capacity) do
+      @pool = ConnectionPool(Redis).new(capacity: capacity, timeout: timeout) do
         Redis.new(host: hostname, port: port, password: password)
       end
     end

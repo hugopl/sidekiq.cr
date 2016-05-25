@@ -57,6 +57,7 @@ module Sidekiq
     end
 
     def redis=(pool : ConnectionPool(Redis))
+      raise "Connection pool too small, capacity must be larger than Sidekiq's concurrency" if pool.capacity <= @concurrency
       @pool = Sidekiq::Pool.new(pool)
     end
 

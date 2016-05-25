@@ -22,7 +22,7 @@ end
 cli = Sidekiq::CLI.new
 server = cli.configure do |config|
   config.server_middleware.add SomeMiddleware.new
-  config.redis = ConnectionPool(Redis).new(capacity: 30) do
+  config.redis = ConnectionPool(Redis).new(capacity: 30, timeout: 5.0) do
     Redis.new(host: "localhost", port: 6379)
   end
 end
