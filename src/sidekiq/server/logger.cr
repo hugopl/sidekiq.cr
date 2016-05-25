@@ -35,9 +35,6 @@ module Sidekiq
   end
 end
 
-# UGH, this is hideous but it's the easiest way to get
-# fiber-local storage.  Hardcoding the value to Array(String)
-# is terrible and needs to be fixed.
 class Fiber
   property logging_context : Array(String)?
 end
