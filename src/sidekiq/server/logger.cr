@@ -2,7 +2,6 @@ require "logger"
 
 module Sidekiq
   class Logger
-    @@context = Hash(UInt64, Array(String)).new
 
     SPACE = " "
 
@@ -15,16 +14,16 @@ module Sidekiq
     end
 
     def self.context
-      c = @@context[Fiber.current.object_id]?
+      c = Fiber.current["context"]?
       " #{c.join(SPACE)}" if c && c.size > 0
     end
 
     def self.with_context(msg)
-      @@context[Fiber.current.object_id] ||= [] of String
-      @@context[Fiber.current.object_id] << msg
+      Fiber.current["context"] ||= [] of String
+      Fiber.current["context"] << msg
       yield
     ensure
-      @@context[Fiber.current.object_id].pop
+      Fiber.current["context"].pop
     end
 
     def self.build(log_target = STDOUT)
@@ -33,5 +32,25 @@ module Sidekiq
       logger.formatter = ENV["DYNO"]? ? NO_TS : PRETTY
       logger
     end
+  end
+end
+
+# UGH, this is hideous but it's the easiest way to get
+# fiber-local storage.  Hardcoding the value to Array(String)
+# is terrible and needs to be fixed.
+class Fiber
+  @@fls = Hash(UInt64, Hash(String, Array(String))).new
+
+  def []=(name, value)
+    @@fls[self.object_id] ||= Hash(String, Array(String)).new
+    @@fls[self.object_id][name] = value
+  end
+  def [](name)
+    @@fls[self.object_id][name]
+  end
+  def []?(name)
+    x = @@fls[self.object_id]?
+    return nil unless x
+    x[name]?
   end
 end
