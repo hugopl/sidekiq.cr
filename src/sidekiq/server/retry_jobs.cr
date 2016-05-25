@@ -41,16 +41,7 @@ module Sidekiq
     # to the job and everyone is using an error service, right?
     #
     # The default number of retry attempts is 25 which works out to about 3 weeks
-    # of retries. You can pass a value for the max number of retry attempts when
-    # adding the middleware using the options hash:
-    #
-    #   Sidekiq.configure_server do |config|
-    #     config.server_middleware do |chain|
-    #       chain.add Sidekiq::Middleware::Server::RetryJobs, :max_retries => 7
-    #     end
-    #   end
-    #
-    # or limit the number of retries for a particular worker with:
+    # of retries.  Limit the number of retries for a particular worker with:
     #
     #    class MyWorker
     #      include Sidekiq::Worker
@@ -71,6 +62,7 @@ module Sidekiq
         attempt_retry(job, ctx, e)
       end
 
+      # The retries option can be true, false, nil or Int64.
       def retries(retry : JSON::Type)
         if retry.is_a?(Bool)
           retry.as(Bool) ? DEFAULT_MAX_RETRY_ATTEMPTS : 0
@@ -81,6 +73,7 @@ module Sidekiq
         end
       end
 
+      # The backtrace option can be true, false, nil or Int64.
       def traces(trace : JSON::Type)
         if trace.is_a?(Bool)
           trace.as(Bool) ? 1000 : 0
@@ -115,7 +108,7 @@ module Sidekiq
           retry_at = Time.now + delay.seconds
           payload = job.to_json
           ctx.pool.redis do |conn|
-            conn.zadd("retry", "%.6f" % retry_at.epoch_f, payload)
+            conn.zadd("retry", retry_at.epoch_f.to_s, payload)
           end
         else
           # Goodbye dear message, you (re)tried your best I'm sure.
@@ -137,7 +130,7 @@ module Sidekiq
         now = Time.now
         ctx.pool.redis do |conn|
           conn.multi do
-            conn.zadd("dead", "%.6f" % now.epoch_f, payload)
+            conn.zadd("dead", now.epoch_f.to_s, payload)
             conn.zremrangebyscore("dead", "-inf", now - 6.months)
             conn.zremrangebyrank("dead", 0, -10_000)
           end
