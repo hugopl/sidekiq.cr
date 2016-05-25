@@ -79,7 +79,7 @@ module Sidekiq
             multi.sadd("processes", svr.identity)
             multi.hmset(svr.identity, {"info"  => json,
               "busy"  => svr.busy,
-              "beat"  => Time.now.epoch_s, # FIXME, should be Float not String
+              "beat"  => Time.now.epoch_f,
               "quiet" => svr.stopping?})
             multi.expire(svr.identity, 60)
             multi.rpop("#{svr.identity}-signals")

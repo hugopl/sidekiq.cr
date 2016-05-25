@@ -10,10 +10,10 @@ describe Sidekiq do
   describe "float formatting" do
     it "preserves precision" do
       time = 1464132168.59994102_f64
-      time.to_s.should eq("1464132168.59994102")
+      time.to_s.should eq("1464132168.59994101524")
 
       num = 1464132168.65_f64
-      num.to_s.should eq("1464132168.65000010")
+      num.to_s.should eq("1464132168.65000009537")
     end
   end
 
