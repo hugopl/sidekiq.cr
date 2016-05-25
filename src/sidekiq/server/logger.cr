@@ -14,16 +14,16 @@ module Sidekiq
     end
 
     def self.context
-      c = Fiber.current["context"]?
+      c = Fiber.current.logging_context
       " #{c.join(SPACE)}" if c && c.size > 0
     end
 
     def self.with_context(msg)
-      Fiber.current["context"] ||= [] of String
-      Fiber.current["context"] << msg
+      Fiber.current.logging_context ||= [] of String
+      Fiber.current.logging_context.not_nil! << msg
       yield
     ensure
-      Fiber.current["context"].pop
+      Fiber.current.logging_context.not_nil!.pop
     end
 
     def self.build(log_target = STDOUT)
@@ -39,18 +39,5 @@ end
 # fiber-local storage.  Hardcoding the value to Array(String)
 # is terrible and needs to be fixed.
 class Fiber
-  @@fls = Hash(UInt64, Hash(String, Array(String))).new
-
-  def []=(name, value)
-    @@fls[self.object_id] ||= Hash(String, Array(String)).new
-    @@fls[self.object_id][name] = value
-  end
-  def [](name)
-    @@fls[self.object_id][name]
-  end
-  def []?(name)
-    x = @@fls[self.object_id]?
-    return nil unless x
-    x[name]?
-  end
+  property logging_context : Array(String)?
 end
