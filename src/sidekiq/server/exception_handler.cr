@@ -4,7 +4,6 @@ require "../middleware"
 
 module Sidekiq
   module ExceptionHandler
-
     class Logger < Base
       @output : ::Logger
 
@@ -29,6 +28,5 @@ module Sidekiq
         end
       end
     end
-
   end
 end

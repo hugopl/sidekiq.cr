@@ -38,14 +38,14 @@ module Sidekiq
 
     def server_json(svr)
       data = {
-        "hostname" => svr.hostname,
-        "started_at" => Time.now.epoch_f,
-        "pid" => Process.pid,
-        "tag" => svr.tag,
+        "hostname"    => svr.hostname,
+        "started_at"  => Time.now.epoch_f,
+        "pid"         => Process.pid,
+        "tag"         => svr.tag,
         "concurrency" => svr.concurrency,
-        "queues" => svr.queues.uniq,
-        "labels" => svr.labels,
-        "identity" => svr.identity,
+        "queues"      => svr.queues.uniq,
+        "labels"      => svr.labels,
+        "identity"    => svr.identity,
       }
       # this data doesn"t change so dump it to a string
       # now so we don"t need to dump it every heartbeat.
@@ -77,10 +77,10 @@ module Sidekiq
         _, _, _, msg = svr.pool.redis do |conn|
           conn.multi do |multi|
             multi.sadd("processes", svr.identity)
-            multi.hmset(svr.identity, { "info" => json,
-                                       "busy" => svr.busy,
-                                       "beat" => Time.now.epoch_s, # FIXME, should be Float not String
-                                       "quiet" => svr.stopping?})
+            multi.hmset(svr.identity, {"info"  => json,
+              "busy"  => svr.busy,
+              "beat"  => Time.now.epoch_s, # FIXME, should be Float not String
+              "quiet" => svr.stopping?})
             multi.expire(svr.identity, 60)
             multi.rpop("#{svr.identity}-signals")
           end
@@ -97,7 +97,5 @@ module Sidekiq
         Processor.reset_counts(procd, fails)
       end
     end
-
   end
 end
-

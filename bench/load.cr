@@ -31,6 +31,7 @@ class LoadWorker
   include Sidekiq::Worker
 
   perform_types Int64
+
   def perform(idx)
   end
 end

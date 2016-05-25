@@ -2,7 +2,6 @@ require "logger"
 
 module Sidekiq
   class Logger
-
     @@context = Hash(UInt64, Array(String)).new
 
     SPACE = " "
@@ -34,6 +33,5 @@ module Sidekiq
       logger.formatter = ENV["DYNO"]? ? NO_TS : PRETTY
       logger
     end
-
   end
 end

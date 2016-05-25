@@ -31,7 +31,6 @@ describe Sidekiq::Middleware do
 
   describe "server" do
     it "works" do
-
     end
   end
 end

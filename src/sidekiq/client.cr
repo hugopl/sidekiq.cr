@@ -5,14 +5,18 @@ module Sidekiq
   class Client
     class Context < Sidekiq::Context
       property! pool
+
       def logger
         @parent.logger
       end
+
       def error_handlers
         @parent.error_handlers
       end
+
       @pool : Sidekiq::Pool
       @parent : Sidekiq::Context
+
       def initialize(@parent)
         @pool = @parent.pool
       end
@@ -21,6 +25,7 @@ module Sidekiq
     DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain.new
 
     @@default : Sidekiq::Context?
+
     def self.default_context=(ctx)
       @@default = Sidekiq::Client::Context.new(ctx)
     end
@@ -29,7 +34,7 @@ module Sidekiq
       DEFAULT_MIDDLEWARE
     end
 
-    ##
+    # #
     # Define client-side middleware:
     #
     #   client = Sidekiq::Client.new
@@ -73,7 +78,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # The main method used to push a job to Redis.  Accepts a number of options:
     #
     #   queue - the named queue to use, default 'default'
@@ -102,7 +107,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # Push a large number of jobs to Redis.  In practice this method is only
     # useful if you are pushing thousands of jobs or more.  This method
     # cuts out the redis network round trip latency.
@@ -160,6 +165,5 @@ module Sidekiq
         conn.lpush("queue:#{q}", to_push)
       end
     end
-
   end
 end

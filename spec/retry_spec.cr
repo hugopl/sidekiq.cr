@@ -18,9 +18,9 @@ describe "retry" do
       end
     end
 
-    POOL.redis {|c| c.llen("queue:default").should eq(0) }
-    POOL.redis {|c| c.zcard("retry").should eq(1) }
-    value, score = POOL.redis {|c| c.zrange("retry", 0, -1, with_scores: true) }.as(Array)
+    POOL.redis { |c| c.llen("queue:default").should eq(0) }
+    POOL.redis { |c| c.zcard("retry").should eq(1) }
+    value, score = POOL.redis { |c| c.zrange("retry", 0, -1, with_scores: true) }.as(Array)
     hash = JSON.parse(value.as(String))
     hash["error_message"].should eq("boom")
     hash["error_class"].should eq("Exception")

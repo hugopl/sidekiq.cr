@@ -9,7 +9,6 @@ module Sidekiq
   # Middleware must be thread-safe.
   #
   module Middleware
-
     abstract class Entry
       abstract def call(job, ctx, &block)
     end
@@ -46,7 +45,7 @@ module Sidekiq
         i = entries.index { |entry| entry.klass == newklass }
         new_entry = i.nil? ? newklass : entries.delete_at(i)
         i = entries.index { |entry| entry.klass == oldklass } || entries.count - 1
-        entries.insert(i+1, new_entry)
+        entries.insert(i + 1, new_entry)
       end
 
       def clear
@@ -67,8 +66,6 @@ module Sidekiq
           end
         end
       end
-
     end
-
   end
 end

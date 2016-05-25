@@ -4,8 +4,9 @@ class MyWorker
   include Sidekiq::Worker
 
   perform_types Int64, Int64, String
+
   def perform(a, b, c)
-    #puts "hello world!"
+    # puts "hello world!"
   end
 end
 
@@ -36,7 +37,7 @@ describe Sidekiq::Worker do
     end
 
     it "can persist in bulk" do
-      POOL.redis {|c| c.flushdb }
+      POOL.redis { |c| c.flushdb }
       jids = MyWorker.async.perform_bulk([1_i64, 2_i64, "3"], [1_i64, 2_i64, "4"])
       jids.size.should eq(2)
       jids[0].should_not eq(jids[1])

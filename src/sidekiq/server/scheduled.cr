@@ -5,7 +5,7 @@ module Sidekiq
     SETS = %w(retry schedule)
 
     class Enq
-      def enqueue_jobs(ctx, now=Time.now, sorted_sets=SETS)
+      def enqueue_jobs(ctx, now = Time.now, sorted_sets = SETS)
         # A job's "score" in Redis is the time at which it should be processed.
         # Just check Redis for the set of jobs with a timestamp before now.
         count = 0
@@ -40,7 +40,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # The Poller checks Redis every N seconds for jobs in the retry or scheduled
     # set have passed their timestamp and should be enqueued.  If so, it
     # just pops the job back onto its original queue so the
@@ -103,7 +103,6 @@ module Sidekiq
 
         sleep total
       end
-
     end
   end
 end

@@ -90,6 +90,5 @@ module Sidekiq
       end
       count
     end
-
   end
 end

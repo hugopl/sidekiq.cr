@@ -2,7 +2,7 @@ require "./util"
 require "./fetch"
 
 module Sidekiq
-  ##
+  # #
   # The Processor is a standalone fiber which:
   #
   # 1. fetches a job from Redis
@@ -109,13 +109,13 @@ module Sidekiq
           end
         end
         ack = true
-      #rescue Sidekiq::Shutdown
+        # rescue Sidekiq::Shutdown
         # Had to force kill this job because it didn't finish
         # within the timeout.  Don't acknowledge the work since
         # we didn't properly finish it.
-        #ack = false
+        # ack = false
       rescue ex : Exception
-        handle_exception(@mgr, ex, { "job" => jobstr })
+        handle_exception(@mgr, ex, {"job" => jobstr})
         raise ex
       ensure
         work.acknowledge if ack
@@ -142,7 +142,7 @@ module Sidekiq
     end
 
     def stats(job, str)
-      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s }
+      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s}
 
       begin
         yield
@@ -154,6 +154,5 @@ module Sidekiq
         @@processed += 1
       end
     end
-
   end
 end

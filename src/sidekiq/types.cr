@@ -1,5 +1,4 @@
 module Sidekiq
-
   module ExceptionHandler
     abstract class Base
       abstract def call(ex : Exception, ctxHash : Hash(String, JSON::Type)?)
@@ -13,5 +12,4 @@ module Sidekiq
     abstract def pool : Sidekiq::Pool
     abstract def error_handlers : Array(Sidekiq::ExceptionHandler::Base)
   end
-
 end

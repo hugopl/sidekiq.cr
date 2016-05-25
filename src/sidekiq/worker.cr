@@ -1,6 +1,5 @@
 module Sidekiq
-
-  ##
+  # #
   # Include this module in your worker class and you can easily create
   # asynchronous jobs:
   #
@@ -52,7 +51,6 @@ module Sidekiq
     end
 
     module ClassMethods
-
       # no block
       def async(queue = "default")
         job = Sidekiq::Job.new
@@ -69,7 +67,6 @@ module Sidekiq
         yield job
         job
       end
-
     end
   end
 end

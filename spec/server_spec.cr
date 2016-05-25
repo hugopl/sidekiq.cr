@@ -4,6 +4,7 @@ require "../src/sidekiq/server"
 class FakeWorker
   include Sidekiq::Worker
   perform_types
+
   def perform
   end
 end
@@ -44,4 +45,3 @@ describe "Sidekiq::Server" do
     s.processors.size.should eq(0)
   end
 end
-

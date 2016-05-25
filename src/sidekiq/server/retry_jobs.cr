@@ -1,6 +1,6 @@
 module Sidekiq
   module Middleware
-    ##
+    # #
     # Automatically retry jobs that fail in Sidekiq.
     # Sidekiq's retry support assumes a typical development lifecycle:
     #
@@ -58,7 +58,6 @@ module Sidekiq
     #    end
     #
     class RetryJobs < Entry
-
       DEFAULT_MAX_RETRY_ATTEMPTS = 25
 
       def initialize
@@ -98,14 +97,14 @@ module Sidekiq
         job.error_message = exception.message
         job.error_class = exception.class.name
         count = if job.retry_count.nil?
-          job.failed_at = Time.now
-          job.retry_count = 0_i64
-        else
-          job.retried_at = Time.now
-          c = job.retry_count.not_nil!
-          c += 1
-          job.retry_count = c
-        end
+                  job.failed_at = Time.now
+                  job.retry_count = 0_i64
+                else
+                  job.retried_at = Time.now
+                  c = job.retry_count.not_nil!
+                  c += 1
+                  job.retry_count = c
+                end
 
         tcount = traces(job.backtrace)
         job.error_backtrace = exception.backtrace[0...tcount] if tcount > 0
@@ -151,9 +150,8 @@ module Sidekiq
 
       # delayed_job uses the same basic formula
       def seconds_to_delay(count)
-        (count ** 4) + 15 + (rand(30)*(count+1))
+        (count ** 4) + 15 + (rand(30)*(count + 1))
       end
-
     end
   end
 end

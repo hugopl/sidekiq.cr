@@ -51,5 +51,4 @@ describe Sidekiq do
       arr[1]?.should be_nil
     end
   end
-
 end

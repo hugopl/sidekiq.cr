@@ -19,5 +19,4 @@ describe "scheduler" do
       conn.llen("queue:default").should eq(1)
     end
   end
-
 end

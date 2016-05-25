@@ -97,6 +97,5 @@ module Sidekiq
       p.start
       p
     end
-
   end
 end

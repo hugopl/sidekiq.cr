@@ -5,10 +5,9 @@ require "./server"
 
 module Sidekiq
   class CLI
-
     getter logger : ::Logger
 
-    def initialize(args=ARGV)
+    def initialize(args = ARGV)
       @concurrency = 25
       @queues = [] of String
       @timeout = 8
@@ -43,9 +42,9 @@ module Sidekiq
 
     def create(logger = @logger)
       Sidekiq::Server.new(concurrency: @concurrency,
-                          queues: @queues,
-                          environment: @environment,
-                          logger: logger)
+        queues: @queues,
+        environment: @environment,
+        logger: logger)
     end
 
     def configure(logger = @logger)
@@ -100,9 +99,8 @@ module Sidekiq
       exit(0)
     end
 
-
     def banner
-%{
+      %{
          m,
          `$b
     .ss,  $$:         .,d$
@@ -125,6 +123,5 @@ module Sidekiq
         puts "\e[0m"
       end
     end
-
   end
 end
