@@ -20,17 +20,18 @@ compiles to a single executable so deployment is much easier than Ruby.
 
 # Note
 
-This project is still unstable.  Do not use except for fun.
+This project is still unstable.  Do not trust it.
 
 ## Help wanted
 
 Things that do not exist but I welcome:
 
-* [Data API](/mperham/sidekiq/wiki/API)
-* [Testing API](/mperham/sidekiq/wiki/Testing)
+* [Data API](https://github.com/mperham/sidekiq/wiki/API)
+* [Testing API](https://github.com/mperham/sidekiq/wiki/Testing)
 * Web UI
+* CI/Build
 
-See also [the issues](/mperham/sidekiq.cr/issues) for chores and other ideas to help.
+See also [the issues](https://github.com/mperham/sidekiq.cr/issues) for chores and other ideas to help.
 
 Things that do not exist and probably won't ever:
 
@@ -89,10 +90,10 @@ Sidekiq within your code:
 require "sidekiq/server/cli"
 require "your_code"
 
-cli = Sidekiq::CLI.new(ARGV)
+cli = Sidekiq::CLI.new
 server = cli.configure do |config|
-  # server middleware
-  config.middleware.add SomeMiddleware.new
+  config.server_middleware.add SomeServerMiddleware.new
+  config.client_middleware.add SomeClientMiddleware.new
 
   # Redis is configured through ENV:
   #   REDIS_PROVIDER=REDIS_URL
@@ -100,6 +101,8 @@ server = cli.configure do |config|
 end
 cli.run(server)
 ```
+
+This code is still in flux and will likely change, feedback welcome.
 
 ## Upgrade?
 
