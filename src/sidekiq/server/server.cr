@@ -25,8 +25,7 @@ module Sidekiq
 
     def initialize(@environment = "development", @queues = ["default"],
                    @concurrency = 25, @logger = Sidekiq::Logger.build)
-      # FIXME Crystal doesn't have Socket.gethostname yet
-      @hostname = ENV["DYNO"]? || `hostname`.strip
+      @hostname = ENV["DYNO"]? || System.hostname
       nonce = SecureRandom.hex(6)
       @identity = "#{@hostname}:#{Process.pid}:#{nonce}"
       @busy = 0
