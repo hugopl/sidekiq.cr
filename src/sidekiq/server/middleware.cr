@@ -1,7 +1,7 @@
 require "../middleware"
 require "./retry_jobs"
 
-class Sidekiq::Middleware::Logger < Sidekiq::Middleware::Entry
+class Sidekiq::Middleware::Logger < Sidekiq::Middleware::ServerEntry
   def call(job, ctx)
     Sidekiq::Logger.with_context("JID=#{job.jid}") do
       a = Time.now.epoch_f

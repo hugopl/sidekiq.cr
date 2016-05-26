@@ -13,11 +13,21 @@ module Sidekiq
       abstract def call(job, ctx, &block)
     end
 
-    class Chain
-      property entries : Array(Entry)
+    # We make these two separate types so users don't
+    # accidentally add a server middleware to the client
+    # chain and vice versa.  Type safety FTW!
+
+    abstract class ServerEntry < Entry
+    end
+
+    abstract class ClientEntry < Entry
+    end
+
+    class Chain(T)
+      property entries : Array(T)
 
       def initialize
-        @entries = [] of Entry
+        @entries = [] of T
       end
 
       def remove(klass)

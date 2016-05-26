@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-class SomeMiddleware < Sidekiq::Middleware::Entry
+class SomeMiddleware < Sidekiq::Middleware::ClientEntry
   def call(job, ctx)
     ctx.logger.info "start"
     yield
@@ -17,7 +17,7 @@ end
 describe Sidekiq::Middleware do
   describe "client" do
     it "works" do
-      ch = Sidekiq::Middleware::Chain.new
+      ch = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ClientEntry).new
       ch.add SomeMiddleware.new
 
       done = false

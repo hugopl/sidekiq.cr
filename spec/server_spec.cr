@@ -9,7 +9,7 @@ class FakeWorker
   end
 end
 
-class Foo < Sidekiq::Middleware::Entry
+class Foo < Sidekiq::Middleware::ServerEntry
   def call(job, ctx)
     yield
   end
@@ -18,8 +18,8 @@ end
 describe "Sidekiq::Server" do
   it "allows adding middleware" do
     s = Sidekiq::Server.new
-    s.middleware.add Foo.new
-    s.middleware.entries.size.should eq(3)
+    s.server_middleware.add Foo.new
+    s.server_middleware.entries.size.should eq(3)
   end
 
   it "will stop" do

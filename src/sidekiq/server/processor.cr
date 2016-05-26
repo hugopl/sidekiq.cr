@@ -100,7 +100,7 @@ module Sidekiq
         job.load(hash.as_h)
 
         stats(job, jobstr) do
-          @mgr.middleware.invoke(job, @mgr) do
+          @mgr.server_middleware.invoke(job, @mgr) do
             # Only ack if we either attempted to start this job or
             # successfully completed it. This prevents us from
             # losing jobs if a middleware raises an exception before yielding

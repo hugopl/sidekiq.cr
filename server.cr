@@ -12,7 +12,14 @@ class MyWorker
   end
 end
 
-class SomeMiddleware < Sidekiq::Middleware::Entry
+class SomeClientMiddleware < Sidekiq::Middleware::ClientEntry
+  def call(job, ctx)
+    ctx.logger.info "Pushing job #{job.jid}"
+    yield
+  end
+end
+
+class SomeServerMiddleware < Sidekiq::Middleware::ServerEntry
   def call(job, ctx)
     ctx.logger.info "Executing job #{job.jid}"
     yield
@@ -21,7 +28,8 @@ end
 
 cli = Sidekiq::CLI.new
 server = cli.configure do |config|
-  config.server_middleware.add SomeMiddleware.new
+  config.server_middleware.add SomeServerMiddleware.new
+  config.client_middleware.add SomeClientMiddleware.new
   config.redis = ConnectionPool(Redis).new(capacity: 30, timeout: 5.0) do
     Redis.new(host: "localhost", port: 6379)
   end

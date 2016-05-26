@@ -22,7 +22,7 @@ module Sidekiq
       end
     end
 
-    DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain.new
+    DEFAULT_MIDDLEWARE = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ClientEntry).new
 
     @@default : Sidekiq::Context?
 

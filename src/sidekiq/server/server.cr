@@ -12,7 +12,7 @@ module Sidekiq
     getter fetcher : Sidekiq::Fetch
     getter scheduler : Sidekiq::Scheduled::Poller
     getter pool : Sidekiq::Pool
-    getter middleware : Sidekiq::Middleware::Chain
+    getter server_middleware : Sidekiq::Middleware::Chain(Sidekiq::Middleware::ServerEntry)
     getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
     getter processors : Array(Sidekiq::Processor)
     getter logger : ::Logger
@@ -33,7 +33,7 @@ module Sidekiq
       @tag = ""
       @labels = ["crystal"]
       @alive = true
-      @middleware = Sidekiq::Middleware::Chain.new.tap do |c|
+      @server_middleware = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ServerEntry).new.tap do |c|
         c.add Sidekiq::Middleware::Logger.new
         c.add Sidekiq::Middleware::RetryJobs.new
       end
@@ -46,10 +46,6 @@ module Sidekiq
       @scheduler = Sidekiq::Scheduled::Poller.new
       @fetcher = Sidekiq::BasicFetch.new(@queues)
       @heartbeat = Sidekiq::Heartbeat.new
-    end
-
-    def server_middleware
-      middleware
     end
 
     def client_middleware

@@ -1,3 +1,5 @@
+require "../middleware"
+
 module Sidekiq
   module Middleware
     # #
@@ -48,7 +50,7 @@ module Sidekiq
     #      sidekiq_options :retry => 10
     #    end
     #
-    class RetryJobs < Entry
+    class RetryJobs < ServerEntry
       DEFAULT_MAX_RETRY_ATTEMPTS = 25
 
       def initialize
