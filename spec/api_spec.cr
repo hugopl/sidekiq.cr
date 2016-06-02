@@ -55,7 +55,7 @@ describe "api" do
         reset_stats
         Sidekiq::Stats.new.reset("xxy")
         s = Sidekiq::Stats.new
-        s.failed.should eq(0)
+        s.failed.should eq(10)
         s.processed.should eq(5)
       end
     end
@@ -76,7 +76,6 @@ describe "api" do
         end
 
         s = Sidekiq::Stats::Queues.new
-        p s.lengths
 
         Sidekiq::Stats::Queues.new.lengths.should eq(Sidekiq::Stats.new.queues)
       end
@@ -163,7 +162,7 @@ describe "api" do
 
       Sidekiq.redis do |conn|
         conn.smembers("queues").should_not contain("foo")
-        conn.exists("queue:foo").should be_false
+        conn.exists("queue:foo").should eq(0)
       end
     end
 

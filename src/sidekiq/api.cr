@@ -72,9 +72,11 @@ module Sidekiq
         end
       end.as(Array(Redis::RedisValue))
 
+      sizes = pipe2_res.map {|x| x.as(Int) }
+
       s = procs.size
-      workers_size = pipe2_res[0...s].reduce(0, &.+)
-      enqueued     = pipe2_res[s..-1].reduce(0, &.+)
+      workers_size = sizes[0...s].sum
+      enqueued     = sizes[s..-1].sum
 
       default_queue_latency = if (entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?)
                                 hash = JSON.parse(entry.as(String))
@@ -101,9 +103,9 @@ module Sidekiq
       all   = %w(failed processed)
       stats = stat.nil? ? all : all & [stat]
 
-      mset_args = Hash(String,String).new
+      mset_args = Hash(String,Int32).new
       stats.each do |stat|
-        mset_args["stat:#{stat}"] = "0"
+        mset_args["stat:#{stat}"] = 0
       end
       Sidekiq.redis do |conn|
         conn.mset(mset_args)
