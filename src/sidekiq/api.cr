@@ -208,7 +208,7 @@ module Sidekiq
     end
 
     def size
-      Sidekiq.redis { |con| con.llen(@rname) }.to_i32
+      Sidekiq.redis { |con| con.llen(@rname) }
     end
 
     # Sidekiq Pro overrides this
@@ -446,7 +446,7 @@ module Sidekiq
     end
 
     def size
-      Sidekiq.redis { |c| c.zcard(name) }.to_i32
+      Sidekiq.redis { |c| c.zcard(name) }
     end
 
     def clear
@@ -691,7 +691,7 @@ module Sidekiq
     # contains Sidekiq processes which have sent a heartbeat within the last
     # 60 seconds.
     def size
-      Sidekiq.redis { |conn| conn.scard("processes") }.to_i32
+      Sidekiq.redis { |conn| conn.scard("processes") }
     end
   end
 
@@ -831,7 +831,7 @@ module Sidekiq
           res.compact.each { |x| count += x.as(String).to_i }
         end
       end
-      count.to_i32
+      count
     end
   end
 end
