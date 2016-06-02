@@ -61,8 +61,10 @@ module Sidekiq
     #       end => ["OK", "mike"]
     #     end
     #
-    def redis(&block : Redis -> Redis::RedisValue)
-      @pool.connection(&block)
+    def redis
+      @pool.connection do |conn|
+        yield conn
+      end
     end
   end
 end

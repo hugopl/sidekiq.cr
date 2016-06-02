@@ -40,7 +40,7 @@ module Sidekiq
       data = {
         "hostname"    => svr.hostname,
         "started_at"  => Time.now.epoch_f,
-        "pid"         => Process.pid,
+        "pid"         => ::Process.pid,
         "tag"         => svr.tag,
         "concurrency" => svr.concurrency,
         "queues"      => svr.queues.uniq,
@@ -89,7 +89,7 @@ module Sidekiq
 
         return unless msgs
 
-        ::Process.kill(Signal.parse(msgs), Process.pid)
+        ::Process.kill(Signal.parse(msgs), ::Process.pid)
       rescue e
         # ignore all redis/network issues
         svr.logger.error("heartbeat: #{e.message}")

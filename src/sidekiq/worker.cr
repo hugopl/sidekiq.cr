@@ -1,3 +1,5 @@
+require "logger"
+
 module Sidekiq
   # #
   # Include this module in your worker class and you can easily create

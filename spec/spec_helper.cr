@@ -36,3 +36,8 @@ def requires_redis(op, ver, &block)
     pending("These tests require Redis #{op}#{ver}, you are running #{redis_version}", &block)
   end
 end
+
+Spec.before_each do
+  Sidekiq.redis {|c| c.flushdb }
+end
+

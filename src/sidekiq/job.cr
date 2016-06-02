@@ -23,7 +23,7 @@ module Sidekiq
       args: Array(JSON::Type),
       klass: { key: "class", type: String }
       created_at: {type: Time, converter: EpochConverter},
-      enqueued_at: {type: Time, converter: EpochConverter},
+      enqueued_at: {type: Time, converter: EpochConverter, nilable: true},
       jid: String,
       at: { type: Time, converter: EpochConverter, nilable: true },
       bid: { type: String, nilable: true },
@@ -43,7 +43,7 @@ module Sidekiq
       @args = [] of JSON::Type
       @klass = ""
       @created_at = Time.now
-      @enqueued_at = Time.now
+      @enqueued_at = nil
       @jid = SecureRandom.hex(12)
       @retry = true
     end

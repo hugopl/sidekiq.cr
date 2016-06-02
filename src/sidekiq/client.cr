@@ -30,6 +30,10 @@ module Sidekiq
       @@default = Sidekiq::Client::Context.new(ctx)
     end
 
+    def self.default_context : Sidekiq::Context
+      @@default.not_nil!
+    end
+
     def self.middleware
       DEFAULT_MIDDLEWARE
     end

@@ -27,7 +27,7 @@ module Sidekiq
                    @concurrency = 25, @logger = Sidekiq::Logger.build)
       @hostname = ENV["DYNO"]? || System.hostname
       nonce = SecureRandom.hex(6)
-      @identity = "#{@hostname}:#{Process.pid}:#{nonce}"
+      @identity = "#{@hostname}:#{::Process.pid}:#{nonce}"
       @busy = 0
       @tag = ""
       @labels = ["crystal"]
