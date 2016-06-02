@@ -5,6 +5,7 @@ class ApiWorker
   include Sidekiq::Worker
 
   perform_types Int64, String
+
   def perform(foo : Int64, name : String)
   end
 end
@@ -123,7 +124,7 @@ describe "api" do
 
       x = q.first
       x.display_class.should eq("ApiWorker")
-      x.display_args.should eq([1,"mike"])
+      x.display_args.should eq([1, "mike"])
 
       q.map(&.delete).should eq([true])
       q.size.should eq(0)
@@ -235,11 +236,11 @@ describe "api" do
 
     it "can enumerate processes" do
       identity_string = "identity_string"
-      odata = Hash(String, JSON::Type) {
-        "pid" => 123_i64,
-        "hostname" => System.hostname,
-        "key" => identity_string,
-        "identity" => identity_string,
+      odata = Hash(String, JSON::Type){
+        "pid"        => 123_i64,
+        "hostname"   => System.hostname,
+        "key"        => identity_string,
+        "identity"   => identity_string,
         "started_at" => Time.now.epoch_f - 15,
       }
 
@@ -261,8 +262,8 @@ describe "api" do
       data.quiet!
       data.stop!
       signals_string = "#{odata["key"]}-signals"
-      Sidekiq.redis{|c| c.lpop(signals_string) }.should eq("TERM")
-      Sidekiq.redis{|c| c.lpop(signals_string) }.should eq("USR1")
+      Sidekiq.redis { |c| c.lpop(signals_string) }.should eq("TERM")
+      Sidekiq.redis { |c| c.lpop(signals_string) }.should eq("USR1")
     end
 
     it "can enumerate workers" do
@@ -271,14 +272,14 @@ describe "api" do
 
       hn = System.hostname
       key = "#{hn}:#{Process.pid}"
-      pdata = { "pid" => Process.pid, "hostname" => hn, "started_at" => Time.now.epoch }
+      pdata = {"pid" => Process.pid, "hostname" => hn, "started_at" => Time.now.epoch}
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
         conn.hmset(key, {"info" => pdata.to_json, "busy" => 0, "beat" => Time.now.epoch_f})
       end
 
       s = "#{key}:workers"
-      data = { "payload" => "{}", "queue" => "default", "run_at" => Time.now.epoch }.to_json
+      data = {"payload" => "{}", "queue" => "default", "run_at" => Time.now.epoch}.to_json
       Sidekiq.redis do |c|
         c.hmset(s, {"1234" => data})
       end
@@ -311,7 +312,7 @@ describe "api" do
     end
 
     it "prunes processes which have died" do
-      data = { "pid" => rand(10_000), "hostname" => "app#{rand(1_000)}", "started_at" => Time.now.epoch_f }
+      data = {"pid" => rand(10_000), "hostname" => "app#{rand(1_000)}", "started_at" => Time.now.epoch_f}
       key = "#{data["hostname"]}:#{data["pid"]}"
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
@@ -331,12 +332,11 @@ describe "api" do
       ps.size.should eq(1)
       ps.to_a.size.should eq(1)
     end
-
   end
 end
 
 def add_retry(jid = "bob", at = Time.now.epoch_f)
-  payload = { "class" => "ApiWorker", "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.epoch_f }.to_json
+  payload = {"class" => "ApiWorker", "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.epoch_f}.to_json
   Sidekiq.redis do |conn|
     conn.zadd("retry", at.to_s, payload)
   end

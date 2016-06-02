@@ -2,7 +2,6 @@ require "logger"
 
 module Sidekiq
   class Logger
-
     SPACE = " "
 
     # 2016-05-19T04:19:24.323Z

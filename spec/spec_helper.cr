@@ -20,15 +20,15 @@ end
 Sidekiq::Client.default_context = MockContext.new
 
 def requires_redis(op, ver, &block)
-  redis_version = POOL.redis{|c| c.info["redis_version"] }.as(String)
+  redis_version = POOL.redis { |c| c.info["redis_version"] }.as(String)
 
   proc = if op == :<
-    -> { redis_version < ver }
-  elsif op == :>=
-    -> { redis_version >= ver }
-  else
-    raise "No such op: #{op}"
-  end
+           ->{ redis_version < ver }
+         elsif op == :>=
+           ->{ redis_version >= ver }
+         else
+           raise "No such op: #{op}"
+         end
 
   if proc.call
     yield
@@ -38,6 +38,5 @@ def requires_redis(op, ver, &block)
 end
 
 Spec.before_each do
-  Sidekiq.redis {|c| c.flushdb }
+  Sidekiq.redis { |c| c.flushdb }
 end
-

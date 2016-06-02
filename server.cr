@@ -7,6 +7,7 @@ class MyWorker
   include Sidekiq::Worker
 
   perform_types(Int64)
+
   def perform(x)
     logger.info "hello!"
   end

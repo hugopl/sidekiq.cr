@@ -3,6 +3,7 @@ require "./job"
 module Sidekiq
   class Stats
     @stats : Hash(String, JSON::Type)
+
     def initialize
       @stats = fetch_stats!
     end
@@ -67,16 +68,16 @@ module Sidekiq
 
       pipe2_res = Sidekiq.redis do |conn|
         conn.pipelined do |ppp|
-          procs.each {|key| ppp.hget(key, "busy") }
-          qs.each {|queue| ppp.llen("queue:#{queue}") }
+          procs.each { |key| ppp.hget(key, "busy") }
+          qs.each { |queue| ppp.llen("queue:#{queue}") }
         end
       end.as(Array(Redis::RedisValue))
 
-      sizes = pipe2_res.map {|x| x.as(Int) }
+      sizes = pipe2_res.map { |x| x.as(Int) }
 
       s = procs.size
       workers_size = sizes[0...s].sum
-      enqueued     = sizes[s..-1].sum
+      enqueued = sizes[s..-1].sum
 
       default_queue_latency = if (entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?)
                                 hash = JSON.parse(entry.as(String))
@@ -85,25 +86,25 @@ module Sidekiq
                               else
                                 0.0_f64
                               end
-      Hash(String, JSON::Type) {
-        "processed" =>             pipe1_res[0] ? pipe1_res[0].as(String).to_i64 { 0_i64 } : 0_i64,
-        "failed" =>                pipe1_res[1] ? pipe1_res[1].as(String).to_i64 { 0_i64 } : 0_i64,
-        "scheduled_size" =>        pipe1_res[2].as(Int64),
-        "retry_size" =>            pipe1_res[3].as(Int64),
-        "dead_size" =>             pipe1_res[4].as(Int64),
-        "processes_size" =>        pipe1_res[5].as(Int64),
+      Hash(String, JSON::Type){
+        "processed"      => pipe1_res[0] ? pipe1_res[0].as(String).to_i64 { 0_i64 } : 0_i64,
+        "failed"         => pipe1_res[1] ? pipe1_res[1].as(String).to_i64 { 0_i64 } : 0_i64,
+        "scheduled_size" => pipe1_res[2].as(Int64),
+        "retry_size"     => pipe1_res[3].as(Int64),
+        "dead_size"      => pipe1_res[4].as(Int64),
+        "processes_size" => pipe1_res[5].as(Int64),
 
         "default_queue_latency" => default_queue_latency,
-        "workers_size" =>          workers_size.to_i64,
-        "enqueued" =>              enqueued.to_i64,
+        "workers_size"          => workers_size.to_i64,
+        "enqueued"              => enqueued.to_i64,
       }
     end
 
     def reset(stat = nil)
-      all   = %w(failed processed)
+      all = %w(failed processed)
       stats = stat.nil? ? all : all & [stat]
 
-      mset_args = Hash(String,Int32).new
+      mset_args = Hash(String, Int32).new
       stats.each do |stat|
         mset_args["stat:#{stat}"] = 0
       end
@@ -177,7 +178,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Encapsulates a queue within Sidekiq.
   # Allows enumeration of all jobs within the queue
   # and deletion of jobs.
@@ -192,7 +193,7 @@ module Sidekiq
   class Queue
     include Enumerable(Sidekiq::JobProxy)
 
-    ##
+    # #
     # Return all known queues within Redis.
     #
     def self.all
@@ -201,7 +202,7 @@ module Sidekiq
 
     getter name : String
 
-    def initialize(name="default")
+    def initialize(name = "default")
       @name = name
       @rname = "queue:#{name}"
     end
@@ -215,7 +216,7 @@ module Sidekiq
       false
     end
 
-    ##
+    # #
     # Calculates this queue's latency, the difference in seconds since the oldest
     # job in the queue was enqueued.
     #
@@ -240,7 +241,7 @@ module Sidekiq
 
       loop do
         range_start = page * page_size - deleted_size
-        range_end   = range_start + page_size - 1
+        range_end = range_start + page_size - 1
         entries = Sidekiq.redis do |conn|
           conn.lrange @rname, range_start, range_end
         end.as(Array(Redis::RedisValue))
@@ -253,7 +254,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # Find the job with the given JID within this queue.
     #
     # This is a slow, inefficient operation.  Do not use under
@@ -272,7 +273,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Encapsulates a pending job within a Sidekiq queue or
   # sorted set.
   #
@@ -304,7 +305,7 @@ module Sidekiq
       (Time.now - (enqueued_at || created_at)).to_f
     end
 
-    ##
+    # #
     # Remove this job from the queue.
     def delete
       count = Sidekiq.redis do |conn|
@@ -376,7 +377,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # Place job in the dead set
     def kill
       raise "Kill not available on jobs which have not failed" unless item["failed_at"]
@@ -386,7 +387,7 @@ module Sidekiq
           conn.multi do |m|
             m.zadd("dead", now, message)
             m.zremrangebyscore("dead", "-inf", now - DeadSet.timeout)
-            m.zremrangebyrank("dead", 0, - DeadSet.max_jobs)
+            m.zremrangebyrank("dead", 0, -DeadSet.max_jobs)
           end
         end
       end
@@ -433,7 +434,6 @@ module Sidekiq
         end
       end
     end
-
   end
 
   class SortedSet
@@ -454,7 +454,6 @@ module Sidekiq
         conn.del(name)
       end
     end
-
   end
 
   class JobSet < SortedSet
@@ -474,7 +473,7 @@ module Sidekiq
 
       loop do
         range_start = page * page_size + offset_size
-        range_end   = range_start + page_size - 1
+        range_end = range_start + page_size - 1
         elements = Sidekiq.redis do |conn|
           conn.zrange name, range_start, range_end, with_scores: true
         end.as(Array(Redis::RedisValue))
@@ -506,7 +505,7 @@ module Sidekiq
       end
     end
 
-    ##
+    # #
     # Find the job with the given JID within this sorted set.
     #
     # This is a slow, inefficient operation.  Do not use under
@@ -544,7 +543,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Allows enumeration of scheduled jobs within Sidekiq.
   # Based on this, you can search/filter for jobs.  Here"s an
   # example where I"m selecting all jobs of a certain type
@@ -562,7 +561,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Allows enumeration of retries within Sidekiq.
   # Based on this, you can search/filter for jobs.  Here"s an
   # example where I"m selecting all jobs of a certain type
@@ -586,7 +585,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Allows enumeration of dead jobs within Sidekiq.
   #
   class DeadSet < JobSet
@@ -609,7 +608,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # Enumerates the set of Sidekiq processes which are actively working
   # right now.  Each process send a heartbeat to Redis every 5 seconds
   # so this set should be relatively accurate, barring network partitions.
@@ -619,7 +618,7 @@ module Sidekiq
   class ProcessSet
     include Enumerable(Sidekiq::Process)
 
-    def initialize(clean_plz=true)
+    def initialize(clean_plz = true)
       self.class.cleanup if clean_plz
     end
 
@@ -630,7 +629,7 @@ module Sidekiq
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
-        prcs.each {|x| procs << x.as(String) }
+        prcs.each { |x| procs << x.as(String) }
 
         heartbeats = conn.pipelined do |ppp|
           procs.each do |key|
@@ -638,7 +637,7 @@ module Sidekiq
           end
         end.as(Array(Redis::RedisValue))
         beats = [] of String?
-        heartbeats.each {|x| beats << (x ? x.as(String) : nil) }
+        heartbeats.each { |x| beats << (x ? x.as(String) : nil) }
 
         # the hash named key has an expiry of 60 seconds.
         # if it's not found, that means the process has not reported
@@ -657,7 +656,7 @@ module Sidekiq
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
-        prcs.each {|x| procs << x.as(String) }
+        prcs.each { |x| procs << x.as(String) }
         procs.sort!
 
         # We're making a tradeoff here between consuming more memory instead of
@@ -759,7 +758,7 @@ module Sidekiq
     end
   end
 
-  ##
+  # #
   # A worker is a thread that is currently processing a job.
   # Programmatic access to the current active worker set.
   #
@@ -788,7 +787,7 @@ module Sidekiq
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
-        prcs.each {|x| procs << x.as(String) }
+        prcs.each { |x| procs << x.as(String) }
         procs.sort!
 
         procs.each do |key|
@@ -829,11 +828,10 @@ module Sidekiq
             end
           end
           arr = res.as(Array(Redis::RedisValue))
-          res.compact.each {|x| count += x.as(String).to_i }
+          res.compact.each { |x| count += x.as(String).to_i }
         end
       end
       count.to_i32
     end
-
   end
 end

@@ -2,7 +2,6 @@ require "./spec_helper"
 
 describe Sidekiq::Job do
   describe "serialization" do
-
     requires_redis(:<, "3.2.0") do
       it "deserializes a simple job" do
         r = Sidekiq::Pool.new
@@ -34,6 +33,5 @@ describe Sidekiq::Job do
         hash.size.should eq(13)
       end
     end
-
   end
 end
