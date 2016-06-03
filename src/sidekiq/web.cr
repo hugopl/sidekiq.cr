@@ -32,12 +32,12 @@ include Sidekiq::Web
 public_folder "../../web"
 root_path = ""
 
-private macro crtemplate(file)
-  "../../web/views/{{file.id}}.ecr", "../../web/views/layout.ecr"
+private macro crtemplate(xxx)
+  render "../../web/views/#{{{xxx}}}.ecr", "../../web/views/layout.ecr"
 end
 
 get "/busy" do |env|
-  render crtemplate("busy")
+  crtemplate("busy")
 end
 
 post "/busy" do |env|
@@ -56,7 +56,7 @@ end
 
 get "/queues" do |env|
   @queues = Sidekiq::Queue.all
-  render crtemplate("queues")
+  crtemplate("queues")
 end
 
 get "/queues/:name" do |env|
@@ -66,7 +66,7 @@ get "/queues/:name" do |env|
   @queue = Sidekiq::Queue.new(@name)
   @current_page, @total_size, @messages = page("queue:#{@name}", params[:page], @count)
   @messages = @messages.map { |msg| Sidekiq::JobProxy.new(msg) }
-  render crtemplate("queue")
+  crtemplate("queue")
 end
 
 post "/queues/:name" do |env|
@@ -83,14 +83,14 @@ get "/morgue" do |env|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @dead = page("dead", params[:page], @count, reverse: true)
   @dead = @dead.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  render crtemplate("morgue")
+  crtemplate("morgue")
 end
 
 get "/morgue/:key" do |env|
   halt 404 unless params["key"]
   @dead = Sidekiq::DeadSet.new.fetch(*parse_params(params["key"])).first
   env.redirect "#{root_path}morgue" if @dead.nil?
-  render crtemplate("dead")
+  crtemplate("dead")
 end
 
 post "/morgue" do |env|
@@ -125,13 +125,13 @@ get "/retries" do |env|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @retries = page("retry", params[:page], @count)
   @retries = @retries.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  render crtemplate("retries")
+  crtemplate("retries")
 end
 
 get "/retries/:key" do |env|
   @retry = Sidekiq::RetrySet.new.fetch(*parse_params(params["key"])).first
   env.redirect "#{root_path}retries" if @retry.nil?
-  render crtemplate("retry")
+  crtemplate("retry")
 end
 
 post "/retries" do |env|
@@ -164,13 +164,13 @@ get "/scheduled" do |env|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @scheduled = page("schedule", params[:page], @count)
   @scheduled = @scheduled.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  render crtemplate("scheduled")
+  crtemplate("scheduled")
 end
 
 get "/scheduled/:key" do |env|
   @job = Sidekiq::ScheduledSet.new.fetch(*parse_params(params["key"])).first
   env.redirect "#{root_path}scheduled" if @job.nil?
-  render crtemplate("scheduled_job_info")
+  crtemplate("scheduled_job_info")
 end
 
 post "/scheduled" do |env|
@@ -195,7 +195,7 @@ get "/" do |env|
   stats_history = Sidekiq::Stats::History.new((params[:days] || 30).to_i)
   @processed_history = stats_history.processed
   @failed_history = stats_history.failed
-  render crtemplate("dashboard")
+  crtemplate("dashboard")
 end
 
 REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
