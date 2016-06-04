@@ -29,11 +29,11 @@ end
 
 include Sidekiq::Web
 
-public_folder "../../web"
+public_folder "web"
 root_path = ""
 
 private macro crtemplate(xxx)
-  render "../../web/views/#{{{xxx}}}.ecr", "../../web/views/layout.ecr"
+  render "web/views/#{{{xxx}}}.ecr", "web/views/layout.ecr"
 end
 
 get "/busy" do |env|

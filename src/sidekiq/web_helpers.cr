@@ -1,40 +1,29 @@
 require "yaml"
 require "uri"
+require "ecr/macros"
 
 module Sidekiq
   # This is not a public API
   module WebHelpers
-    @@strings = {}  of String => Hash(String, String)
-    @@locale_paths = ["../../web/locales"]
+    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
+    LOCALE_PATHS = ["web/locales"]
 
-    def strings(lang)
-      @@strings[lang] ||= begin
-        # Allow sidekiq-web extensions to add locale paths
-        # so extensions can be localized
+    @@strings = {}  of String => Hash(String, String)
+
+    {% for lang in LANGS %}
+      @@strings[{{lang}}] = begin
         text = {} of String => String
-        find_locale_files(lang).each do |file|
-          strs = YAML.load(File.open(file))
-          text.deep_merge!(strs[lang])
-        end
+        {% for path in LOCALE_PATHS %}
+          {% cmd = "cat #{ {{path.id}} }/#{ {{lang.id}} }.yml" %}
+          io = {{ system(cmd).stringify }}
+          text.deep_merge! YAML.load(io)[lang]
+        {% end %}
         text
       end
-    end
+    {% end %}
 
     def clear_caches
       @@strings = nil
-      @@locale_files = nil
-    end
-
-    def locale_paths
-      @@locale_paths
-    end
-
-    def locale_files
-      @@locale_files ||= locale_paths.flat_map {|path| Dir["#{path}/*.yml"] }
-    end
-
-    def find_locale_files(lang)
-      locale_files.select { |file| file =~ /\/#{lang}\.yml$/ }
     end
 
     # This is a hook for a Sidekiq Pro feature.  Please don"t touch.
@@ -52,7 +41,7 @@ module Sidekiq
         languages.downcase.split(",").each do |lang|
           next if lang == "*"
           lang = lang.split(";")[0]
-          break locale = lang if locale_files.any? { |file| file =~ /\/#{lang}\.yml$/ }
+          break locale = lang if @@strings[lang]?
         end
         locale
       end
