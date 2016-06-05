@@ -27,13 +27,15 @@ module Sidekiq
   end
 end
 
-include Sidekiq::Web
+class HTTP::Server::Context
+  include Sidekiq::WebHelpers
+end
 
 public_folder "web"
 root_path = ""
 
 private macro crtemplate(xxx)
-  render "web/views/#{{{xxx}}}.ecr", "web/views/layout.ecr"
+  render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../../web/views/layout.ecr"
 end
 
 get "/busy" do |env|

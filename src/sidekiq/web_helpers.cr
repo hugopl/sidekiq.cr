@@ -1,30 +1,24 @@
 require "yaml"
 require "uri"
-require "ecr/macros"
 
 module Sidekiq
   # This is not a public API
   module WebHelpers
-    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
-    LOCALE_PATHS = ["web/locales"]
+    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk xx zh-cn zh-tw)
+    LOCALE_PATHS = ["../../web/locales"]
 
-    @@strings = {}  of String => Hash(String, String)
-
+    @locale : String?
+    @@strings : Hash(String, Hash(String, String))
+    @@strings = Hash(String, Hash(String, String)).new
     {% for lang in LANGS %}
-      @@strings[{{lang}}] = begin
-        text = {} of String => String
-        {% for path in LOCALE_PATHS %}
-          {% cmd = "cat #{ {{path.id}} }/#{ {{lang.id}} }.yml" %}
-          io = {{ system(cmd).stringify }}
-          text.deep_merge! YAML.load(io)[lang]
-        {% end %}
-        text
+      begin
+        @@strings[{{lang}}] = text = Hash(String, String).new
+      {% for path in LOCALE_PATHS %}
+        io = {{ system("cat #{__DIR__}/#{path.id}/#{lang.id}.yml 2>/dev/null || true").stringify }}
+        text.merge! YAML.parse(io)[{{lang}}].as(Hash(String, String))
+      {% end %}
       end
     {% end %}
-
-    def clear_caches
-      @@strings = nil
-    end
 
     # This is a hook for a Sidekiq Pro feature.  Please don"t touch.
     def filtering(*args)
@@ -37,7 +31,7 @@ module Sidekiq
     def locale
       @locale ||= begin
         locale = "en"
-        languages = request.env["HTTP_ACCEPT_LANGUAGE"] || "en"
+        languages = request.headers["HTTP_ACCEPT_LANGUAGE"] || "en"
         languages.downcase.split(",").each do |lang|
           next if lang == "*"
           lang = lang.split(";")[0]
@@ -98,9 +92,9 @@ module Sidekiq
       "/"
     end
 
-    def current_path
-      @current_path ||= request.path_info.gsub(/^\//,"")
-    end
+    #def current_path
+      #request.path_info.gsub(/^\//,"")
+    #end
 
     def current_status
       workers.size == 0 ? "idle" : "active"
