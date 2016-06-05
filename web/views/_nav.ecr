@@ -18,12 +18,12 @@
     <div class="collapse navbar-collapse" id="navbar-menu">
       <ul class="nav navbar-nav" data-navbar="static">
         <% Sidekiq::Web.default_tabs.each do |title, url| %>
-          <% if url == '' %>
-            <li class="<%= current_path == url ? 'active' : '' %>">
+          <% if url == "" %>
+            <li class="<%= current_path == url ? "active" : "" %>">
             <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
             </li>
           <% else %>
-            <li class="<%= current_path.start_with?(url) ? 'active' : '' %>">
+            <li class="<%= current_path.start_with?(url) ? "active" : "" %>">
             <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
             </li>
           <% end %>
@@ -31,7 +31,7 @@
 
         <li class="dropdown" data-navbar="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-            <%= t('Plugins') %> <span class="caret"></span>
+            <%= t("Plugins") %> <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" role="menu">
             <% Sidekiq::Web.custom_tabs.each do |title, url| %>
@@ -43,7 +43,7 @@
         </li>
 
         <% Sidekiq::Web.custom_tabs.each do |title, url| %>
-          <li class="<%= current_path.start_with?(url) ? 'active' : '' %>" data-navbar="custom-tab">
+          <li class="<%= current_path.start_with?(url) ? "active" : "" %>" data-navbar="custom-tab">
             <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
           </li>
         <% end %>
