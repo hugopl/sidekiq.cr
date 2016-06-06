@@ -3,21 +3,20 @@
   <head>
     <title><%= Sidekiq::NAME %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <link href="<%= root_path %>stylesheets/bootstrap.css" media="screen" rel="stylesheet" type="text/css" />
-    <link href="<%= root_path %>stylesheets/application.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="<%= x.root_path %>stylesheets/bootstrap.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="<%= x.root_path %>stylesheets/application.css" media="screen" rel="stylesheet" type="text/css" />
     <link rel="shortcut icon" type="image/ico" href="<%= root_path %>images/favicon.ico" />
-    <script type="text/javascript" src="<%= root_path %>javascripts/application.js"></script>
-    <script type="text/javascript" src="<%= root_path %>javascripts/locales/jquery.timeago.<%= locale %>.js"></script>
+    <script type="text/javascript" src="<%= x.root_path %>javascripts/application.js"></script>
+    <script type="text/javascript" src="<%= x.root_path %>javascripts/locales/jquery.timeago.<%= x.locale %>.js"></script>
     <meta name="google" content="notranslate" />
-    <%= display_custom_head %>
   </head>
   <body class="admin">
-    <%= ecr :_nav %>
+    <%= ecr "_nav" %>
     <div id="page">
       <div class="container">
         <div class="row">
           <div class="col-sm-12 summary_bar">
-            <%= ecr :_summary %>
+            <%= ecr "_summary" %>
           </div>
 
           <div class="col-sm-12">
@@ -26,7 +25,7 @@
         </div>
       </div>
     </div>
-    <%=  ecr :_footer %>
-    <%= ecr :_poll_js %>
+    <%=  ecr "_footer" %>
+    <%= ecr "_poll_js" %>
   </body>
 </html>

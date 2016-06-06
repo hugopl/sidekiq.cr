@@ -720,7 +720,11 @@ module Sidekiq
     end
 
     def labels
-      self["labels"].to_a
+      self["labels"].as(Array(String))
+    end
+
+    def queues
+      self["queues"].as(Array(String))
     end
 
     def [](key)

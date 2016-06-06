@@ -34,15 +34,15 @@ end
 public_folder "web"
 root_path = ""
 
-private macro crtemplate(xxx)
+macro ecr(xxx)
   render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../../web/views/layout.ecr"
 end
 
-get "/busy" do |env|
-  crtemplate("busy")
+get "/busy" do |x|
+  ecr("busy")
 end
 
-post "/busy" do |env|
+post "/busy" do |x|
   if params["identity"]
     p = Sidekiq::Process.new({"identity" => params["identity"]})
     p.quiet! if params[:quiet]
@@ -53,50 +53,50 @@ post "/busy" do |env|
       pro.stop! if params[:stop]
     end
   end
-  env.redirect "/busy"
+  x.redirect "/busy"
 end
 
-get "/queues" do |env|
+get "/queues" do |x|
   @queues = Sidekiq::Queue.all
-  crtemplate("queues")
+  ecr("queues")
 end
 
-get "/queues/:name" do |env|
+get "/queues/:name" do |x|
   halt 404 unless params[:name]
   @count = (params[:count] || 25).to_i
   @name = params[:name]
   @queue = Sidekiq::Queue.new(@name)
   @current_page, @total_size, @messages = page("queue:#{@name}", params[:page], @count)
   @messages = @messages.map { |msg| Sidekiq::JobProxy.new(msg) }
-  crtemplate("queue")
+  ecr("queue")
 end
 
-post "/queues/:name" do |env|
+post "/queues/:name" do |x|
   Sidekiq::Queue.new(params[:name]).clear
-  env.redirect "#{root_path}/queues"
+  x.redirect "#{root_path}/queues"
 end
 
-post "/queues/:name/delete" do |env|
+post "/queues/:name/delete" do |x|
   Sidekiq::JobProxy.new(params[:key_val]).delete
   redirect_with_query("#{root_path}queues/#{params[:name]}")
 end
 
-get "/morgue" do |env|
+get "/morgue" do |x|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @dead = page("dead", params[:page], @count, reverse: true)
   @dead = @dead.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  crtemplate("morgue")
+  ecr("morgue")
 end
 
-get "/morgue/:key" do |env|
+get "/morgue/:key" do |x|
   halt 404 unless params["key"]
   @dead = Sidekiq::DeadSet.new.fetch(*parse_params(params["key"])).first
-  env.redirect "#{root_path}morgue" if @dead.nil?
-  crtemplate("dead")
+  x.redirect "#{root_path}morgue" if @dead.nil?
+  ecr("dead")
 end
 
-post "/morgue" do |env|
-  env.redirect request.path unless params["key"]
+post "/morgue" do |x|
+  x.redirect request.path unless params["key"]
 
   params["key"].each do |key|
     job = Sidekiq::DeadSet.new.fetch(*parse_params(key)).first
@@ -105,17 +105,17 @@ post "/morgue" do |env|
   redirect_with_query("#{root_path}morgue")
 end
 
-post "/morgue/all/delete" do |env|
+post "/morgue/all/delete" do |x|
   Sidekiq::DeadSet.new.clear
-  env.redirect "#{root_path}morgue"
+  x.redirect "#{root_path}morgue"
 end
 
-post "/morgue/all/retry" do |env|
+post "/morgue/all/retry" do |x|
   Sidekiq::DeadSet.new.retry_all
-  env.redirect "#{root_path}morgue"
+  x.redirect "#{root_path}morgue"
 end
 
-post "/morgue/:key" do |env|
+post "/morgue/:key" do |x|
   halt 404 unless params["key"]
   job = Sidekiq::DeadSet.new.fetch(*parse_params(params["key"])).first
   retry_or_delete_or_kill job, params if job
@@ -123,21 +123,21 @@ post "/morgue/:key" do |env|
 end
 
 
-get "/retries" do |env|
+get "/retries" do |x|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @retries = page("retry", params[:page], @count)
   @retries = @retries.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  crtemplate("retries")
+  ecr("retries")
 end
 
-get "/retries/:key" do |env|
+get "/retries/:key" do |x|
   @retry = Sidekiq::RetrySet.new.fetch(*parse_params(params["key"])).first
-  env.redirect "#{root_path}retries" if @retry.nil?
-  crtemplate("retry")
+  x.redirect "#{root_path}retries" if @retry.nil?
+  ecr("retry")
 end
 
-post "/retries" do |env|
-  env.redirect request.path unless params["key"]
+post "/retries" do |x|
+  x.redirect request.path unless params["key"]
 
   params["key"].each do |key|
     job = Sidekiq::RetrySet.new.fetch(*parse_params(key)).first
@@ -146,37 +146,37 @@ post "/retries" do |env|
   redirect_with_query("#{root_path}retries")
 end
 
-post "/retries/all/delete" do |env|
+post "/retries/all/delete" do |x|
   Sidekiq::RetrySet.new.clear
-  env.redirect "#{root_path}retries"
+  x.redirect "#{root_path}retries"
 end
 
-post "/retries/all/retry" do |env|
+post "/retries/all/retry" do |x|
   Sidekiq::RetrySet.new.retry_all
-  env.redirect "#{root_path}retries"
+  x.redirect "#{root_path}retries"
 end
 
-post "/retries/:key" do |env|
+post "/retries/:key" do |x|
   job = Sidekiq::RetrySet.new.fetch(*parse_params(params["key"])).first
   retry_or_delete_or_kill job, params if job
   redirect_with_query("#{root_path}retries")
 end
 
-get "/scheduled" do |env|
+get "/scheduled" do |x|
   @count = (params[:count] || 25).to_i
   @current_page, @total_size, @scheduled = page("schedule", params[:page], @count)
   @scheduled = @scheduled.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
-  crtemplate("scheduled")
+  ecr("scheduled")
 end
 
-get "/scheduled/:key" do |env|
+get "/scheduled/:key" do |x|
   @job = Sidekiq::ScheduledSet.new.fetch(*parse_params(params["key"])).first
-  env.redirect "#{root_path}scheduled" if @job.nil?
-  crtemplate("scheduled_job_info")
+  x.redirect "#{root_path}scheduled" if @job.nil?
+  ecr("scheduled_job_info")
 end
 
-post "/scheduled" do |env|
-  env.redirect request.path unless params["key"]
+post "/scheduled" do |x|
+  x.redirect request.path unless params["key"]
 
   params["key"].each do |key|
     job = Sidekiq::ScheduledSet.new.fetch(*parse_params(key)).first
@@ -185,32 +185,32 @@ post "/scheduled" do |env|
   redirect_with_query("#{root_path}scheduled")
 end
 
-post "/scheduled/:key" do |env|
+post "/scheduled/:key" do |x|
   halt 404 unless params["key"]
   job = Sidekiq::ScheduledSet.new.fetch(*parse_params(params["key"])).first
   delete_or_add_queue job, params if job
   redirect_with_query("#{root_path}scheduled")
 end
 
-get "/" do |env|
+get "/" do |x|
   @redis_info = redis_info.select{ |k, v| REDIS_KEYS.include? k }
   stats_history = Sidekiq::Stats::History.new((params[:days] || 30).to_i)
   @processed_history = stats_history.processed
   @failed_history = stats_history.failed
-  crtemplate("dashboard")
+  ecr("dashboard")
 end
 
 REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
 
-get "/dashboard/stats" do |env|
-  env.redirect "#{root_path}stats"
+get "/dashboard/stats" do |x|
+  x.redirect "#{root_path}stats"
 end
 
-get "/stats" do |env|
+get "/stats" do |x|
   sidekiq_stats = Sidekiq::Stats.new
   redis_stats   = redis_info.select { |k, v| REDIS_KEYS.include? k }
 
-  env.response.content_type = "application/json"
+  x.response.content_type = "application/json"
   Hash(String, String) {
     "sidekiq": {
       "processed":       sidekiq_stats.processed,
@@ -227,10 +227,10 @@ get "/stats" do |env|
   }.to_json
 end
 
-get "/stats/queues" do |env|
+get "/stats/queues" do |x|
   queue_stats = Sidekiq::Stats::Queues.new
 
-  env.response.content_type = "application/json"
+  x.response.content_type = "application/json"
   queue_stats.lengths.to_json
 end
 

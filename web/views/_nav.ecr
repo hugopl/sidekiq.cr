@@ -7,11 +7,11 @@
         <span class="icon-bar"></span>
       </button>
       <div class="navbar-toggle collapsed navbar-livereload">
-        <%= ecr :_poll_link %>
+        <%= ecr "_poll_link" %>
       </div>
       <a class="navbar-brand" href="<%= root_path %>">
         <%= Sidekiq::NAME %>
-        <%= ecr :_status %>
+        <%= ecr "_status" %>
       </a>
     </div>
 
@@ -19,39 +19,39 @@
       <ul class="nav navbar-nav" data-navbar="static">
         <% Sidekiq::Web.default_tabs.each do |title, url| %>
           <% if url == "" %>
-            <li class="<%= current_path == url ? "active" : "" %>">
-            <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
+            <li class="<%= x.current_path == url ? "active" : "" %>">
+            <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
             </li>
           <% else %>
-            <li class="<%= current_path.start_with?(url) ? "active" : "" %>">
-            <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
+            <li class="<%= x.current_path.start_with?(url) ? "active" : "" %>">
+            <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
             </li>
           <% end %>
         <% end %>
 
         <li class="dropdown" data-navbar="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-            <%= t("Plugins") %> <span class="caret"></span>
+            <%= x.t("Plugins") %> <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" role="menu">
             <% Sidekiq::Web.custom_tabs.each do |title, url| %>
               <li>
-                <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
+                <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
               </li>
             <% end %>
           </ul>
         </li>
 
         <% Sidekiq::Web.custom_tabs.each do |title, url| %>
-          <li class="<%= current_path.start_with?(url) ? "active" : "" %>" data-navbar="custom-tab">
-            <a href="<%= root_path %><%= url %>"><%= t(title) %></a>
+          <li class="<%= x.current_path.start_with?(url) ? "active" : "" %>" data-navbar="custom-tab">
+            <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
           </li>
         <% end %>
       </ul>
       <ul class="nav navbar-nav navbar-right navbar-livereload" data-navbar="static">
         <li>
           <div class="poll-wrapper pull-right">
-            <%= ecr :_poll_link %>
+            <%= ecr "_poll_link" %>
           </div>
         </li>
       </ul>

@@ -1,42 +1,42 @@
-<% url = "#{root_path}queues/#{@name}" %>
+<% url = "#{x.root_path}queues/#{@name}" %>
 <header class="row">
   <div class="col-sm-5">
     <h3>
-      <%= t("CurrentMessagesInQueue", {"queue" => h(@name)}) %>
+      <%= x.t("CurrentMessagesInQueue", {"queue" => h(@name)}) %>
       <% if @queue.paused? %>
-        <span class="label label-danger"><%= t("Paused") %></span>
+        <span class="label label-danger"><%= x.t("Paused") %></span>
       <% end %>
     </h3>
   </div>
   <div class="col-sm-4 pull-right">
-    <%= ecr "web/views/_paging.ecr" %>
+    <%= ecr "_paging" %>
   </div>
 </header>
 <div class="table_container">
   <table class="queue table table-hover table-bordered table-striped">
     <thead>
-      <th><%= t("Job") %></th>
-      <th><%= t("Arguments") %></th>
+      <th><%= x.t("Job") %></th>
+      <th><%= x.t("Arguments") %></th>
       <th></th>
     </thead>
     <% @messages.each_with_index do |msg, index| %>
       <tr>
-        <td><%= h(msg.display_class) %></td>
+        <td><%= x.h(msg.display_class) %></td>
         <td>
           <% a = msg.display_args.inspect %>
           <% if a.size > 100 %>
-            <%= h(msg.display_args.inspect[0..100]) + "... " %>
-            <button data-toggle="collapse" data-target="#worker_<%= index %>" class="btn btn-default btn-xs"><%= t("ShowAll") %></button>
-            <div class="toggle" id="worker_<%= index %>" style="display: none;"><%= h(msg.display_args) %></div>
+            <%= x.h(msg.display_args.inspect[0..100]) + "... " %>
+            <button data-toggle="collapse" data-target="#worker_<%= index %>" class="btn btn-default btn-xs"><%= x.t("ShowAll") %></button>
+            <div class="toggle" id="worker_<%= index %>" style="display: none;"><%= x.h(msg.display_args) %></div>
           <% else %>
-            <%= h(msg.display_args) %>
+            <%= x.h(msg.display_args) %>
           <% end %>
         </td>
         <td>
-          <form action="<%= root_path %>queues/<%= @name %>/delete" method="post">
-            <%= csrf_tag %>
-            <input name="key_val" value="<%= h msg.item.to_json %>" type="hidden" />
-            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= t("Delete") %>" data-confirm="<%= t("AreYouSure") %>" />
+          <form action="<%= x.root_path %>queues/<%= @name %>/delete" method="post">
+            <%= x.csrf_tag %>
+            <input name="key_val" value="<%= x.h msg.item.to_json %>" type="hidden" />
+            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= x.t("Delete") %>" data-confirm="<%= x.t("AreYouSure") %>" />
           </form>
         </td>
       </tr>

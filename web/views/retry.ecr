@@ -1,24 +1,24 @@
 <% job = @retry %>
 <% type = :retry %>
-<%= ecr "web/views/_job_info" %>
+<%= ecr "_job_info" %>
 
-<h3><%= t("Error") %></h3>
+<h3><%= x.t("Error") %></h3>
 <div class="table_container">
   <table class="error table table-bordered table-striped">
     <tbody>
       <tr>
-        <th><%= t("ErrorClass") %></th>
+        <th><%= x.t("ErrorClass") %></th>
         <td>
-          <code><%= h @retry.display_class %></code>
+          <code><%= x.h @retry.display_class %></code>
         </td>
       </tr>
       <tr>
-        <th><%= t("ErrorMessage") %></th>
-        <td><%= h(@retry["error_message"]) %></td>
+        <th><%= x.t("ErrorMessage") %></th>
+        <td><%= x.h(@retry["error_message"]) %></td>
       </tr>
       <% if !@retry["error_backtrace"].nil? %>
         <tr>
-          <th><%= t("ErrorBacktrace") %></th>
+          <th><%= x.t("ErrorBacktrace") %></th>
           <td>
             <code><%= @retry["error_backtrace"].join("<br/>") %></code>
           </td>
@@ -28,9 +28,9 @@
   </table>
 </div>
 
-<form class="form-horizontal" action="<%= root_path %>retries/<%= job_params(@retry, @retry.score) %>" method="post">
-  <%= csrf_tag %>
-  <a class="btn btn-default" href="<%= root_path %>retries"><%= t("GoBack") %></a>
-  <input class="btn btn-primary" type="submit" name="retry" value="<%= t("RetryNow") %>" />
-  <input class="btn btn-danger" type="submit" name="delete" value="<%= t("Delete") %>" />
+<form class="form-horizontal" action="<%= x.root_path %>retries/<%= x.job_params(@retry, @retry.score) %>" method="post">
+  <%= x.csrf_tag %>
+  <a class="btn btn-default" href="<%= x.root_path %>retries"><%= x.t("GoBack") %></a>
+  <input class="btn btn-primary" type="submit" name="retry" value="<%= x.t("RetryNow") %>" />
+  <input class="btn btn-danger" type="submit" name="delete" value="<%= x.t("Delete") %>" />
 </form>

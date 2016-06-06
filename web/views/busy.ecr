@@ -1,13 +1,13 @@
 <div class="row header">
   <div class="col-sm-8 pull-left">
-    <h3><%= t("Processes") %></h3>
+    <h3><%= x.t("Processes") %></h3>
   </div>
   <div class="col-sm-4 pull-right">
     <form method="POST" style="margin-top: 20px; margin-bottom: 10px;">
-      <%= csrf_tag %>
+      <%= x.csrf_tag %>
       <div class="btn-group pull-right">
-        <button class="btn btn-warn" type="submit" name="quiet" value="1" data-confirm="<%= t("AreYouSure") %>"><%= t("QuietAll") %></button>
-        <button class="btn btn-danger" type="submit" name="stop" value="1" data-confirm="<%= t("AreYouSure") %>"><%= t("StopAll") %></button>
+        <button class="btn btn-warn" type="submit" name="quiet" value="1" data-confirm="<%= x.t("AreYouSure") %>"><%= x.t("QuietAll") %></button>
+        <button class="btn btn-danger" type="submit" name="stop" value="1" data-confirm="<%= x.t("AreYouSure") %>"><%= x.t("StopAll") %></button>
       </div>
     </form>
   </div>
@@ -16,13 +16,13 @@
 <div class="table_container">
   <table class="processes table table-hover table-bordered table-striped table-white">
     <thead>
-      <th><%= t("Name") %></th>
-      <th><%= t("Started") %></th>
-      <th><%= t("Threads") %></th>
-      <th><%= t("Busy") %></th>
+      <th><%= x.t("Name") %></th>
+      <th><%= x.t("Started") %></th>
+      <th><%= x.t("Threads") %></th>
+      <th><%= x.t("Busy") %></th>
       <th>&nbsp;</th>
     </thead>
-    <% processes.each do |process| %>
+    <% x.processes.each do |process| %>
       <tr>
         <td width="50%">
           <%= "#{process["hostname"]}:#{process["pid"]}" %>
@@ -34,21 +34,21 @@
             <span class="label label-danger">Quiet</span>
           <% end %>
           <br>
-          <b><%= "#{t("Queues")}: " %></b>
-          <%= process["queues"] * ", " %>
+          <b><%= "#{x.t("Queues")}: " %></b>
+          <%= process.queues.join(", ") %>
         </td>
-        <td><%= relative_time(Time.at(process["started_at"])) %></td>
+        <td><%= x.relative_time(Time.epoch(process["started_at"].as(Int))) %></td>
         <td><%= process["concurrency"] %></td>
         <td><%= process["busy"] %></td>
         <td>
           <div class="btn-group pull-right">
             <form method="POST">
-              <%= csrf_tag %>
+              <%= x.csrf_tag %>
               <input type="hidden" name="identity" value="<%= process["identity"] %>"/>
               <% unless process.stopping? %>
-                <button class="btn btn-warn" type="submit" name="quiet" value="1"><%= t("Quiet") %></button>
+                <button class="btn btn-warn" type="submit" name="quiet" value="1"><%= x.t("Quiet") %></button>
               <% end %>
-              <button class="btn btn-danger" type="submit" name="stop" value="1"><%= t("Stop") %></button>
+              <button class="btn btn-danger" type="submit" name="stop" value="1"><%= x.t("Stop") %></button>
             </form>
           </div>
         </td>
@@ -59,35 +59,35 @@
 
 <div class="row header">
   <div class="col-sm-7">
-    <h3><%= t("Jobs") %></h3>
+    <h3><%= x.t("Jobs") %></h3>
   </div>
 </div>
 
 <div class="table_container">
   <table class="workers table table-hover table-bordered table-striped table-white">
     <thead>
-      <th><%= t("Process") %></th>
-      <th><%= t("TID") %></th>
-      <th><%= t("JID") %></th>
-      <th><%= t("Queue") %></th>
-      <th><%= t("Job") %></th>
-      <th><%= t("Arguments") %></th>
-      <th><%= t("Started") %></th>
+      <th><%= x.t("Process") %></th>
+      <th><%= x.t("TID") %></th>
+      <th><%= x.t("JID") %></th>
+      <th><%= x.t("Queue") %></th>
+      <th><%= x.t("Job") %></th>
+      <th><%= x.t("Arguments") %></th>
+      <th><%= x.t("Started") %></th>
     </thead>
-    <% workers.each do |process, thread, msg| %>
-      <% job = Sidekiq::JobProxy.new(msg["payload"]) %>
+    <% x.workers.each do |process, thread, msg| %>
+      <% job = Sidekiq::JobProxy.new(msg["payload"].as(String)) %>
       <tr>
         <td><%= process %></td>
         <td><%= thread %></td>
         <td><%= job.jid %></td>
         <td>
-          <a href="<%= root_path %>queues/<%= job.queue %>"><%= job.queue %></a>
+          <a href="<%= x.root_path %>queues/<%= job.queue %>"><%= job.queue %></a>
         </td>
         <td><%= job.display_class %></td>
         <td>
-          <div class="args"><%= display_args(job.display_args) %></div>
+          <div class="args"><%= x.display_args(job.display_args) %></div>
         </td>
-        <td><%= relative_time(Time.epoch(msg["run_at"])) %></td>
+        <td><%= x.relative_time(Time.epoch(msg["run_at"].as(Int))) %></td>
       </tr>
     <% end %>
   </table>

@@ -2,23 +2,23 @@ require "yaml"
 require "uri"
 
 module Sidekiq
-  # This is not a public API
   module WebHelpers
     LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk xx zh-cn zh-tw)
     LOCALE_PATHS = ["../../web/locales"]
 
     @locale : String?
-    @@strings : Hash(String, Hash(String, String))
-    @@strings = Hash(String, Hash(String, String)).new
-    {% for lang in LANGS %}
-      begin
-        @@strings[{{lang}}] = text = Hash(String, String).new
-      {% for path in LOCALE_PATHS %}
-        io = {{ system("cat #{__DIR__}/#{path.id}/#{lang.id}.yml 2>/dev/null || true").stringify }}
-        text.merge! YAML.parse(io)[{{lang}}].as(Hash(String, String))
+    macro included
+      @@strings = {} of String => Hash(String, String)
+      {% for lang in LANGS %}
+        begin
+          @@strings[{{lang}}] = text = Hash(String, String).new
+        {% for path in LOCALE_PATHS %}
+          io = {{ system("cat #{__DIR__}/#{path.id}/#{lang.id}.yml 2>/dev/null || true").stringify }}
+          text.merge! YAML.parse(io)[{{lang}}].as(Hash(String, String))
+        {% end %}
+        end
       {% end %}
-      end
-    {% end %}
+    end
 
     # This is a hook for a Sidekiq Pro feature.  Please don"t touch.
     def filtering(*args)
@@ -42,7 +42,7 @@ module Sidekiq
     end
 
     def get_locale
-      strings(locale)
+      @@strings[locale]
     end
 
     def t(msg, options={} of String => String)
@@ -101,7 +101,7 @@ module Sidekiq
     end
 
     def relative_time(time)
-      %{<time datetime="#{time.getutc.iso8601}">#{time}</time>}
+      %{<time datetime="#{time.to_utc.to_s("%Y-%m-%dT%H:%M:%SZ")}">#{time}</time>}
     end
 
     def job_params(job, score)
@@ -134,7 +134,8 @@ module Sidekiq
     end
 
     def csrf_tag
-      "<input type='hidden' name='authenticity_token' value='#{session[:csrf]}'/>"
+      #"<input type='hidden' name='authenticity_token' value='#{session[:csrf]}'/>"
+      ""
     end
 
     def to_display(arg)
