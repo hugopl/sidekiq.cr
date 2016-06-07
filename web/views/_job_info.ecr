@@ -40,30 +40,31 @@
         <th><%= x.t("Enqueued") %></th>
         <td><%= (enqueued_at = job.enqueued_at) ? x.relative_time(enqueued_at) : x.t("NotYetEnqueued") %></td>
       </tr>
-      <% unless x.retry_extra_items(job).empty? %>
+      <%  extras = x.retry_extra_items(job)
+          unless extras.empty? %>
         <tr>
           <th><%= x.t("Extras") %></th>
           <td>
             <code>
-              <%= x.retry_extra_items(job).inspect %>
+              <%= extras.inspect %>
             </code>
           </td>
         </tr>
       <% end %>
       <% if type == :retry %>
-        <% if job["retry_count"] && job["retry_count"] > 0 %>
+        <% if job["retry_count"] && job["retry_count"].as(Int) > 0 %>
           <tr>
             <th><%= x.t("RetryCount") %></th>
             <td><%= job["retry_count"] %></td>
           </tr>
           <tr>
             <th><%= x.t("LastRetry") %></th>
-            <td><%= x.relative_time(job.retried_at) %></td>
+            <td><%= x.relative_time(job.retried_at.not_nil!) %></td>
           </tr>
         <% else %>
           <tr>
             <th><%= x.t("OriginallyFailed") %></th>
-            <td><%= x.relative_time(job.failed_at) %></td>
+            <td><%= x.relative_time(job.failed_at.not_nil!) %></td>
           </tr>
         <% end %>
         <tr>

@@ -1,8 +1,7 @@
-<% job = @job %>
 <% type = :scheduled %>
 <%= ecr "_job_info" %>
 
-<form class="form-horizontal" action="<%= x.root_path %>scheduled/<%= x.job_params(@job, @job.score) %>" method="post">
+<form class="form-horizontal" action="<%= x.root_path %>scheduled/<%= x.job_params(job, job.score) %>" method="post">
   <%= x.csrf_tag %>
   <a class="btn btn-default" href="<%= root_path %>scheduled"><%= x.t("GoBack") %></a>
   <input class="btn btn-primary" type="submit" name="add_to_queue" value="<%= x.t("AddToQueue") %>" />

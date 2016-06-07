@@ -7,7 +7,7 @@
       <th><%= x.t("Size") %></th>
       <th><%= x.t("Actions") %></th>
     </thead>
-    <% @queues.each do |queue| %>
+    <% queues.each do |queue| %>
       <tr>
         <td>
           <a href="<%= x.root_path %>queues/<%= queue.name %>"><%= queue.name %></a>

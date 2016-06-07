@@ -37,7 +37,7 @@
           <b><%= "#{x.t("Queues")}: " %></b>
           <%= process.queues.join(", ") %>
         </td>
-        <td><%= x.relative_time(Time.epoch(process["started_at"].as(Int))) %></td>
+        <td><%= x.relative_time(Time.epoch(process["started_at"].as(Float64).to_i)) %></td>
         <td><%= process["concurrency"] %></td>
         <td><%= process["busy"] %></td>
         <td>

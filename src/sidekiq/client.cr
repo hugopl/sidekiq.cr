@@ -4,21 +4,16 @@ require "./types"
 module Sidekiq
   class Client
     class Context < Sidekiq::Context
-      property! pool
-
-      def logger
-        @parent.logger
-      end
+      getter! pool : Sidekiq::Pool
+      getter! logger : ::Logger
 
       def error_handlers
-        @parent.error_handlers
+        [] of Sidekiq::ExceptionHandler::Base
       end
 
-      @pool : Sidekiq::Pool
-      @parent : Sidekiq::Context
-
-      def initialize(@parent)
-        @pool = @parent.pool
+      def initialize(pool, logger)
+        @pool = pool
+        @logger = logger
       end
     end
 
@@ -27,7 +22,7 @@ module Sidekiq
     @@default : Sidekiq::Context?
 
     def self.default_context=(ctx)
-      @@default = Sidekiq::Client::Context.new(ctx)
+      @@default = ctx
     end
 
     def self.default_context : Sidekiq::Context
@@ -60,6 +55,7 @@ module Sidekiq
     end
 
     @ctx : Sidekiq::Context
+    @pool : Sidekiq::Pool
 
     # Sidekiq::Client normally uses the default Redis pool but you may
     # set a custom ConnectionPool if you want to shard your
@@ -74,12 +70,7 @@ module Sidekiq
     def initialize(pool = nil)
       raise "Sidekiq client has not been configured yet" unless @@default
       @ctx = @@default.not_nil!
-      if pool
-        # FIXME dup does not work just yet
-        # https://github.com/crystal-lang/crystal/issues/2627
-        @ctx = @@default.dup.not_nil!
-        @ctx.pool = pool
-      end
+      @pool = pool || @ctx.pool
     end
 
     # #

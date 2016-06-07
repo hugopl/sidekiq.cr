@@ -50,7 +50,7 @@ module Sidekiq
     def configure(logger = @logger)
       x = create(logger)
       yield x
-      Sidekiq::Client.default_context = x
+      Sidekiq::Client.default_context = Sidekiq::Client::Context.new(pool: x.pool, logger: x.logger)
       x
     end
 

@@ -3,7 +3,7 @@
   <div class="col-sm-5">
     <h3><%= x.t("Retries") %></h3>
   </div>
-  <% if @retries.size > 0 && @total_size > @count %>
+  <% if retries.size > 0 && total_size > count %>
     <div class="col-sm-4">
     <%= ecr "_paging" %>
     </div>
@@ -11,7 +11,7 @@
   <%= x.filtering("retries") %>
 </header>
 
-<% if @retries.size > 0 %>
+<% if retries.size > 0 %>
   <form action="<%= x.root_path %>retries" method="post">
     <%= x.csrf_tag %>
     <div class="table_container">
@@ -31,7 +31,7 @@
             <th><%= x.t("Error") %></th>
           </tr>
         </thead>
-        <% @retries.each do |entry| %>
+        <% retries.each do |entry| %>
           <tr>
             <td class="table-checkbox">
               <label>

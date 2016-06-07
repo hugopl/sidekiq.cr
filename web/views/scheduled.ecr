@@ -3,7 +3,7 @@
   <div class="col-sm-5">
     <h3><%= x.t("ScheduledJobs") %></h3>
   </div>
-  <% if @scheduled.size > 0 && @total_size > @count %>
+  <% if scheduled.size > 0 && total_size > count %>
     <div class="col-sm-4">
       <%= ecr "_paging" %>
     </div>
@@ -11,7 +11,7 @@
   <%= x.filtering("scheduled") %>
 </header>
 
-<% if @scheduled.size > 0 %>
+<% if scheduled.size > 0 %>
 
   <form action="<%= x.root_path %>scheduled" method="post">
     <%= x.csrf_tag %>
@@ -28,7 +28,7 @@
             <th><%= x.t("Arguments") %></th>
           </tr>
         </thead>
-        <% @scheduled.each do |entry| %>
+        <% scheduled.each do |entry| %>
           <tr>
             <td>
               <input type="checkbox" name="key[]" value="<%= x.job_params(entry.item, entry.score) %>" />

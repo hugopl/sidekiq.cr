@@ -1,4 +1,3 @@
-require "./logger"
 require "./fetch"
 require "./processor"
 require "./scheduled"

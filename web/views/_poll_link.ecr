@@ -1,7 +1,7 @@
 <% if x.current_path != "" %>
-  <% if x.params[:poll] %>
+  <% if x.params.query[:poll]? %>
     <a id="live-poll" class="btn btn-primary active" href="<%= x.root_path + x.current_path %>"><%= x.t("StopPolling") %></a>
   <% else %>
-    <a id="live-poll" class="btn btn-primary" href="<%= x.root_path + x.current_path %>?<%= x.qparams(poll: true) %>"><%= x.t("LivePoll") %></a>
+    <a id="live-poll" class="btn btn-primary" href="<%= x.root_path + x.current_path %>?<%= x.qparams({poll: true}) %>"><%= x.t("LivePoll") %></a>
   <% end %>
 <% end %>

@@ -1,4 +1,4 @@
-<% job = @retry %>
+<% job = retri %>
 <% type = :retry %>
 <%= ecr "_job_info" %>
 
@@ -9,18 +9,18 @@
       <tr>
         <th><%= x.t("ErrorClass") %></th>
         <td>
-          <code><%= x.h @retry.display_class %></code>
+          <code><%= x.h retri.display_class %></code>
         </td>
       </tr>
       <tr>
         <th><%= x.t("ErrorMessage") %></th>
-        <td><%= x.h(@retry["error_message"]) %></td>
+        <td><%= x.h(retri["error_message"].as(String)) %></td>
       </tr>
-      <% if !@retry["error_backtrace"].nil? %>
+      <% if !retri["error_backtrace"].nil? %>
         <tr>
           <th><%= x.t("ErrorBacktrace") %></th>
           <td>
-            <code><%= @retry["error_backtrace"].join("<br/>") %></code>
+          <code><%= retri["error_backtrace"].as(Array).map{|x|x.as(String)}.join("<br/>") %></code>
           </td>
         </tr>
       <% end %>
@@ -28,7 +28,7 @@
   </table>
 </div>
 
-<form class="form-horizontal" action="<%= x.root_path %>retries/<%= x.job_params(@retry, @retry.score) %>" method="post">
+<form class="form-horizontal" action="<%= x.root_path %>retries/<%= x.job_params(retri, retri.score) %>" method="post">
   <%= x.csrf_tag %>
   <a class="btn btn-default" href="<%= x.root_path %>retries"><%= x.t("GoBack") %></a>
   <input class="btn btn-primary" type="submit" name="retry" value="<%= x.t("RetryNow") %>" />

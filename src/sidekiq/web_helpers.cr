@@ -3,7 +3,7 @@ require "uri"
 
 module Sidekiq
   module WebHelpers
-    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk xx zh-cn zh-tw)
+    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
     LOCALE_PATHS = ["../../web/locales"]
 
     @locale : String?
@@ -14,7 +14,11 @@ module Sidekiq
           @@strings[{{lang}}] = text = Hash(String, String).new
         {% for path in LOCALE_PATHS %}
           io = {{ system("cat #{__DIR__}/#{path.id}/#{lang.id}.yml 2>/dev/null || true").stringify }}
-          text.merge! YAML.parse(io)[{{lang}}].as(Hash(String, String))
+          h = YAML.parse(io)
+          h = h[{{lang}}].as_h
+          h.each do |k, v|
+            text[k.as(String)] = v.as(String)
+          end
         {% end %}
         end
       {% end %}
@@ -31,7 +35,7 @@ module Sidekiq
     def locale
       @locale ||= begin
         locale = "en"
-        languages = request.headers["HTTP_ACCEPT_LANGUAGE"] || "en"
+        languages = request.headers["HTTP_ACCEPT_LANGUAGE"]? || "en"
         languages.downcase.split(",").each do |lang|
           next if lang == "*"
           lang = lang.split(";")[0]
@@ -46,7 +50,7 @@ module Sidekiq
     end
 
     def t(msg, options={} of String => String)
-      string = get_locale[msg] || msg
+      string = get_locale[msg]? || msg
       if options.empty?
         string
       else
@@ -73,11 +77,13 @@ module Sidekiq
     end
 
     def location
-      Sidekiq.redis { |conn| conn.client.location }
+      #Sidekiq.redis { |conn| conn.client.location }
+      ""
     end
 
     def redis_connection
-      Sidekiq.redis { |conn| conn.client.id }
+      #Sidekiq.redis { |conn| conn.client.id }
+      ""
     end
 
     def namespace
@@ -85,16 +91,16 @@ module Sidekiq
     end
 
     def redis_info
-      Sidekiq.redis_info
+      Sidekiq.redis {|c| c.info }
     end
 
     def root_path
       "/"
     end
 
-    #def current_path
-      #request.path_info.gsub(/^\//,"")
-    #end
+    def current_path
+      request.resource.gsub(/^\//,"")
+    end
 
     def current_status
       workers.size == 0 ? "idle" : "active"
@@ -116,11 +122,20 @@ module Sidekiq
     SAFE_QPARAMS = %w(page poll)
 
     # Merge options with current params, filter safe params, and stringify to query string
-    def qparams(options)
-      options = options.stringify_keys
-      params.merge(options).map do |key, value|
-        SAFE_QPARAMS.include?(key) ? "#{key}=#{value}" : next
-      end.compact.join("&")
+    def qparams(newparams)
+      hash = {} of String => String
+      request.query_params.each do |key, value|
+        hash[key] = value if SAFE_QPARAMS.includes?(key)
+      end
+      newparams.each do |key, value|
+        hash[key.to_s] = value.to_s
+      end
+
+      params = [] of String
+      hash.each do |k, v|
+        params << "#{k}=#{v}"
+      end
+      params.join("&")
     end
 
     def truncate(text, truncate_after_chars = 2000)
@@ -158,9 +173,9 @@ module Sidekiq
     ))
 
     def retry_extra_items(retry_job)
-      @retry_extra_items ||= Hash(String, JSON::Type).new.tap do |extra|
+      Hash(String, JSON::Type).new.tap do |extra|
         retry_job.item.each do |key, value|
-          extra[key] = value unless RETRY_JOB_KEYS.include?(key)
+          extra[key] = value unless RETRY_JOB_KEYS.includes?(key)
         end
       end
     end
@@ -175,13 +190,14 @@ module Sidekiq
 
     # Any paginated list that performs an action needs to redirect
     # back to the proper page after performing that action.
-    def redirect_with_query(url)
-      r = request.referer
+    def url_with_query(ctx, url)
+      p ctx.request.headers
+      r = ctx.request.headers["http_referer"]
       if r && r =~ /\?/
         ref = URI.parse(r)
-        redirect("#{url}?#{ref.query}")
+        "#{url}?#{ref.query}"
       else
-        redirect url
+        url
       end
     end
 
@@ -198,6 +214,21 @@ module Sidekiq
         namespace_suffix = namespace == nil ? "" : "##{namespace}"
         "#{redis_connection}#{namespace_suffix}"
       end
+    end
+
+    def list_page(key, pageidx=1, page_size=25)
+      x, y, items = page(key, pageidx, page_size)
+      {x.as(Int), y.as(Int), items.as(Array(String))}
+    end
+
+    def zpage(key, pageidx=1, page_size=25, opts=nil)
+      x, y, items = page(key, pageidx, page_size, opts)
+      results = items.as(Array(String))
+      jobs = [] of Array(String)
+      results.in_groups_of(2) do |(x, y)|
+        jobs << [x.not_nil!, y.not_nil!]
+      end
+      {x.as(Int), y.as(Int), jobs}
     end
 
     def page(key, pageidx=1, page_size=25, opts=nil)

@@ -3,7 +3,7 @@
   <div class="col-sm-5">
     <h3><%= x.t("DeadJobs") %></h3>
   </div>
-  <% if @dead.size > 0 && @total_size > @count %>
+  <% if dead.size > 0 && total_size > count %>
     <div class="col-sm-4">
       <%= ecr "_paging" %>
     </div>
@@ -11,7 +11,7 @@
   <%= x.filtering("dead") %>
 </header>
 
-<% if @dead.size > 0 %>
+<% if dead.size > 0 %>
   <form action="<%= root_path %>morgue" method="post">
     <%= x.csrf_tag %>
     <div class="table_container">
@@ -30,7 +30,7 @@
             <th><%= x.t("Error") %></th>
           </tr>
         </thead>
-        <% @dead.each do |entry| %>
+        <% dead.each do |entry| %>
           <tr>
             <td class="table-checkbox">
               <label>

@@ -31,11 +31,15 @@ class HTTP::Server::Context
   include Sidekiq::WebHelpers
 end
 
-public_folder "web"
+public_folder "web/assets"
 root_path = ""
 
 macro ecr(xxx)
-  render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../../web/views/layout.ecr"
+  {% if xxx.starts_with?('_') %}
+    render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr"
+  {% else %}
+    render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../../web/views/layout.ecr"
+  {% end %}
 end
 
 get "/busy" do |x|
@@ -43,175 +47,195 @@ get "/busy" do |x|
 end
 
 post "/busy" do |x|
-  if params["identity"]
-    p = Sidekiq::Process.new({"identity" => params["identity"]})
-    p.quiet! if params[:quiet]
-    p.stop! if params[:stop]
+  id = x.params.body["identity"]?
+  if id
+    p = Sidekiq::Process.new({"identity" => id.as(JSON::Type)})
+    p.quiet! if x.params.body["quiet"]?
+    p.stop! if x.params.body["stop"]?
   else
-    processes.each do |pro|
-      pro.quiet! if params[:quiet]
-      pro.stop! if params[:stop]
+    x.processes.each do |pro|
+      pro.quiet! if x.params.body["quiet"]?
+      pro.stop! if x.params.body["stop"]?
     end
   end
   x.redirect "/busy"
 end
 
 get "/queues" do |x|
-  @queues = Sidekiq::Queue.all
+  queues = Sidekiq::Queue.all
   ecr("queues")
 end
 
 get "/queues/:name" do |x|
-  halt 404 unless params[:name]
-  @count = (params[:count] || 25).to_i
-  @name = params[:name]
-  @queue = Sidekiq::Queue.new(@name)
-  @current_page, @total_size, @messages = page("queue:#{@name}", params[:page], @count)
-  @messages = @messages.map { |msg| Sidekiq::JobProxy.new(msg) }
+  name = x.params.url["name"]
+  queue = Sidekiq::Queue.new(name)
+  count = 25
+  current_page, total_size, messages = x.list_page("queue:#{name}", x.params.query["page"]?.try(&.to_i) || 1)
+  jobs = messages.map { |msg| Sidekiq::JobProxy.new(msg) }
   ecr("queue")
 end
 
 post "/queues/:name" do |x|
-  Sidekiq::Queue.new(params[:name]).clear
-  x.redirect "#{root_path}/queues"
+  name = x.params.url["name"]
+  Sidekiq::Queue.new(name).clear
+  x.redirect "#{x.root_path}/queues"
 end
 
 post "/queues/:name/delete" do |x|
-  Sidekiq::JobProxy.new(params[:key_val]).delete
-  redirect_with_query("#{root_path}queues/#{params[:name]}")
+  name = x.params.url["name"]
+  val = x.params.body["key_val"]
+  Sidekiq::JobProxy.new(val).delete
+  x.redirect x.url_with_query(x, "#{x.root_path}queues/#{name}")
 end
 
 get "/morgue" do |x|
-  @count = (params[:count] || 25).to_i
-  @current_page, @total_size, @dead = page("dead", params[:page], @count, reverse: true)
-  @dead = @dead.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
+  count = 25
+  current_page, total_size, msg = x.zpage("dead", x.params.query["page"]?.try(&.to_i) || 1, count, {reverse: true})
+  dead = msg.map { |(msg, score)| Sidekiq::SortedEntry.new(nil, score.to_f, msg) }
   ecr("morgue")
 end
 
 get "/morgue/:key" do |x|
-  halt 404 unless params["key"]
-  @dead = Sidekiq::DeadSet.new.fetch(*parse_params(params["key"])).first
-  x.redirect "#{root_path}morgue" if @dead.nil?
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  dead = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first
+  x.redirect "#{root_path}morgue" if dead.nil?
   ecr("dead")
 end
 
 post "/morgue" do |x|
-  x.redirect request.path unless params["key"]
-
-  params["key"].each do |key|
-    job = Sidekiq::DeadSet.new.fetch(*parse_params(key)).first
-    retry_or_delete_or_kill job, params if job
+  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  bdy.fetch_all("key").each do |key|
+    score, jid = key.split("-")
+    job = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first?
+    retry_or_delete_or_kill job, x.params.body if job
   end
-  redirect_with_query("#{root_path}morgue")
+  x.redirect x.url_with_query(x, "#{x.root_path}morgue")
 end
 
 post "/morgue/all/delete" do |x|
   Sidekiq::DeadSet.new.clear
-  x.redirect "#{root_path}morgue"
+  x.redirect "#{x.root_path}morgue"
 end
 
 post "/morgue/all/retry" do |x|
   Sidekiq::DeadSet.new.retry_all
-  x.redirect "#{root_path}morgue"
+  x.redirect "#{x.root_path}morgue"
 end
 
 post "/morgue/:key" do |x|
-  halt 404 unless params["key"]
-  job = Sidekiq::DeadSet.new.fetch(*parse_params(params["key"])).first
-  retry_or_delete_or_kill job, params if job
-  redirect_with_query("#{root_path}morgue")
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  job = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first?
+  retry_or_delete_or_kill job, x.params.body if job
+  x.redirect x.url_with_query(x, "#{x.root_path}morgue")
 end
 
 
 get "/retries" do |x|
-  @count = (params[:count] || 25).to_i
-  @current_page, @total_size, @retries = page("retry", params[:page], @count)
-  @retries = @retries.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
+  count = 25
+  current_page, total_size, msgs = x.zpage("retry", x.params.query["page"]?.try(&.to_i) || 1, count)
+  retries = msgs.map { |(msg, score)| Sidekiq::SortedEntry.new(nil, score.to_f, msg) }
   ecr("retries")
 end
 
 get "/retries/:key" do |x|
-  @retry = Sidekiq::RetrySet.new.fetch(*parse_params(params["key"])).first
-  x.redirect "#{root_path}retries" if @retry.nil?
-  ecr("retry")
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  retri = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
+  if retri
+    ecr("retry")
+  else
+    x.redirect x.url_with_query(x, "#{root_path}retries")
+  end
 end
 
 post "/retries" do |x|
-  x.redirect request.path unless params["key"]
-
-  params["key"].each do |key|
-    job = Sidekiq::RetrySet.new.fetch(*parse_params(key)).first
-    retry_or_delete_or_kill job, params if job
+  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  bdy.fetch_all("key").each do |key|
+    score, jid = key.split("-")
+    job = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
+    retry_or_delete_or_kill job, x.params.body if job
   end
-  redirect_with_query("#{root_path}retries")
+  x.redirect x.url_with_query(x, "#{x.root_path}retries")
 end
 
 post "/retries/all/delete" do |x|
   Sidekiq::RetrySet.new.clear
-  x.redirect "#{root_path}retries"
+  x.redirect "#{x.root_path}retries"
 end
 
 post "/retries/all/retry" do |x|
   Sidekiq::RetrySet.new.retry_all
-  x.redirect "#{root_path}retries"
+  x.redirect "#{x.root_path}retries"
 end
 
 post "/retries/:key" do |x|
-  job = Sidekiq::RetrySet.new.fetch(*parse_params(params["key"])).first
-  retry_or_delete_or_kill job, params if job
-  redirect_with_query("#{root_path}retries")
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  job = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
+  retry_or_delete_or_kill job, x.params.body if job
+  x.redirect x.url_with_query(x, "#{x.root_path}retries")
 end
 
 get "/scheduled" do |x|
-  @count = (params[:count] || 25).to_i
-  @current_page, @total_size, @scheduled = page("schedule", params[:page], @count)
-  @scheduled = @scheduled.map { |msg, score| Sidekiq::SortedEntry.new(nil, score, msg) }
+  count = 25
+  current_page, total_size, msgs = x.zpage("schedule", x.params.query["page"]?.try(&.to_i) || 1, count)
+  scheduled = msgs.map { |(msg, score)| Sidekiq::SortedEntry.new(nil, score.to_f, msg) }
   ecr("scheduled")
 end
 
 get "/scheduled/:key" do |x|
-  @job = Sidekiq::ScheduledSet.new.fetch(*parse_params(params["key"])).first
-  x.redirect "#{root_path}scheduled" if @job.nil?
-  ecr("scheduled_job_info")
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
+  if job
+    ecr("scheduled_job_info")
+  else
+    x.redirect "#{root_path}scheduled"
+  end
 end
 
 post "/scheduled" do |x|
-  x.redirect request.path unless params["key"]
-
-  params["key"].each do |key|
-    job = Sidekiq::ScheduledSet.new.fetch(*parse_params(key)).first
-    delete_or_add_queue job, params if job
+  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  ss = Sidekiq::ScheduledSet.new
+  bdy.fetch_all("key").each do |key|
+    score, jid = key.split("-")
+    job = ss.fetch(score.to_f, jid).first?
+    delete_or_add_queue job, x.params.body if job
   end
-  redirect_with_query("#{root_path}scheduled")
+  x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
 end
 
 post "/scheduled/:key" do |x|
-  halt 404 unless params["key"]
-  job = Sidekiq::ScheduledSet.new.fetch(*parse_params(params["key"])).first
-  delete_or_add_queue job, params if job
-  redirect_with_query("#{root_path}scheduled")
+  element = x.params.url["key"]
+  score, jid = element.split("-")
+  job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
+  delete_or_add_queue job, x.params.body if job
+  x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
 end
 
 get "/" do |x|
-  @redis_info = redis_info.select{ |k, v| REDIS_KEYS.include? k }
-  stats_history = Sidekiq::Stats::History.new((params[:days] || 30).to_i)
-  @processed_history = stats_history.processed
-  @failed_history = stats_history.failed
+  days = x.params.url["days"]?.try(&.to_i) || 30
+  redis_info = x.redis_info.select{ |k, v| REDIS_KEYS.includes? k }
+  stats_history = Sidekiq::Stats::History.new(days)
+  processed_history = stats_history.processed
+  failed_history = stats_history.failed
   ecr("dashboard")
 end
 
 REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
 
 get "/dashboard/stats" do |x|
-  x.redirect "#{root_path}stats"
+  x.redirect "#{x.root_path}stats"
 end
 
 get "/stats" do |x|
   sidekiq_stats = Sidekiq::Stats.new
-  redis_stats   = redis_info.select { |k, v| REDIS_KEYS.include? k }
+  redis_stats   = x.redis_info.select { |k, v| REDIS_KEYS.includes? k }
 
   x.response.content_type = "application/json"
-  Hash(String, String) {
+  {
     "sidekiq": {
       "processed":       sidekiq_stats.processed,
       "failed":          sidekiq_stats.failed,

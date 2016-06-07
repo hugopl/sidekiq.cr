@@ -4,6 +4,7 @@ require "./sidekiq/middleware"
 require "./sidekiq/types"
 require "./sidekiq/client"
 require "./sidekiq/worker"
+require "./sidekiq/logger"
 
 module Sidekiq
   NAME = "Sidekiq"

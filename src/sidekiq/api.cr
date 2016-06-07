@@ -73,7 +73,7 @@ module Sidekiq
         end
       end.as(Array(Redis::RedisValue))
 
-      sizes = pipe2_res.map { |x| x.as(Int) }
+      sizes = pipe2_res.map { |x| x.to_s.to_i }
 
       s = procs.size
       workers_size = sizes[0...s].sum
@@ -140,9 +140,11 @@ module Sidekiq
     end
 
     class History
+      @days_previous : Int32
+      @start_date : Time
       def initialize(days_previous, start_date = nil)
         @days_previous = days_previous
-        @start_date = start_date || Time.now.utc.to_date
+        @start_date = start_date || Time.now.to_utc.date
       end
 
       def processed
@@ -155,13 +157,13 @@ module Sidekiq
 
       private def date_stat_hash(stat)
         i = 0
-        stat_hash = Hash(String, String).new
+        stat_hash = Hash(String, Int32).new
         keys = [] of String
         dates = [] of String
 
         while i < @days_previous
           date = @start_date - i
-          datestr = date.strftime("%Y-%m-%d")
+          datestr = date.to_s("%Y-%m-%d")
           keys << "stat:#{stat}:#{datestr}"
           dates << datestr
           i += 1
@@ -169,7 +171,7 @@ module Sidekiq
 
         Sidekiq.redis do |conn|
           conn.mget(keys).each_with_index do |value, idx|
-            stat_hash[dates[idx]] = value ? value.to_i : 0
+            stat_hash[dates[idx]] = value ? value.as(String).to_i : 0
           end
         end
 
@@ -197,7 +199,7 @@ module Sidekiq
     # Return all known queues within Redis.
     #
     def self.all
-      Sidekiq.redis { |c| c.smembers("queues") }.sort.map { |q| Sidekiq::Queue.new(q) }
+      Sidekiq.redis { |c| c.smembers("queues") }.as(Array).map{|x| x.as(String) }.sort.map { |q| Sidekiq::Queue.new(q) }
     end
 
     getter name : String
@@ -296,9 +298,9 @@ module Sidekiq
       klass
     end
 
-    def display_args : Array(JSON::Type)
+    def display_args : Array(String)
       # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      args
+      args.map(&.inspect)
     end
 
     def latency
@@ -332,7 +334,7 @@ module Sidekiq
 
   class SortedEntry < JobProxy
     getter score : Float64
-    getter parent : Sidekiq::JobSet
+    getter parent : Sidekiq::JobSet?
 
     def initialize(parent, score, item)
       super(item)
@@ -345,16 +347,18 @@ module Sidekiq
     end
 
     def delete
+      p = @parent.not_nil!
       if @value
-        @parent.delete_by_value(@parent.name, @value)
+        p.delete_by_value(p.name, @value)
       else
-        @parent.delete_by_jid(score, jid)
+        p.delete_by_jid(score, jid)
       end
     end
 
     def reschedule(at)
       delete
-      @parent.schedule(at, item)
+      p = @parent.not_nil!
+      p.schedule(at, item)
     end
 
     def add_to_queue
@@ -394,10 +398,11 @@ module Sidekiq
     end
 
     private def remove_job
+      p = @parent.not_nil!
       Sidekiq.redis do |conn|
         results = conn.multi do |m|
-          m.zrangebyscore(parent.name, score, score)
-          m.zremrangebyscore(parent.name, score, score)
+          m.zrangebyscore(p.name, score, score)
+          m.zremrangebyscore(p.name, score, score)
         end.as(Array(Redis::RedisValue)).first
 
         r = results.as(Array(Redis::RedisValue))
@@ -428,7 +433,7 @@ module Sidekiq
           # push the rest back onto the sorted set
           conn.multi do |m|
             hash.fetch(false, [] of String).each do |message|
-              m.zadd(parent.name, score.to_f.to_s, message)
+              m.zadd(p.name, score.to_f.to_s, message)
             end
           end
         end
@@ -580,7 +585,7 @@ module Sidekiq
 
     def retry_all
       while size > 0
-        each(&:retry)
+        each(&.retry)
       end
     end
   end
@@ -595,7 +600,7 @@ module Sidekiq
 
     def retry_all
       while size > 0
-        each(&:retry)
+        each(&.retry)
       end
     end
 
@@ -720,11 +725,11 @@ module Sidekiq
     end
 
     def labels
-      self["labels"].as(Array(String))
+      self["labels"].as(Array).map {|x| x.as(String) }
     end
 
     def queues
-      self["queues"].as(Array(String))
+      self["queues"].as(Array).map {|x| x.as(String) }
     end
 
     def [](key)

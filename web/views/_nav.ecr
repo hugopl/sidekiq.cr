@@ -23,7 +23,7 @@
             <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
             </li>
           <% else %>
-            <li class="<%= x.current_path.start_with?(url) ? "active" : "" %>">
+            <li class="<%= x.current_path.starts_with?(url) ? "active" : "" %>">
             <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
             </li>
           <% end %>
@@ -43,7 +43,7 @@
         </li>
 
         <% Sidekiq::Web.custom_tabs.each do |title, url| %>
-          <li class="<%= x.current_path.start_with?(url) ? "active" : "" %>" data-navbar="custom-tab">
+          <li class="<%= x.current_path.starts_with?(url) ? "active" : "" %>" data-navbar="custom-tab">
             <a href="<%= x.root_path %><%= url %>"><%= x.t(title) %></a>
           </li>
         <% end %>
