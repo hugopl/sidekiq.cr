@@ -3,10 +3,11 @@ require "uri"
 
 module Sidekiq
   module WebHelpers
-    LANGS = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
+    LANGS        = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
     LOCALE_PATHS = ["../../web/locales"]
 
     @locale : String?
+
     macro included
       @@strings = {} of String => Hash(String, String)
       {% for lang in LANGS %}
@@ -49,7 +50,7 @@ module Sidekiq
       @@strings[locale]
     end
 
-    def t(msg, options={} of String => String)
+    def t(msg, options = {} of String => String)
       string = get_locale[msg]? || msg
       if options.empty?
         string
@@ -77,12 +78,12 @@ module Sidekiq
     end
 
     def location
-      #Sidekiq.redis { |conn| conn.client.location }
+      # Sidekiq.redis { |conn| conn.client.location }
       ""
     end
 
     def redis_connection
-      #Sidekiq.redis { |conn| conn.client.id }
+      # Sidekiq.redis { |conn| conn.client.id }
       ""
     end
 
@@ -91,7 +92,7 @@ module Sidekiq
     end
 
     def redis_info
-      Sidekiq.redis {|c| c.info }
+      Sidekiq.redis { |c| c.info }
     end
 
     def root_path
@@ -99,7 +100,7 @@ module Sidekiq
     end
 
     def current_path
-      request.resource.gsub(/^\//,"")
+      request.resource.gsub(/^\//, "")
     end
 
     def current_status
@@ -149,7 +150,7 @@ module Sidekiq
     end
 
     def csrf_tag
-      #"<input type='hidden' name='authenticity_token' value='#{session[:csrf]}'/>"
+      # "<input type='hidden' name='authenticity_token' value='#{session[:csrf]}'/>"
       ""
     end
 
@@ -216,12 +217,12 @@ module Sidekiq
       end
     end
 
-    def list_page(key, pageidx=1, page_size=25)
+    def list_page(key, pageidx = 1, page_size = 25)
       x, y, items = page(key, pageidx, page_size)
       {x.as(Int), y.as(Int), items.as(Array(String))}
     end
 
-    def zpage(key, pageidx=1, page_size=25, opts=nil)
+    def zpage(key, pageidx = 1, page_size = 25, opts = nil)
       x, y, items = page(key, pageidx, page_size, opts)
       results = items.as(Array(String))
       jobs = [] of Array(String)
@@ -231,7 +232,7 @@ module Sidekiq
       {x.as(Int), y.as(Int), jobs}
     end
 
-    def page(key, pageidx=1, page_size=25, opts=nil)
+    def page(key, pageidx = 1, page_size = 25, opts = nil)
       current_page = pageidx.to_i < 1 ? 1 : pageidx.to_i
       pageidx = current_page - 1
       total_size = 0
@@ -267,6 +268,5 @@ module Sidekiq
         end
       end
     end
-
   end
 end

@@ -7,7 +7,7 @@ require "./sidekiq/worker"
 require "./sidekiq/logger"
 
 module Sidekiq
-  NAME = "Sidekiq"
+  NAME    = "Sidekiq"
   VERSION = "0.2.0"
   LICENSE = "Licensed for use under the terms of the GNU LGPL-3.0 license."
 

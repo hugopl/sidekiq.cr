@@ -42,6 +42,49 @@ macro ecr(xxx)
   {% end %}
 end
 
+get "/" do |x|
+  days = x.params.url["days"]?.try(&.to_i) || 30
+  redis_info = x.redis_info.select { |k, v| REDIS_KEYS.includes? k }
+  stats_history = Sidekiq::Stats::History.new(days)
+  processed_history = stats_history.processed
+  failed_history = stats_history.failed
+  ecr("dashboard")
+end
+
+REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
+
+get "/dashboard/stats" do |x|
+  x.redirect "#{x.root_path}stats"
+end
+
+get "/stats" do |x|
+  sidekiq_stats = Sidekiq::Stats.new
+  redis_stats = x.redis_info.select { |k, v| REDIS_KEYS.includes? k }
+
+  x.response.content_type = "application/json"
+  {
+    "sidekiq": {
+      "processed":       sidekiq_stats.processed,
+      "failed":          sidekiq_stats.failed,
+      "busy":            sidekiq_stats.workers_size,
+      "processes":       sidekiq_stats.processes_size,
+      "enqueued":        sidekiq_stats.enqueued,
+      "scheduled":       sidekiq_stats.scheduled_size,
+      "retries":         sidekiq_stats.retry_size,
+      "dead":            sidekiq_stats.dead_size,
+      "default_latency": sidekiq_stats.default_queue_latency,
+    },
+    "redis": redis_stats,
+  }.to_json
+end
+
+get "/stats/queues" do |x|
+  queue_stats = Sidekiq::Stats::Queues.new
+
+  x.response.content_type = "application/json"
+  queue_stats.lengths.to_json
+end
+
 get "/busy" do |x|
   ecr("busy")
 end
@@ -131,7 +174,6 @@ post "/morgue/:key" do |x|
   x.redirect x.url_with_query(x, "#{x.root_path}morgue")
 end
 
-
 get "/retries" do |x|
   count = 25
   current_page, total_size, msgs = x.zpage("retry", x.params.query["page"]?.try(&.to_i) || 1, count)
@@ -213,49 +255,6 @@ post "/scheduled/:key" do |x|
   job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
   delete_or_add_queue job, x.params.body if job
   x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
-end
-
-get "/" do |x|
-  days = x.params.url["days"]?.try(&.to_i) || 30
-  redis_info = x.redis_info.select{ |k, v| REDIS_KEYS.includes? k }
-  stats_history = Sidekiq::Stats::History.new(days)
-  processed_history = stats_history.processed
-  failed_history = stats_history.failed
-  ecr("dashboard")
-end
-
-REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
-
-get "/dashboard/stats" do |x|
-  x.redirect "#{x.root_path}stats"
-end
-
-get "/stats" do |x|
-  sidekiq_stats = Sidekiq::Stats.new
-  redis_stats   = x.redis_info.select { |k, v| REDIS_KEYS.includes? k }
-
-  x.response.content_type = "application/json"
-  {
-    "sidekiq": {
-      "processed":       sidekiq_stats.processed,
-      "failed":          sidekiq_stats.failed,
-      "busy":            sidekiq_stats.workers_size,
-      "processes":       sidekiq_stats.processes_size,
-      "enqueued":        sidekiq_stats.enqueued,
-      "scheduled":       sidekiq_stats.scheduled_size,
-      "retries":         sidekiq_stats.retry_size,
-      "dead":            sidekiq_stats.dead_size,
-      "default_latency": sidekiq_stats.default_queue_latency
-    },
-    "redis": redis_stats
-  }.to_json
-end
-
-get "/stats/queues" do |x|
-  queue_stats = Sidekiq::Stats::Queues.new
-
-  x.response.content_type = "application/json"
-  queue_stats.lengths.to_json
 end
 
 private def retry_or_delete_or_kill(job, params)

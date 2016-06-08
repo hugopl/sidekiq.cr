@@ -142,6 +142,7 @@ module Sidekiq
     class History
       @days_previous : Int32
       @start_date : Time
+
       def initialize(days_previous, start_date = nil)
         @days_previous = days_previous
         @start_date = start_date || Time.now.to_utc.date
@@ -199,7 +200,7 @@ module Sidekiq
     # Return all known queues within Redis.
     #
     def self.all
-      Sidekiq.redis { |c| c.smembers("queues") }.as(Array).map{|x| x.as(String) }.sort.map { |q| Sidekiq::Queue.new(q) }
+      Sidekiq.redis { |c| c.smembers("queues") }.as(Array).map { |x| x.as(String) }.sort.map { |q| Sidekiq::Queue.new(q) }
     end
 
     getter name : String
@@ -725,11 +726,11 @@ module Sidekiq
     end
 
     def labels
-      self["labels"].as(Array).map {|x| x.as(String) }
+      self["labels"].as(Array).map { |x| x.as(String) }
     end
 
     def queues
-      self["queues"].as(Array).map {|x| x.as(String) }
+      self["queues"].as(Array).map { |x| x.as(String) }
     end
 
     def [](key)
