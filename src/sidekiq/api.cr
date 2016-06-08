@@ -260,7 +260,7 @@ module Sidekiq
     # #
     # Find the job with the given JID within this queue.
     #
-    # This is a slow, inefficient operation.  Do not use under
+    # **This is a slow, inefficient operation.**  Do not use under
     # normal conditions.  Sidekiq Pro contains a faster version.
     def find_job(jid)
       find { |j| j.jid == jid }
@@ -299,9 +299,9 @@ module Sidekiq
       klass
     end
 
-    def display_args : Array(String)
+    def display_args : Array(JSON::Type)
       # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      args.map(&.inspect)
+      args
     end
 
     def latency
@@ -721,12 +721,17 @@ module Sidekiq
       @attribs = hash
     end
 
+    def started_at : Time
+      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i)
+    end
+
     def tag
-      self["tag"]
+      @attribs["tag"]?
     end
 
     def labels
-      self["labels"].as(Array).map { |x| x.as(String) }
+      x = @attribs["labels"]?
+      x ? x.as(Array).map { |x| x.as(String) } : [] of String
     end
 
     def queues
@@ -768,6 +773,23 @@ module Sidekiq
     end
   end
 
+  class WorkerEntry
+    getter! process_id : String
+    getter! thread_id : String
+    getter! work : Hash(String, JSON::Type)
+
+    def initialize(@process_id, @thread_id, @work)
+    end
+
+    def job_proxy : JobProxy
+      Sidekiq::JobProxy.new(work["payload"].to_json)
+    end
+
+    def run_at : Time
+      Time.epoch(work["run_at"].as(Int))
+    end
+  end
+
   # #
   # A worker is a thread that is currently processing a job.
   # Programmatic access to the current active worker set.
@@ -789,7 +811,7 @@ module Sidekiq
   #    end
   #
   class Workers
-    include Enumerable({process_key: String, thread_key: String, work: Hash(String, JSON::Type)})
+    include Enumerable(WorkerEntry)
 
     def each
       workers_set = [] of Array(String)
@@ -816,7 +838,7 @@ module Sidekiq
       end
       keys.zip(workers_set).each do |(key, workers)|
         workers.in_groups_of(2).each do |(tid, json)|
-          yield(key, tid, JSON.parse(json.not_nil!).as_h)
+          yield(WorkerEntry.new(key, tid, JSON.parse(json.not_nil!).as_h))
         end
       end
     end

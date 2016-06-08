@@ -192,8 +192,7 @@ module Sidekiq
     # Any paginated list that performs an action needs to redirect
     # back to the proper page after performing that action.
     def url_with_query(ctx, url)
-      p ctx.request.headers
-      r = ctx.request.headers["http_referer"]
+      r = ctx.request.headers["http_referer"]?
       if r && r =~ /\?/
         ref = URI.parse(r)
         "#{url}?#{ref.query}"
@@ -203,7 +202,7 @@ module Sidekiq
     end
 
     def environment_title_prefix
-      ENV["APP_ENV"] || "development"
+      ENV["APP_ENV"]? || "development"
     end
 
     def product_version
@@ -219,15 +218,15 @@ module Sidekiq
 
     def list_page(key, pageidx = 1, page_size = 25)
       x, y, items = page(key, pageidx, page_size)
-      {x.as(Int), y.as(Int), items.as(Array(String))}
+      {x.as(Int), y.as(Int), items.as(Array).map{|x|x.as(String)}}
     end
 
     def zpage(key, pageidx = 1, page_size = 25, opts = nil)
       x, y, items = page(key, pageidx, page_size, opts)
-      results = items.as(Array(String))
+      results = items.as(Array).map{|x| x.as(String)}
       jobs = [] of Array(String)
-      results.in_groups_of(2) do |(x, y)|
-        jobs << [x.not_nil!, y.not_nil!]
+      results.in_groups_of(2) do |(a, b)|
+        jobs << [a.not_nil!, b.not_nil!]
       end
       {x.as(Int), y.as(Int), jobs}
     end

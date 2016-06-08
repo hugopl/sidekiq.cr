@@ -91,7 +91,7 @@ module Sidekiq
     # Example:
     #   push('queue' => 'my_queue', 'class' => MyWorker, 'args' => ['foo', 1, :bat => 'bar'])
     #
-    def push(job)
+    def push(job : Sidekiq::Job)
       result = middleware.invoke(job, @ctx) do
         !!job
       end
@@ -114,7 +114,7 @@ module Sidekiq
     #
     # Returns an array of the of pushed jobs' jids.  The number of jobs pushed can be less
     # than the number given if the middleware stopped processing for one or more jobs.
-    def push_bulk(job, allargs)
+    def push_bulk(job : Sidekiq::Job, allargs)
       payloads = allargs.map do |args|
         copy = Sidekiq::Job.new
         copy.jid = SecureRandom.hex(12)

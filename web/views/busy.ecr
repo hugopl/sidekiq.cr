@@ -37,7 +37,7 @@
           <b><%= "#{x.t("Queues")}: " %></b>
           <%= process.queues.join(", ") %>
         </td>
-        <td><%= x.relative_time(Time.epoch(process["started_at"].as(Float64).to_i)) %></td>
+        <td><%= x.relative_time(process.started_at) %></td>
         <td><%= process["concurrency"] %></td>
         <td><%= process["busy"] %></td>
         <td>
@@ -74,11 +74,11 @@
       <th><%= x.t("Arguments") %></th>
       <th><%= x.t("Started") %></th>
     </thead>
-    <% x.workers.each do |process, thread, msg| %>
-      <% job = Sidekiq::JobProxy.new(msg["payload"].as(String)) %>
+    <% x.workers.each do |entry| %>
+      <% job = entry.job_proxy %>
       <tr>
-        <td><%= process %></td>
-        <td><%= thread %></td>
+        <td><%= entry.process_id %></td>
+        <td><%= entry.thread_id %></td>
         <td><%= job.jid %></td>
         <td>
           <a href="<%= x.root_path %>queues/<%= job.queue %>"><%= job.queue %></a>
@@ -87,7 +87,7 @@
         <td>
           <div class="args"><%= x.display_args(job.display_args) %></div>
         </td>
-        <td><%= x.relative_time(Time.epoch(msg["run_at"].as(Int))) %></td>
+        <td><%= x.relative_time(entry.run_at) %></td>
       </tr>
     <% end %>
   </table>

@@ -1,5 +1,5 @@
 require "./spec_helper"
-require "../src/sidekiq/server/logger"
+require "../src/sidekiq/logger"
 
 describe Sidekiq::Logger do
   describe "basics" do

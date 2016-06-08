@@ -188,7 +188,7 @@ get "/retries/:key" do |x|
   if retri
     ecr("retry")
   else
-    x.redirect x.url_with_query(x, "#{root_path}retries")
+    x.redirect x.url_with_query(x, "#{x.root_path}retries")
   end
 end
 
@@ -258,19 +258,19 @@ post "/scheduled/:key" do |x|
 end
 
 private def retry_or_delete_or_kill(job, params)
-  if params["retry"]
+  if params["retry"]?
     job.retry
-  elsif params["delete"]
+  elsif params["delete"]?
     job.delete
-  elsif params["kill"]
+  elsif params["kill"]?
     job.kill
   end
 end
 
 private def delete_or_add_queue(job, params)
-  if params["delete"]
+  if params["delete"]?
     job.delete
-  elsif params["add_to_queue"]
+  elsif params["add_to_queue"]?
     job.add_to_queue
   end
 end

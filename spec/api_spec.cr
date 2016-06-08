@@ -285,11 +285,11 @@ describe "api" do
       end
 
       count = 0
-      w.each do |p, x, y|
-        p.should eq(key)
-        x.should eq("1234")
-        y["queue"].should eq("default")
-        Time.epoch(y["run_at"].as(Int)).year.should eq(Time.now.year)
+      w.each do |entry|
+        entry.process_id.should eq(key)
+        entry.thread_id.should eq("1234")
+        entry.work["queue"].should eq("default")
+        Time.epoch(entry.work["run_at"].as(Int)).year.should eq(Time.now.year)
         count += 1
       end
       count.should eq(1)
