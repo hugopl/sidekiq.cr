@@ -476,7 +476,7 @@ end
 private def add_retry
   now = Time.now.epoch_f
   msg = { "class" => "HardWorker",
-          "args" => ["bob", 1, now],
+          "args" => ["bob", 1, now.to_s],
           "queue" => "default",
           "error_message" => "Some fake message",
           "error_class" => "RuntimeError",
@@ -484,7 +484,7 @@ private def add_retry
           "retried_at" => now,
           "failed_at" => now,
           "jid" => SecureRandom.hex(12) }
-  score = now
+  score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
   end

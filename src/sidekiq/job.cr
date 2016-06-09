@@ -42,7 +42,7 @@ module Sidekiq
       @queue = "default"
       @args = [] of JSON::Type
       @klass = ""
-      @created_at = Time.now
+      @created_at = Time.now.to_utc
       @enqueued_at = nil
       @jid = SecureRandom.hex(12)
       @retry = true
@@ -60,6 +60,14 @@ module Sidekiq
       self.retry = hash["retry"]?
       self.retry_count = hash["retry_count"]?.try &.as(Int64)
       self.dead = hash["dead"]?.try &.as(Bool)
+      if hash["at"]?
+        x = hash["at"].as(Float64)
+        self.at = Time.epoch_ms((x * 1000).to_i64)
+      end
+      if hash["enqueued_at"]?
+        x = hash["enqueued_at"].as(Float64)
+        self.enqueued_at = Time.epoch_ms((x * 1000).to_i64)
+      end
       if hash["created_at"]?
         x = hash["created_at"].as(Float64)
         self.created_at = Time.epoch_ms((x * 1000).to_i64)

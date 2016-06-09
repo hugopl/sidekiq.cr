@@ -305,7 +305,7 @@ module Sidekiq
     end
 
     def latency
-      (Time.now - (enqueued_at || created_at)).to_f
+      (Time.now.to_utc - (enqueued_at || created_at)).to_f
     end
 
     # #
