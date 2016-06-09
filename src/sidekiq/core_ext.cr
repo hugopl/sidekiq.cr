@@ -8,7 +8,7 @@ module Sidekiq
     end
 
     def self.from_json(value : JSON::PullParser) : Time
-      Time.epoch_ms(value.read_float * 1000)
+      Time.epoch_ms((value.read_float * 1000).to_i64)
     end
   end
 end

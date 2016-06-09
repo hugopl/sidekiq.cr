@@ -725,8 +725,8 @@ module Sidekiq
       @attribs = hash
     end
 
-    def started_at : Time
-      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i)
+    def started_at
+      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i64)
     end
 
     def tag
