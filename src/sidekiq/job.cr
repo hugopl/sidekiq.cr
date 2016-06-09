@@ -60,6 +60,14 @@ module Sidekiq
       self.retry = hash["retry"]?
       self.retry_count = hash["retry_count"]?.try &.as(Int64)
       self.dead = hash["dead"]?.try &.as(Bool)
+      if hash["retried_at"]?
+        x = hash["retried_at"].as(Float64)
+        self.retried_at = Time.epoch_ms((x * 1000).to_i)
+      end
+      if hash["failed_at"]?
+        x = hash["failed_at"].as(Float64)
+        self.failed_at = Time.epoch_ms((x * 1000).to_i)
+      end
     end
 
     def client

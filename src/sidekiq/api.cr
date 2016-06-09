@@ -321,6 +321,10 @@ module Sidekiq
       @item[name]
     end
 
+    def []?(name)
+      @item[name]?
+    end
+
     private def safe_load(content, default)
       begin
         yield(*YAML.load(content))

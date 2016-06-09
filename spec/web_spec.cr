@@ -28,21 +28,14 @@ describe "sidekiq web" do
   describe "busy" do
 
     it "can display workers" do
-      Sidekiq.redis do |conn|
-        conn.incr("busy")
-        conn.sadd("processes", "foo:1234")
-        conn.hmset("foo:1234", {"info" => {"hostname" => "foo", "started_at" => Time.now.epoch_f, "queues" => ["critical"]}.to_json, "at" => Time.now.epoch_f, "busy" => 4})
-        identity = "foo:1234:workers"
-        hash = {:queue => "critical", :payload => { "class" => "WebWorker", "args" => [1_i64,"abc"] }.to_json, :run_at => Time.now.epoch }
-        conn.hmset(identity, {"1001" => hash.to_json})
-      end
+      add_worker
       assert_equal ["1001"], Sidekiq::Workers.new.map { |entry| entry.thread_id }
 
       get "/busy"
       assert_equal 200, last_response.status_code
-      assert_match(/status_code-active/, last_response.body)
+      assert_match(/status-active/, last_response.body)
       assert_match(/critical/, last_response.body)
-      assert_match(/WebWorker/, last_response.body)
+      assert_match(/HardWorker/, last_response.body)
     end
 
     it "can quiet a process" do
@@ -148,7 +141,7 @@ describe "sidekiq web" do
   it "can delete a single retry" do
     params = add_retry
     msg = params[0]
-    str = msg["args"].as(Array)[2].as(String)
+    str = msg["args"].as(Array)[2].to_s
     post "/retries/#{job_params(*params)}", {"delete" => "Delete"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
@@ -176,7 +169,7 @@ describe "sidekiq web" do
     get "/queues/default"
     assert_equal 200, last_response.status_code
     msg = params[0]
-    str = msg["args"].as(Array)[2].as(String)
+    str = msg["args"].as(Array)[2].to_s
     assert_match(/#{str}/, last_response.body)
   end
 
@@ -188,9 +181,7 @@ describe "sidekiq web" do
 
     get "/morgue"
     assert_equal 200, last_response.status_code
-    msg = params[0]
-    str = msg["args"].as(Array)[2].as(String)
-    assert_match(/#{str}/, last_response.body)
+    assert_match(/#{params[1]}/, last_response.body)
   end
 
   it "can display scheduled" do
@@ -229,7 +220,7 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    assert_match(/#{params.first["args"][2]}/, last_response.body)
+    assert_match(/#{params.first["args"][2].to_s}/, last_response.body)
   end
 
   it "can delete a single scheduled job" do
@@ -282,7 +273,7 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    str = msg["args"].as(Array)[2].as(String)
+    str = msg["args"].as(Array)[2].to_s
     assert_match(/#{str}/, last_response.body)
   end
 
@@ -390,7 +381,7 @@ describe "sidekiq web" do
       end
       2.times { add_retry }
       3.times { add_scheduled }
-      4.times { add_worker }
+      add_worker
 
       get "/stats"
       response = JSON.parse(last_response.body).as_h
@@ -417,21 +408,20 @@ describe "sidekiq web" do
   describe "stats/queues" do
     it "reports the queue depth" do
       Sidekiq.redis do |conn|
-        conn.set("stat:processed", 5)
-        conn.set("stat:failed", 2)
         conn.sadd("queues", "default")
         conn.sadd("queues", "queue2")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:queue2", "{}")
+        conn.lpush("queue:queue2", "{}")
       end
-      2.times { add_retry }
-      3.times { add_scheduled }
-      4.times { add_worker }
 
       get "/stats/queues"
-      puts last_response.body
       response = JSON.parse(last_response.body).as_h
 
-      assert_equal 0, response["default"]
-      assert_equal 0, response["queue2"]
+      assert_equal 3, response["default"]
+      assert_equal 2, response["queue2"]
     end
   end
 
@@ -466,9 +456,7 @@ describe "sidekiq web" do
 
       get "/queues/foo"
       assert_equal 200, last_response.status_code
-      msg = params[0]
-      str = msg["args"].as(Array)[2].as(String)
-      assert_match(/#{str}/, last_response.body)
+      assert_match(/#{params[1]}/, last_response.body)
     end
   end
 end
@@ -476,6 +464,7 @@ end
 private def add_scheduled
   score = Time.now.epoch_f
   msg = { "class" => "HardWorker",
+          "queue" => "default",
           "args" => ["bob", 1, Time.now.epoch_f],
           "jid" => SecureRandom.hex(12) }
   Sidekiq.redis do |conn|
@@ -485,15 +474,17 @@ private def add_scheduled
 end
 
 private def add_retry
+  now = Time.now.epoch_f
   msg = { "class" => "HardWorker",
-          "args" => ["bob", 1, Time.now.epoch_f],
+          "args" => ["bob", 1, now],
           "queue" => "default",
           "error_message" => "Some fake message",
           "error_class" => "RuntimeError",
           "retry_count" => 0,
-          "failed_at" => Time.now.epoch_f,
+          "retried_at" => now,
+          "failed_at" => now,
           "jid" => SecureRandom.hex(12) }
-  score = Time.now.epoch_f
+  score = now
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
   end
@@ -501,15 +492,17 @@ private def add_retry
 end
 
 private def add_dead
+  now = Time.now.epoch_f
   msg = { "class" => "HardWorker",
-          "args" => ["bob", 1, Time.now.epoch_f],
+          "args" => ["bob", 1, now],
           "queue" => "foo",
           "error_message" => "Some fake message",
           "error_class" => "RuntimeError",
-          "retry_count" => 0,
-          "failed_at" => Time.now.epoch_f,
+          "retry_count" => 20,
+          "retried_at" => now,
+          "failed_at" => now,
           "jid" => SecureRandom.hex(12) }
-  score = Time.now.epoch_f
+  score = now
   Sidekiq.redis do |conn|
     conn.zadd("dead", score, msg.to_json)
   end
@@ -534,15 +527,15 @@ end
 
 private def add_worker
   key = "#{System.hostname}:#{Process.pid}"
-  msg = "{\"queue\":\"default\",\"payload\":{\"retry\":true,\"queue\":\"default\",\"timeout\":20,\"backtrace\":5,\"class\":\"HardWorker\",\"args\":[\"bob\",10,5],\"jid\":\"2b5ad2b016f5e063a1c62872\"},\"run_at\":1361208995}"
+  msg = "{\"queue\":\"default\",\"payload\":{\"retry\":true,\"queue\":\"critical\",\"timeout\":20,\"backtrace\":5,\"class\":\"HardWorker\",\"args\":[\"bob\",10,5],\"jid\":\"2b5ad2b016f5e063a1c62872\"},\"run_at\":1361208995}"
   Sidekiq.redis do |conn|
     conn.multi do |m|
       m.sadd("processes", key)
-      m.hmset(key, {"info" => {"hostname" => "foo", "started_at" => Time.now.epoch_f, "queues" => ["default"]}.to_json, "at" => Time.now.epoch_f, "busy" => 4})
-      m.hmset("#{key}:workers", {Time.now.epoch_f => msg})
+      m.hmset(key, {"info" => {"concurrency" => 25, "identity" => key, "pid" => Process.pid, "hostname" => "foo", "started_at" => Time.now.epoch_f, "queues" => ["default", "critical"]}.to_json, "beat" => Time.now.epoch_f, "busy" => 4})
+      m.hmset("#{key}:workers", {"1001" => msg})
     end
   end
-  nil
+  key
 end
 
 private def last_response

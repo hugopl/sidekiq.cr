@@ -16,7 +16,7 @@
         <th><%= x.t("ErrorMessage") %></th>
         <td><%= x.h(retri["error_message"].as(String)) %></td>
       </tr>
-      <% if !retri["error_backtrace"].nil? %>
+      <% if retri["error_backtrace"]? %>
         <tr>
           <th><%= x.t("ErrorBacktrace") %></th>
           <td>
