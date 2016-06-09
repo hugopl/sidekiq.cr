@@ -1,13 +1,20 @@
 test:
-	crystal run spec/*_spec.cr
+	crystal spec
 
 run:
-	crystal run server.cr
+	crystal run bin/sidekiq.cr
 
 bench:
 	crystal run --release bench/load.cr
 	ruby bench/load.rb
 
-all: test bench
+bin: clean
+	crystal build --release -o sidekiq bin/sidekiq.cr
+	crystal build --release -o sideweb bin/web.cr
 
-.PHONY: test run bench all
+clean:
+	rm -f bin/sidekiq bin/sideweb
+
+all: test bin bench
+
+.PHONY: test run bench all bin clean

@@ -73,7 +73,7 @@ module Sidekiq
         end
       end.as(Array(Redis::RedisValue))
 
-      sizes = pipe2_res.map { |x| x.to_s.to_i }
+      sizes = pipe2_res.map { |x| x ? x.to_s.to_i : 0 }
 
       s = procs.size
       workers_size = sizes[0...s].sum

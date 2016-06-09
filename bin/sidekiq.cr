@@ -1,4 +1,4 @@
-require "./src/sidekiq/server/cli"
+require "../src/sidekiq/server/cli"
 
 # This file is an example of how to start Sidekiq for Crystal.
 # You must define one or more Sidekiq::Worker classes
