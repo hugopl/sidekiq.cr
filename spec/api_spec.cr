@@ -4,8 +4,6 @@ require "../src/sidekiq/api"
 class ApiWorker
   include Sidekiq::Worker
 
-  perform_types Int64, String
-
   def perform(foo : Int64, name : String)
   end
 end

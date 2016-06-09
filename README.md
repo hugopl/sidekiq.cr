@@ -58,16 +58,15 @@ and run `crystal deps`.
 ## Jobs
 
 A worker class executes jobs.  You create a worker class by including
-`Sidekiq::Worker`.  You must define a `perform` method and declare
-the types of the arguments using the `perform_types` macro.  **All
-arguments to the perform method must be of [JSON::Type](http://crystal-lang.org/api/JSON/Type.html).**
+`Sidekiq::Worker`.  You must define a `perform` method and explicitly declare
+the types of the arguments.  **All arguments to the perform method
+ must be of [JSON::Type](http://crystal-lang.org/api/JSON/Type.html).**
 
 ```cr
 class SomeWorker
   include Sidekiq::Worker
 
-  perform_types(Int64, String)
-  def perform(user_id, email)
+  def perform(user_id : Int64, email : String)
   end
 end
 ```

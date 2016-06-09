@@ -3,7 +3,6 @@ require "../src/sidekiq/server"
 
 class FakeWorker
   include Sidekiq::Worker
-  perform_types
 
   def perform
   end

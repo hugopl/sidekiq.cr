@@ -549,8 +549,7 @@ end
 class WebWorker
   include Sidekiq::Worker
 
-  perform_types(Int64, Int64)
-  def perform(a, b)
+  def perform(a : Int64, b : Int64)
     a + b
   end
 end

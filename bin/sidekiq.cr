@@ -6,9 +6,7 @@ require "../src/sidekiq/server/cli"
 class MyWorker
   include Sidekiq::Worker
 
-  perform_types(Int64)
-
-  def perform(x)
+  def perform(x : Int64)
     logger.info "hello!"
   end
 end

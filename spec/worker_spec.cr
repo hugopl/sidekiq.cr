@@ -3,9 +3,7 @@ require "./spec_helper"
 class MyWorker
   include Sidekiq::Worker
 
-  perform_types Int64, Int64, String
-
-  def perform(a, b, c)
+  def perform(a : Int64, b : Int64, c : String)
     # puts "hello world!"
   end
 end

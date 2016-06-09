@@ -8,15 +8,14 @@ module Sidekiq
   # class HardWorker
   #   include Sidekiq::Worker
   #
-  #   perform_types(Int64, Int64, Float64)
-  #   def perform(a, b, c)
+  #   def perform(a : Int64, b : Int64, c : Float64)
   #     # do some work
   #   end
   # end
   #
-  # Note that you must annotate your perform method with the
-  # `perform_types` macro so that Sidekiq knows how to marshal
-  # your jobs at compile-time.  Only JSON::Type parameters are allowed!
+  # Note that you **must** annotate your perform method arguments so
+  # so that Sidekiq knows how to marshal your jobs at compile-time.
+  # Only JSON::Type parameters are allowed, e.g. Int64 is allowed but Int32 is not.
   #
   # To create a new job, you do this:
   #
@@ -35,20 +34,21 @@ module Sidekiq
     macro included
       extend Sidekiq::Worker::ClassMethods
       Sidekiq::Job.register("{{@type}}", ->{ {{@type}}.new.as(Sidekiq::Worker) })
-    end
 
-    macro perform_types(*types)
-      def _perform(args : Array(JSON::Type))
-        {% if types.size == 0 %}
-          perform
-        {% else %}
-          tup = {
-          {% for type, index in types %}
-            args[{{index}}].as({{type}}),
-          {% end %}
-          }
-          perform(*tup)
-        {% end %}
+      macro method_added(a_def)
+        \{% if a_def.name.id == "perform".id %}
+          def _perform(args : Array(JSON::Type))
+            perform(
+              \{% for arg, index in a_def.args %}
+                \{% if arg.restriction %}
+                  args[\{{index}}].as(\{{arg.restriction}}),
+                \{% else %}
+                  \{{ raise "argument '#{arg}' must have a type restriction" }}
+                \{% end %}
+              \{% end %}
+            )
+          end
+        \{% end %}
       end
     end
 
