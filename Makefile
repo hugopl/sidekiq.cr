@@ -9,8 +9,8 @@ bench:
 	ruby bench/load.rb
 
 bin: clean
-	crystal build --release -o sidekiq bin/sidekiq.cr
-	crystal build --release -o sideweb bin/web.cr
+	time crystal build --release -o sidekiq bin/sidekiq.cr
+	time crystal build --release -o sideweb bin/web.cr
 
 clean:
 	rm -f bin/sidekiq bin/sideweb

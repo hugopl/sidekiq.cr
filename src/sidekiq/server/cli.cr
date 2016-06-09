@@ -34,7 +34,7 @@ module Sidekiq
           @logger.level = ::Logger::DEBUG
         end
         parser.on("-V", "Print version and exit") { |c| puts "Sidekiq #{Sidekiq::VERSION}"; exit }
-        parser.on("-h", "--help", "Show this help") { puts parser }
+        parser.on("-h", "--help", "Show this help") { puts parser; exit }
       end
 
       @queues = ["default"] if @queues.empty?
@@ -66,24 +66,25 @@ module Sidekiq
 
       svr.start
       shutdown_started_at = nil
+      channel = Channel(Int32).new
 
       Signal::INT.trap do
         shutdown_started_at = Time.now
         svr.request_stop
+        channel.send 0
       end
       Signal::TERM.trap do
         shutdown_started_at = Time.now
         svr.request_stop
+        channel.send 0
       end
       Signal::USR1.trap do
         svr.request_stop
       end
 
       logger.info "Press Ctrl-C to stop"
-
-      until shutdown_started_at
-        sleep 1
-      end
+      # We block here infinitely until signalled to shutdown
+      channel.receive
 
       deadline = shutdown_started_at.not_nil! + @timeout.seconds
       while Time.now < deadline && !svr.processors.empty?
