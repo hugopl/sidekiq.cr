@@ -45,4 +45,4 @@ their respective languages.
 
 ## Author
 
-Mike Perham, [[http://www.mikeperham.com]]
+Mike Perham, http://www.mikeperham.com, [@mperham](https://twitter.com/mperham) / [@sidekiq](https://twitter.com/sidekiq)
