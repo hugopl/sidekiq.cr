@@ -77,7 +77,7 @@ module Sidekiq
       # no block
       def async(queue = "default")
         {% begin %}
-        job = {{@type.id.identify}}::SidekiqJobProxy.new
+        job = {{@type.id}}::SidekiqJobProxy.new
         job.klass = self.name
         job.queue = queue
         job
@@ -87,7 +87,7 @@ module Sidekiq
       # if passed a block, yields the job
       def async(queue = "default")
         {% begin %}
-        job = {{@type.id.identify}}::SidekiqJobProxy.new
+        job = {{@type.id}}::SidekiqJobProxy.new
         job.klass = self.name
         job.queue = queue
         yield job
