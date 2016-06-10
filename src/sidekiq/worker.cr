@@ -48,6 +48,27 @@ module Sidekiq
               \{% end %}
             )
           end
+
+          class SidekiqJobProxy < Sidekiq::Job
+            \{% args_list = a_def.args.join(", ").id %}
+            \{% args = a_def.args.map { |a| a.name }.join(", ").id %}
+
+            def perform(\{{args_list}})
+              _perform(\{{args}})
+            end
+            def perform_bulk(\{{args_list}})
+              _perform_bulk(\{{args}})
+            end
+            def perform_bulk(args : Array(Json::Type))
+              _perform_bulk(args)
+            end
+            def perform_at(interval : Time, \{{args_list}})
+              _perform_at(interval, \{{args}})
+            end
+            def perform_in(interval : Time::Span, \{{args_list}})
+              _perform_in(interval, \{{args}})
+            end
+          end
         \{% end %}
       end
     end
@@ -55,19 +76,23 @@ module Sidekiq
     module ClassMethods
       # no block
       def async(queue = "default")
-        job = Sidekiq::Job.new
+        {% begin %}
+        job = {{@type.id.identify}}::SidekiqJobProxy.new
         job.klass = self.name
         job.queue = queue
         job
+        {% end %}
       end
 
       # if passed a block, yields the job
       def async(queue = "default")
-        job = Sidekiq::Job.new
+        {% begin %}
+        job = {{@type.id.identify}}::SidekiqJobProxy.new
         job.klass = self.name
         job.queue = queue
         yield job
         job
+        {% end %}
       end
     end
   end

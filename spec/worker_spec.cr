@@ -34,22 +34,22 @@ describe Sidekiq::Worker do
       job.execute(MockContext.new)
     end
 
-    it "can persist in bulk" do
-      POOL.redis { |c| c.flushdb }
-      jids = MyWorker.async.perform_bulk([1_i64, 2_i64, "3"], [1_i64, 2_i64, "4"])
-      jids.size.should eq(2)
-      jids[0].should_not eq(jids[1])
+    # it "can persist in bulk" do
+    #   POOL.redis { |c| c.flushdb }
+    #   jids = MyWorker.async.perform_bulk([1_i64, 2_i64, "3"], [1_i64, 2_i64, "4"])
+    #   jids.size.should eq(2)
+    #   jids[0].should_not eq(jids[1])
 
-      pool = Sidekiq::Pool.new
+    #   pool = Sidekiq::Pool.new
 
-      size = pool.redis { |c| c.llen("queue:default") }
-      size.should eq(2)
+    #   size = pool.redis { |c| c.llen("queue:default") }
+    #   size.should eq(2)
 
-      str = pool.redis { |c| c.lpop("queue:default") }
-      hash = JSON.parse(str.to_s)
-      job = Sidekiq::Job.new
-      job.load(hash.as_h)
-      job.execute(MockContext.new)
-    end
+    #   str = pool.redis { |c| c.lpop("queue:default") }
+    #   hash = JSON.parse(str.to_s)
+    #   job = Sidekiq::Job.new
+    #   job.load(hash.as_h)
+    #   job.execute(MockContext.new)
+    # end
   end
 end

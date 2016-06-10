@@ -101,7 +101,7 @@ module Sidekiq
       worker._perform(args)
     end
 
-    def perform(*args)
+    def _perform(*args)
       coer = [] of JSON::Type
       args.each { |x| coer << x.as(JSON::Type) }
 
@@ -109,7 +109,7 @@ module Sidekiq
       client.push(self)
     end
 
-    def perform_bulk(*args)
+    def _perform_bulk(*args)
       coer = [] of Array(JSON::Type)
       args.each do |x|
         foo = [] of JSON::Type
@@ -121,7 +121,7 @@ module Sidekiq
       client.push_bulk(self, coer)
     end
 
-    def perform_bulk(args : Array(Array(JSON::Type)))
+    def _perform_bulk(args : Array(Array(JSON::Type)))
       coer = [] of Array(JSON::Type)
       args.each do |x|
         foo = [] of JSON::Type
@@ -134,12 +134,12 @@ module Sidekiq
     end
 
     # Run this job at or after the given instant in Time
-    def perform_at(interval : Time, *args)
+    def _perform_at(interval : Time, *args)
       perform_in(interval.epoch_f, *args)
     end
 
     # Run this job +interval+ from now.
-    def perform_in(interval : Time::Span, *args)
+    def _perform_in(interval : Time::Span, *args)
       now = Time.now
       ts = now + interval
 
