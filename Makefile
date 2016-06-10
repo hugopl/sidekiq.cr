@@ -2,18 +2,18 @@ test:
 	crystal spec
 
 run:
-	crystal run bin/sidekiq.cr
+	crystal run examples/sidekiq.cr
 
 bench:
 	crystal run --release bench/load.cr
 	ruby bench/load.rb
 
 bin: clean
-	time crystal build --release -o sidekiq bin/sidekiq.cr
-	time crystal build --release -o sideweb bin/web.cr
+	time crystal build --release -o sidekiq examples/sidekiq.cr
+	time crystal build --release -o sideweb examples/web.cr
 
 clean:
-	rm -f bin/sidekiq bin/sideweb
+	rm -f sidekiq sideweb
 
 all: test bin bench
 
