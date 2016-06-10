@@ -220,7 +220,7 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    assert_match(/#{params.first["args"][2].to_s}/, last_response.body)
+    assert_match(/#{params.first["args"][2]}/, last_response.body)
   end
 
   it "can delete a single scheduled job" do
