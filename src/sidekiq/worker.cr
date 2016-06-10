@@ -59,7 +59,7 @@ module Sidekiq
             def perform_bulk(\{{args_list}})
               _perform_bulk(\{{args}})
             end
-            def perform_bulk(args : Array(Json::Type))
+            def perform_bulk(args : Array(Array(JSON::Type)))
               _perform_bulk(args)
             end
             def perform_at(interval : Time, \{{args_list}})
