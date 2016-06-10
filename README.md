@@ -43,27 +43,6 @@ Both versions should be able to create and process jobs from each other.
 Their APIs **are not** and should not be identical but rather idiomatic to
 their respective languages.
 
-## Jobs
+## Author
 
-A worker class executes jobs.  You create a worker class by including
-`Sidekiq::Worker`.  You must define a `perform` method and explicitly declare
-the types of the arguments.  **All arguments to the perform method
- must be of [JSON::Type](http://crystal-lang.org/api/JSON/Type.html).**
-
-```cr
-class SomeWorker
-  include Sidekiq::Worker
-
-  def perform(user_id : Int64, email : String)
-  end
-end
-```
-
-You create a job like so:
-
-```cr
-jid = SomeWorker.async.perform(1234_i64, "mike@example.com")
-```
-
-Note the difference in syntax to Sidekiq.rb.  It's possible this syntax
-will be backported to Ruby.
+Mike Perham, [[http://www.mikeperham.com]]
