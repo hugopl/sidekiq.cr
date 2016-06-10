@@ -49,7 +49,7 @@ module Sidekiq
             )
           end
 
-          class SidekiqJobProxy < Sidekiq::Job
+          class PerformProxy < Sidekiq::Job
             \{% args_list = a_def.args.join(", ").id %}
             \{% args = a_def.args.map { |a| a.name }.join(", ").id %}
 
@@ -77,7 +77,7 @@ module Sidekiq
       # no block
       def async(queue = "default")
         {% begin %}
-        job = {{@type.id}}::SidekiqJobProxy.new
+        job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
         job.queue = queue
         job
@@ -87,7 +87,7 @@ module Sidekiq
       # if passed a block, yields the job
       def async(queue = "default")
         {% begin %}
-        job = {{@type.id}}::SidekiqJobProxy.new
+        job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
         job.queue = queue
         yield job
