@@ -1,5 +1,5 @@
 require "./spec_helper"
-require "../src/sidekiq/server/cli"
+require "../src/cli"
 
 class FakeWorker
   include Sidekiq::Worker
