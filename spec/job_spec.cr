@@ -2,36 +2,30 @@ require "./spec_helper"
 
 describe Sidekiq::Job do
   describe "serialization" do
-    requires_redis(:<, "3.2.0") do
-      it "deserializes a simple job" do
-        r = Sidekiq::Pool.new
-        str = r.redis do |conn|
-          data = File.read("spec/queue.bin")
-          conn.del("queue:default")
-          conn.restore("queue:default", 10000, data, false)
-          conn.llen("queue:default").should eq(1)
-          conn.lpop("queue:default")
-        end.as(String)
+    it "deserializes a simple job" do
+      load_fixtures("ruby_compat")
 
-        hash = JSON.parse(str)
-        hash.size.should eq(8)
-      end
+      r = Sidekiq::Pool.new
+      str = r.redis do |conn|
+        conn.lpop("queue:default")
+      end.as(String)
 
-      it "deserializes a retry" do
-        r = Sidekiq::Pool.new
-        results = r.redis do |conn|
-          data = File.read("spec/retry.bin")
-          conn.del("retry")
-          conn.restore("retry", 10000, data, false)
-          conn.zcard("retry").should eq(1)
-          conn.zrangebyscore("retry", "-inf", "inf")
-        end.as(Array)
+      hash = JSON.parse(str)
+      hash.size.should eq(7)
+    end
 
-        results.size.should eq(1)
-        str = results[0].as(String)
-        hash = JSON.parse(str)
-        hash.size.should eq(13)
-      end
+    it "deserializes a retry" do
+      load_fixtures("ruby_compat")
+
+      r = Sidekiq::Pool.new
+      results = r.redis do |conn|
+        conn.zrangebyscore("retry", "-inf", "inf")
+      end.as(Array)
+
+      results.size.should eq(1)
+      str = results[0].as(String)
+      hash = JSON.parse(str)
+      hash.size.should eq(11)
     end
   end
 end

@@ -67,3 +67,7 @@ class HTTP::Server::Response
     cresp.body.not_nil!
   end
 end
+
+def load_fixtures(filename)
+  `ruby #{__DIR__}/fixtures/load_fixtures.rb #{__DIR__}/fixtures/#{filename}.marshal.bin`
+end

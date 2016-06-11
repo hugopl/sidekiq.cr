@@ -15,6 +15,9 @@ bin: clean
 clean:
 	rm -f sidekiq sideweb
 
+fixtures:
+	cd spec/fixtures && ruby create_fixtures.rb
+
 all: test bin bench
 
-.PHONY: test run bench all bin clean
+.PHONY: test run bench all bin clean fixtures
