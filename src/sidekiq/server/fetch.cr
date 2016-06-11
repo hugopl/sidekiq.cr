@@ -51,7 +51,7 @@ module Sidekiq
     end
 
     def retrieve_work(ctx)
-      arr = ctx.pool.redis { |conn| conn.brpop(["queue:default"], TIMEOUT) }.as(Array(Redis::RedisValue))
+      arr = ctx.pool.redis { |conn| conn.brpop(@queues, TIMEOUT) }.as(Array(Redis::RedisValue))
       if arr.size == 2
         UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)
       end
