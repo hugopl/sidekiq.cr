@@ -2,7 +2,6 @@ require "./spec_helper"
 require "../src/sidekiq/web"
 
 describe "sidekiq web" do
-
   it "can show text with any locales" do
     empty = {} of String => String
     rackenv = {"HTTP_ACCEPT_LANGUAGE" => "ru,en"}
@@ -26,7 +25,6 @@ describe "sidekiq web" do
   end
 
   describe "busy" do
-
     it "can display workers" do
       add_worker
       assert_equal ["1001"], Sidekiq::Workers.new.map { |entry| entry.thread_id }
@@ -290,19 +288,19 @@ describe "sidekiq web" do
     assert_equal 200, last_response.status_code
     assert_match(/FailWorker/, last_response.body)
 
-    last_response.body.should contain( "fail message: &lt;a&gt;hello&lt;/a&gt;" )
-    last_response.body.should_not contain( "fail message: <a>hello</a>" )
+    last_response.body.should contain("fail message: &lt;a&gt;hello&lt;/a&gt;")
+    last_response.body.should_not contain("fail message: <a>hello</a>")
 
-    last_response.body.should contain( "args\">&quot;&lt;a&gt;hello&lt;/a&gt;&quot;<" )
-    last_response.body.should_not contain( "args\"><a>hello</a><" )
+    last_response.body.should contain("args\">&quot;&lt;a&gt;hello&lt;/a&gt;&quot;<")
+    last_response.body.should_not contain("args\"><a>hello</a><")
 
     # on /workers page
     Sidekiq.redis do |conn|
       pro = "foo:1234"
       conn.sadd("processes", pro)
-      conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.now.epoch_f, "labels" => ["frumduz"], "queues" =>["default"]}.to_json, "busy" => 1, "beat" => Time.now.epoch_f})
+      conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.now.epoch_f, "labels" => ["frumduz"], "queues" => ["default"]}.to_json, "busy" => 1, "beat" => Time.now.epoch_f})
       identity = "#{pro}:workers"
-      hash = {:queue => "critical", :payload => { "queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"] }, :run_at => Time.now.epoch }
+      hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"]}, :run_at => Time.now.epoch}
       conn.hmset(identity, {"100001" => hash.to_json})
       conn.incr("busy")
     end
@@ -311,9 +309,8 @@ describe "sidekiq web" do
     assert_equal 200, last_response.status_code
     assert_match(/FailWorker/, last_response.body)
     assert_match(/frumduz/, last_response.body)
-    last_response.body.should contain( "&lt;a&gt;hello&lt;/a&gt;" )
-    last_response.body.should_not contain( "<a>hello</a>" )
-
+    last_response.body.should contain("&lt;a&gt;hello&lt;/a&gt;")
+    last_response.body.should_not contain("<a>hello</a>")
 
     # on /queues page
     params = add_xss_retry
@@ -322,47 +319,47 @@ describe "sidekiq web" do
 
     get "/queues/foo"
     assert_equal 200, last_response.status_code
-    last_response.body.should contain( "&lt;a&gt;hello&lt;/a&gt;" )
-    last_response.body.should_not contain( "<a>hello</a>" )
+    last_response.body.should contain("&lt;a&gt;hello&lt;/a&gt;")
+    last_response.body.should_not contain("<a>hello</a>")
   end
 
-  #it "can show user defined tab" do
-    #begin
-      #Sidekiq::Web.tabs["Custom Tab"] = "/custom"
+  # it "can show user defined tab" do
+  # begin
+  # Sidekiq::Web.tabs["Custom Tab"] = "/custom"
 
-      #get "/"
-      #assert_match "Custom Tab", last_response.body
+  # get "/"
+  # assert_match "Custom Tab", last_response.body
 
-    #ensure
-      #Sidekiq::Web.tabs.delete "Custom Tab"
-    #end
-  #end
+  # ensure
+  # Sidekiq::Web.tabs.delete "Custom Tab"
+  # end
+  # end
 
   it "can display home" do
     get "/"
     assert_equal 200, last_response.status_code
   end
 
-  #describe "custom locales" do
-    #before do
-      #Sidekiq::Web.settings.locales << File.join(File.dirname(__FILE__), "fixtures")
-      #Sidekiq::Web.tabs["Custom Tab"] = "/custom"
-      #Sidekiq::Web.get("/custom") do
-        #clear_caches # ugly hack since I can"t figure out how to access WebHelpers outside of this context
-        #t("translated_text")
-      #end
-    #end
+  # describe "custom locales" do
+  # before do
+  # Sidekiq::Web.settings.locales << File.join(File.dirname(__FILE__), "fixtures")
+  # Sidekiq::Web.tabs["Custom Tab"] = "/custom"
+  # Sidekiq::Web.get("/custom") do
+  # clear_caches # ugly hack since I can"t figure out how to access WebHelpers outside of this context
+  # t("translated_text")
+  # end
+  # end
 
-    #after do
-      #Sidekiq::Web.tabs.delete "Custom Tab"
-      #Sidekiq::Web.settings.locales.pop
-    #end
+  # after do
+  # Sidekiq::Web.tabs.delete "Custom Tab"
+  # Sidekiq::Web.settings.locales.pop
+  # end
 
-    #it "can show user defined tab with custom locales" do
-      #get "/custom"
-      #assert_match(/Changed text/, last_response.body)
-    #end
-  #end
+  # it "can show user defined tab with custom locales" do
+  # get "/custom"
+  # assert_match(/Changed text/, last_response.body)
+  # end
+  # end
 
   describe "dashboard/stats" do
     it "redirects to stats" do
@@ -463,10 +460,10 @@ end
 
 private def add_scheduled
   score = Time.now.epoch_f
-  msg = { "class" => "HardWorker",
-          "queue" => "default",
-          "args" => ["bob", 1, Time.now.epoch_f],
-          "jid" => SecureRandom.hex(12) }
+  msg = {"class" => "HardWorker",
+    "queue" => "default",
+    "args"  => ["bob", 1, Time.now.epoch_f],
+    "jid"   => SecureRandom.hex(12)}
   Sidekiq.redis do |conn|
     conn.zadd("schedule", score, msg.to_json)
   end
@@ -475,15 +472,15 @@ end
 
 private def add_retry
   now = Time.now.epoch_f
-  msg = { "class" => "HardWorker",
-          "args" => ["bob", 1, now.to_s],
-          "queue" => "default",
-          "error_message" => "Some fake message",
-          "error_class" => "RuntimeError",
-          "retry_count" => 0,
-          "retried_at" => now,
-          "failed_at" => now,
-          "jid" => SecureRandom.hex(12) }
+  msg = {"class"         => "HardWorker",
+    "args"          => ["bob", 1, now.to_s],
+    "queue"         => "default",
+    "error_message" => "Some fake message",
+    "error_class"   => "RuntimeError",
+    "retry_count"   => 0,
+    "retried_at"    => now,
+    "failed_at"     => now,
+    "jid"           => SecureRandom.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
@@ -493,15 +490,15 @@ end
 
 private def add_dead
   now = Time.now.epoch_f
-  msg = { "class" => "HardWorker",
-          "args" => ["bob", 1, now],
-          "queue" => "foo",
-          "error_message" => "Some fake message",
-          "error_class" => "RuntimeError",
-          "retry_count" => 20,
-          "retried_at" => now,
-          "failed_at" => now,
-          "jid" => SecureRandom.hex(12) }
+  msg = {"class"         => "HardWorker",
+    "args"          => ["bob", 1, now],
+    "queue"         => "foo",
+    "error_message" => "Some fake message",
+    "error_class"   => "RuntimeError",
+    "retry_count"   => 20,
+    "retried_at"    => now,
+    "failed_at"     => now,
+    "jid"           => SecureRandom.hex(12)}
   score = now
   Sidekiq.redis do |conn|
     conn.zadd("dead", score, msg.to_json)
@@ -510,14 +507,14 @@ private def add_dead
 end
 
 private def add_xss_retry
-  msg = { "class" => "FailWorker",
-          "args" => ["<a>hello</a>"],
-          "queue" => "foo",
-          "error_message" => "fail message: <a>hello</a>",
-          "error_class" => "RuntimeError",
-          "retry_count" => 0,
-          "failed_at" => Time.now.epoch_f,
-          "jid" => SecureRandom.hex(12) }
+  msg = {"class"         => "FailWorker",
+    "args"          => ["<a>hello</a>"],
+    "queue"         => "foo",
+    "error_message" => "fail message: <a>hello</a>",
+    "error_class"   => "RuntimeError",
+    "retry_count"   => 0,
+    "failed_at"     => Time.now.epoch_f,
+    "jid"           => SecureRandom.hex(12)}
   score = Time.now.epoch_f
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
@@ -554,10 +551,10 @@ class WebWorker
   end
 end
 
-private def get(path, params=nil, headers=nil)
-  resource = "#{path}?#{params.try(&.map{|k,v| "#{URI.escape(k)}=#{URI.escape(v)}"}.join("&"))}"
+private def get(path, params = nil, headers = nil)
+  resource = "#{path}?#{params.try(&.map { |k, v| "#{URI.escape(k)}=#{URI.escape(v)}" }.join("&"))}"
   hdrs = HTTP::Headers.new
-  headers.each do |k,v|
+  headers.each do |k, v|
     hdrs[k] = v
   end if headers
   req = HTTP::Request.new("GET", resource, hdrs)
@@ -568,11 +565,11 @@ private def get(path, params=nil, headers=nil)
   res.flush
 end
 
-private def post(path, params=nil, headers=nil)
+private def post(path, params = nil, headers = nil)
   resource = path
-  body = params.try(&.map{|k,v| "#{URI.escape(k, true)}=#{URI.escape(v, true)}"}.join("&"))
+  body = params.try(&.map { |k, v| "#{URI.escape(k, true)}=#{URI.escape(v, true)}" }.join("&"))
   hdrs = HTTP::Headers.new
-  headers.each do |k,v|
+  headers.each do |k, v|
     hdrs[k] = v
   end if headers
   hdrs["Content-Type"] = "application/x-www-form-urlencoded"
@@ -583,4 +580,3 @@ private def post(path, params=nil, headers=nil)
   Kemal::RouteHandler::INSTANCE.call(HTTP::Server::Context.new(req, res))
   res.flush
 end
-

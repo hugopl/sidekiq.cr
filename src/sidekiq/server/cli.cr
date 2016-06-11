@@ -16,8 +16,7 @@ module Sidekiq
       @logger = Sidekiq::Logger.build
 
       OptionParser.parse(args) do |parser|
-        parser.banner = "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}\n\
-                        #{Sidekiq::LICENSE}\n\
+        parser.banner = "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}\n#{Sidekiq::LICENSE}\n\
                         Usage: sidekiq [arguments]"
         parser.on("-c NUM", "Number of workers") { |c| @concurrency = c.to_i }
         parser.on("-e ENV", "Application environment") { |e| @environment = e }

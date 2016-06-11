@@ -218,12 +218,12 @@ module Sidekiq
 
     def list_page(key, pageidx = 1, page_size = 25)
       x, y, items = page(key, pageidx, page_size)
-      {x.as(Int), y.as(Int), items.as(Array).map{|x|x.as(String)}}
+      {x.as(Int), y.as(Int), items.as(Array).map { |x| x.as(String) }}
     end
 
     def zpage(key, pageidx = 1, page_size = 25, opts = nil)
       x, y, items = page(key, pageidx, page_size, opts)
-      results = items.as(Array).map{|x| x.as(String)}
+      results = items.as(Array).map { |x| x.as(String) }
       jobs = [] of Array(String)
       results.in_groups_of(2) do |(a, b)|
         jobs << [a.not_nil!, b.not_nil!]

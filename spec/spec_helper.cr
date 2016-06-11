@@ -54,9 +54,11 @@ def assert_equal(expected, actual)
 end
 
 require "http/server/response"
+
 class HTTP::Server::Response
   property! mem : MemoryIO
   property! cresp : HTTP::Client::Response
+
   def body : String
     output.flush
     output.close

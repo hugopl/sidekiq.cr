@@ -1,14 +1,29 @@
 require "./spec_helper"
 
+$test_count = 0
+
 class MyWorker
   include Sidekiq::Worker
 
   def perform(a : Int64, b : Int64, c : String)
-    # puts "hello world!"
+    $test_count += 1
   end
 end
 
 describe Sidekiq::Worker do
+  describe "round-trip" do
+    it "coerces types as necessary" do
+      a = $test_count
+      jid = MyWorker.async.perform(1_i64, 2_i64, "3")
+      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      job = Sidekiq::Job.new
+      job.load(JSON.parse(msg.to_s).as_h)
+      job.execute(MockContext.new)
+      b = $test_count
+      (b - a).should eq(1)
+    end
+  end
+
   describe "client-side" do
     it "can create a basic job" do
       jid = MyWorker.async.perform(1_i64, 2_i64, "3")
