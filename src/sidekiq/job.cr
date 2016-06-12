@@ -21,7 +21,7 @@ module Sidekiq
     JSON.mapping({
       queue: String,
       args: Array(JSON::Type),
-      klass: { key: "class", type: String }
+      klass: { key: "class", type: String },
       created_at: {type: Time, converter: EpochConverter},
       enqueued_at: {type: Time, converter: EpochConverter, nilable: true},
       jid: String,
