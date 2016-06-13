@@ -375,7 +375,7 @@ module Sidekiq
       end
     end
 
-    def retry
+    def retry!
       raise "Retry not available on jobs which have not failed" unless item["failed_at"]
       remove_job do |message|
         msg = JSON.parse(message).as_h
@@ -388,7 +388,7 @@ module Sidekiq
 
     # #
     # Place job in the dead set
-    def kill
+    def kill!
       raise "Kill not available on jobs which have not failed" unless item["failed_at"]
       remove_job do |message|
         now = Time.now.epoch_f
@@ -590,7 +590,7 @@ module Sidekiq
 
     def retry_all
       while size > 0
-        each(&.retry)
+        each(&.retry!)
       end
     end
   end
@@ -605,7 +605,7 @@ module Sidekiq
 
     def retry_all
       while size > 0
-        each(&.retry)
+        each(&.retry!)
       end
     end
 

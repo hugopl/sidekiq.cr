@@ -259,11 +259,11 @@ end
 
 private def retry_or_delete_or_kill(job, params)
   if params["retry"]?
-    job.retry
+    job.retry!
   elsif params["delete"]?
     job.delete
   elsif params["kill"]?
-    job.kill
+    job.kill!
   end
 end
 

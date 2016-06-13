@@ -211,11 +211,23 @@ describe "api" do
       r.size.should eq(1)
     end
 
+    it "can kill a retry" do
+      add_retry
+      r = Sidekiq::RetrySet.new
+      r.size.should eq(1)
+      r.first.kill!
+      r.size.should eq(0)
+      ds = Sidekiq::DeadSet.new
+      ds.size.should eq(1)
+      job = ds.first
+      job.jid.should eq("bob")
+    end
+
     it "can retry a retry" do
       add_retry
       r = Sidekiq::RetrySet.new
       r.size.should eq(1)
-      r.first.retry
+      r.first.retry!
       r.size.should eq(0)
       Sidekiq::Queue.new("default").size.should eq(1)
       job = Sidekiq::Queue.new("default").first
