@@ -1,3 +1,5 @@
 language: crystal
+install:
+  - gem install redis
 services:
   - redis-server

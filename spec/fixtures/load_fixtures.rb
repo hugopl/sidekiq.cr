@@ -1,14 +1,6 @@
 #!/usr/bin/env ruby
 
-canretry = true
-begin
-  require "redis"
-rescue
-  raise unless canretry
-  puts `gem install redis`
-  canretry = false
-  retry
-end
+require "redis"
 
 filename = ARGV[0]
 puts "Loading fixture #{filename}"
