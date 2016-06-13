@@ -2,6 +2,7 @@ require "./spec_helper"
 require "../src/sidekiq/server/scheduled"
 
 describe "scheduler" do
+  requires_redis(:>=, "3.2") do
     it "should schedule" do
       load_fixtures("ruby_compat")
 
@@ -23,4 +24,5 @@ describe "scheduler" do
         conn.llen("queue:foo").should eq(3)
       end
     end
+  end
 end

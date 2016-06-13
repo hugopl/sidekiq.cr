@@ -53,7 +53,7 @@ def assert_equal(expected, actual)
   actual.should eq(expected)
 end
 
-require "http/server/response"
+require "http"
 
 class HTTP::Server::Response
   property! mem : MemoryIO

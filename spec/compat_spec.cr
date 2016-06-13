@@ -2,7 +2,7 @@ require "./spec_helper"
 
 describe "ruby compatibility" do
   describe "API" do
-    if File.exists?("#{__DIR__}/fixtures/ruby_compat.marshal.bin")
+    requires_redis(:>=, "3.2") do
       it "works with Ruby-based retries" do
         load_fixtures("ruby_compat")
 
@@ -13,8 +13,6 @@ describe "ruby compatibility" do
           retri.at.should be < Time.now
         end
       end
-    else
-      puts "No fixture file found, run \"make fixtures\" to generate"
     end
   end
 end
