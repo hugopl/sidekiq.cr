@@ -1,8 +1,7 @@
 #
 # systemd unit file for CentOS 7, Ubuntu 15.04
 #
-# Customize this file based on your bundler location, app directory, etc.
-# Put this in /usr/lib/systemd/system (CentOS) or /lib/systemd/system (Ubuntu).
+# Customize this file as necessary and put it in /etc/systemd/system.
 # Run:
 #   - systemctl enable sidekiq
 #   - systemctl {start,stop,restart} sidekiq
@@ -37,9 +36,6 @@ Restart=on-failure
 # output goes to /var/log/syslog
 StandardOutput=syslog
 StandardError=syslog
-
-# This will default to "bundler" if we don't specify it
-SyslogIdentifier=sidekiq
 
 [Install]
 WantedBy=multi-user.target
