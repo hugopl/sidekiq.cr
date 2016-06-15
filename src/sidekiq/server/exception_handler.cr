@@ -21,10 +21,10 @@ module Sidekiq
       ctx.error_handlers.each do |handler|
         begin
           handler.call(ex, ctxHash)
-        rescue ex
+        rescue ex2
           ctx.logger.error "!!! ERROR HANDLER THREW AN ERROR !!!"
-          ctx.logger.error ex
-          ctx.logger.error ex.backtrace.join("\n")
+          ctx.logger.error ex2
+          ctx.logger.error ex2.backtrace.join("\n")
         end
       end
     end

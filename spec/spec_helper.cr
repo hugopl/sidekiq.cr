@@ -3,6 +3,16 @@ require "../src/sidekiq"
 
 POOL = Sidekiq::Pool.new
 
+# Workaround for https://github.com/crystal-lang/crystal/issues/2840
+module Sidekiq::Middleware
+  class DummyClientEntry < ClientEntry
+    def call(job, ctx, &block : -> Bool) : Bool
+      false
+    end
+  end
+end
+
+
 class MockContext < Sidekiq::Context
   getter pool
   getter logger
