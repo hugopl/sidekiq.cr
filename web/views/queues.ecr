@@ -19,7 +19,7 @@
         <td width="20%">
           <form action="<%= x.root_path %>queues/<%= queue.name %>" method="post">
             <%= x.csrf_tag %>
-            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= x.t("Delete") %>" data-confirm="<%= x.t("AreYouSureDeleteQueue", {"queue": x.h(queue.name)}) %>" />
+            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= x.t("Delete") %>" data-confirm="<%= x.t("AreYouSureDeleteQueue", {"queue" => x.h(queue.name)}) %>" />
           </form>
         </td>
       </tr>
