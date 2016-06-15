@@ -13,7 +13,7 @@ describe Sidekiq do
       time.to_s.should eq("1464132168.599941")
 
       num = 1464132168.65_f64
-      num.to_s.should eq("1464132168.6500001")
+      num.to_s.should eq("1464132168.65")
     end
   end
 

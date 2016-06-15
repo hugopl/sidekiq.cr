@@ -10,7 +10,7 @@ module Sidekiq
   #
   module Middleware
     abstract class Entry
-      abstract def call(job, ctx, &block)
+      abstract def call(job, ctx, &block : -> Bool) : Bool
     end
 
     # We make these two separate types so users don't
@@ -62,12 +62,12 @@ module Sidekiq
         entries.clear
       end
 
-      def invoke(job, ctx, &block)
+      def invoke(job, ctx, &block : -> Bool) : Bool
         chain = entries.map { |k| k }
         next_link(chain, job, ctx, &block)
       end
 
-      def next_link(chain, job, ctx, &block)
+      def next_link(chain, job, ctx, &block : -> Bool) : Bool
         if chain.empty?
           block.call
         else

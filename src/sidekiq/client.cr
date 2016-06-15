@@ -43,10 +43,7 @@ module Sidekiq
     #
     def middleware(&block)
       @chain ||= DEFAULT_MIDDLEWARE
-      if block_given?
-        @chain = @chain.dup
-        yield @chain
-      end
+      yield @chain.not_nil!
       @chain
     end
 
@@ -93,7 +90,7 @@ module Sidekiq
     #
     def push(job : Sidekiq::Job)
       result = middleware.invoke(job, @ctx) do
-        !!job
+        true
       end
 
       if result

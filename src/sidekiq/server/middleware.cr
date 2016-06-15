@@ -8,6 +8,7 @@ class Sidekiq::Middleware::Logger < Sidekiq::Middleware::ServerEntry
       ctx.logger.info "Start"
       yield
       ctx.logger.info "Done: #{"%.6f" % (Time.now.epoch_f - a)} sec"
+      true
     end
   end
 end

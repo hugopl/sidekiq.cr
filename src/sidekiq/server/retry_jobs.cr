@@ -59,9 +59,11 @@ module Sidekiq
 
       def call(job, ctx)
         yield
+        true
       rescue e : Exception
         raise e unless retries(job.retry) > 0
         attempt_retry(job, ctx, e)
+        true
       end
 
       # The retries option can be true, false, nil or Int64.

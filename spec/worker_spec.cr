@@ -33,6 +33,7 @@ describe Sidekiq::Worker do
 
     it "can execute a persistent job" do
       jid = MyWorker.async.perform(1_i64, 2_i64, "3")
+      jid.should_not be_nil
 
       pool = Sidekiq::Pool.new
 

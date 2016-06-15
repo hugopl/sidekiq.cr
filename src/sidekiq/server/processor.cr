@@ -106,6 +106,7 @@ module Sidekiq
             # losing jobs if a middleware raises an exception before yielding
             ack = true
             job.execute(@mgr)
+            true
           end
         end
         ack = true
