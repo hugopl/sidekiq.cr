@@ -58,7 +58,6 @@ describe Sidekiq::Middleware do
     x.should_not be_nil
 
     c.middleware do |chain|
-      chain.clear
       chain.add StopperMiddleware.new
     end
 

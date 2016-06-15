@@ -42,15 +42,15 @@ module Sidekiq
     #   end
     #
     def middleware(&block)
-      @chain ||= DEFAULT_MIDDLEWARE
-      yield @chain.not_nil!
+      yield @chain
       @chain
     end
 
     def middleware
-      @chain ||= DEFAULT_MIDDLEWARE
+      @chain
     end
 
+    @chain : Sidekiq::Middleware::Chain(Sidekiq::Middleware::ClientEntry)
     @ctx : Sidekiq::Context
     @pool : Sidekiq::Pool
 
@@ -68,6 +68,7 @@ module Sidekiq
       raise "Sidekiq client has not been configured yet" unless @@default
       @ctx = @@default.not_nil!
       @pool = pool || @ctx.pool
+      @chain = DEFAULT_MIDDLEWARE.copy
     end
 
     # #

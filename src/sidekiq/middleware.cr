@@ -30,6 +30,12 @@ module Sidekiq
         @entries = [] of T
       end
 
+      def copy
+        Chain(T).new.tap do |c|
+          c.entries = @entries.dup
+        end
+      end
+
       def remove(klass)
         entries.delete_if { |entry| entry.klass == klass }
       end
