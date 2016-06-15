@@ -100,7 +100,7 @@ describe "sidekiq web" do
       conn.lrange("queue:foo", 0, -1).includes?(job.value).should be_true
     end
 
-    post "/queues/foo/delete", {"key_val": job.value}
+    post "/queues/foo/delete", {"key_val" => job.value}
     assert_equal 302, last_response.status_code
 
     Sidekiq.redis do |conn|
