@@ -44,9 +44,9 @@ total = iter * count
 
 a = Time.now
 iter.times do
-  args = [] of Array(Int64)
+  args = [] of {Int64}
   count.times do |idx|
-    args << [idx]
+    args << {idx}
   end
   LoadWorker.async.perform_bulk(args)
 end

@@ -112,7 +112,7 @@ module Sidekiq
     #
     # Returns an array of the of pushed jobs' jids.  The number of jobs pushed can be less
     # than the number given if the middleware stopped processing for one or more jobs.
-    def push_bulk(job : Sidekiq::Job, allargs)
+    def push_bulk(job : Sidekiq::Job, allargs : Array(String))
       payloads = allargs.map do |args|
         copy = Sidekiq::Job.new
         copy.jid = SecureRandom.hex(12)

@@ -78,6 +78,10 @@ module Sidekiq
       client.push(self)
     end
 
+    def _perform_bulk(args : Array(String))
+      client.push_bulk(self, args)
+    end
+
     # Run this job at or after the given instant in Time
     def _perform_at(interval : Time, args : String)
       perform_in(interval.epoch_f, args)

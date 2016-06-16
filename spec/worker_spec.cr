@@ -3,7 +3,7 @@ require "./spec_helper"
 class MyWorker
   include Sidekiq::Worker
 
-  def perform(a : Int64, b : Int64, c : String)
+  def perform(a : Int32, b : Int32, c : String)
   end
 end
 
@@ -43,7 +43,7 @@ describe Sidekiq::Worker do
 
   describe "round-trip" do
     it "coerces types as necessary" do
-      jid = MyWorker.async.perform(1_i64, 2_i64, "3")
+      jid = MyWorker.async.perform(1, 2, "3")
       msg = Sidekiq.redis { |c| c.lpop("queue:default") }
       job = Sidekiq::Job.from_json(msg.to_s)
       job.execute(MockContext.new)
@@ -52,19 +52,19 @@ describe Sidekiq::Worker do
 
   describe "client-side" do
     it "can create a basic job" do
-      jid = MyWorker.async.perform(1_i64, 2_i64, "3")
+      jid = MyWorker.async.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
       pool = Sidekiq::Pool.new
       pool.redis { |c| c.lpop("queue:default") }
     end
 
     it "can schedule a basic job" do
-      jid = MyWorker.async.perform_in(60.seconds, 1_i64, 2_i64, "3")
+      jid = MyWorker.async.perform_in(60.seconds, 1, 2, "3")
       jid.should match /[a-f0-9]{24}/
     end
 
     it "can execute a persistent job" do
-      jid = MyWorker.async.perform(1_i64, 2_i64, "3")
+      jid = MyWorker.async.perform(1, 2, "3")
       jid.should_not be_nil
 
       pool = Sidekiq::Pool.new
@@ -73,6 +73,19 @@ describe Sidekiq::Worker do
       hash = JSON.parse(str.to_s)
       job = Sidekiq::Job.from_json(str.to_s)
       job.execute(MockContext.new)
+    end
+
+    it "can create jobs in bulk" do
+      count = POOL.redis { |c| c.llen("queue:default") }
+      count.should eq(0)
+      MyWorker.async.perform_bulk([
+        {1, 2, "1"},
+        {2, 4, "2"},
+        {3, 6, "3"},
+        {4, 8, "4"},
+      ])
+      count = POOL.redis { |c| c.llen("queue:default") }
+      count.should eq(4)
     end
 
   end

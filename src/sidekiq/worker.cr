@@ -66,6 +66,7 @@ module Sidekiq
           class PerformProxy < Sidekiq::Job
             \{% args_list = a_def.args.join(", ").id %}
             \{% args = a_def.args.map { |a| a.name }.join(", ").id %}
+            \{% res = a_def.args.map { |a| a.restriction }.join(", ").id %}
 
             def perform(\{{args_list}})
               data = ""
@@ -74,6 +75,11 @@ module Sidekiq
               \{% end %}
               _perform(data)
             end
+            \{% if a_def.args.size > 0 %}
+              def perform_bulk(argses : Array({\{{res}}}))
+                _perform_bulk(argses.map {|(\{{args}})| ARGS_TUPLE.new(\{{args}}).to_json })
+              end
+            \{% end %}
             def perform_at(interval : Time, \{{args_list}})
               data = ""
               \{% if a_def.args.size > 0 %}
