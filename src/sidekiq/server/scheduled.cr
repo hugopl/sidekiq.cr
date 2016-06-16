@@ -20,14 +20,12 @@ module Sidekiq
               results = conn.zrangebyscore(sorted_set, "-inf", nowstr, limit: [0, 1]).as(Array)
               break if results.empty?
               jobstr = results[0].as(String)
+              job = Sidekiq::Job.from_json(jobstr)
 
               # Pop item off the queue and add it to the work queue. If the job can't be popped from
               # the queue, it's because another process already popped it so we can move on to the
               # next one.
               if conn.zrem(sorted_set, jobstr)
-                hash = JSON.parse(jobstr)
-                job = Sidekiq::Job.new
-                job.load(hash.as_h)
                 # A lot of work just to update the enqueued_at attribute :-(
                 job.client.push(job)
                 count += 1

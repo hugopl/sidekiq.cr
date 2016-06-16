@@ -67,10 +67,10 @@ module Sidekiq
       end
 
       # The retries option can be true, false, nil or Int64.
-      def retries(retry : JSON::Type)
+      def retries(retry)
         if retry.is_a?(Bool)
           retry.as(Bool) ? DEFAULT_MAX_RETRY_ATTEMPTS : 0
-        elsif retry.is_a?(Int64)
+        elsif retry.is_a?(Int32)
           retry.to_i
         else
           0
@@ -78,10 +78,10 @@ module Sidekiq
       end
 
       # The backtrace option can be true, false, nil or Int64.
-      def traces(trace : JSON::Type)
+      def traces(trace)
         if trace.is_a?(Bool)
           trace.as(Bool) ? 1000 : 0
-        elsif trace.is_a?(Int64)
+        elsif trace.is_a?(Int32)
           trace.to_i
         else
           0
@@ -95,7 +95,7 @@ module Sidekiq
         job.error_class = exception.class.name
         count = if job.retry_count.nil?
                   job.failed_at = Time.now
-                  job.retry_count = 0_i64
+                  job.retry_count = 0
                 else
                   job.retried_at = Time.now
                   c = job.retry_count.not_nil!

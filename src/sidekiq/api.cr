@@ -288,10 +288,9 @@ module Sidekiq
     getter value : String
 
     def initialize(str)
-      super()
+      super(JSON::PullParser.new(str))
       @value = str
       @item = JSON.parse(str).as_h
-      load(@item)
     end
 
     def display_class
@@ -299,7 +298,7 @@ module Sidekiq
       klass
     end
 
-    def display_args : Array(JSON::Type)
+    def display_args : String
       # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
       args
     end
@@ -368,9 +367,7 @@ module Sidekiq
 
     def add_to_queue
       remove_job do |message|
-        msg = JSON.parse(message).as_h
-        job = Sidekiq::Job.new
-        job.load(msg)
+        job = Sidekiq::Job.from_json(message)
         Sidekiq::Client.new.push(job)
       end
     end
@@ -378,9 +375,7 @@ module Sidekiq
     def retry!
       raise "Retry not available on jobs which have not failed" unless item["failed_at"]
       remove_job do |message|
-        msg = JSON.parse(message).as_h
-        job = Sidekiq::Job.new
-        job.load(msg)
+        job = Sidekiq::Job.from_json(message)
         job.retry_count = job.retry_count.not_nil! - 1
         Sidekiq::Client.new.push(job)
       end

@@ -7,13 +7,44 @@ class MyWorker
   end
 end
 
+class Point
+  JSON.mapping({x: Float64, y: Float64})
+  def initialize(@x, @y)
+  end
+end
+
+class Circle
+  JSON.mapping({radius: Int32, diameter: Int32})
+  def initialize(@radius, @diameter)
+  end
+end
+
+class ComplexWorker
+  include Sidekiq::Worker
+
+  def perform(points : Array(Point), circle : Circle)
+  end
+end
+
 describe Sidekiq::Worker do
+  describe "arguments" do
+    it "handles arbitrary complexity" do
+      p1 = Point.new(1.0, 3.0)
+      p2 = Point.new(4.3, 12.5)
+      a = [p1, p2]
+
+      ComplexWorker.async.perform(a, Circle.new(9, 17))
+      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      job = Sidekiq::Job.from_json(msg.as(String))
+      job.args.should eq("[[{\"x\":1.0,\"y\":3.0},{\"x\":4.3,\"y\":12.5}],{\"radius\":9,\"diameter\":17}]")
+    end
+  end
+
   describe "round-trip" do
     it "coerces types as necessary" do
       jid = MyWorker.async.perform(1_i64, 2_i64, "3")
       msg = Sidekiq.redis { |c| c.lpop("queue:default") }
-      job = Sidekiq::Job.new
-      job.load(JSON.parse(msg.to_s).as_h)
+      job = Sidekiq::Job.from_json(msg.to_s)
       job.execute(MockContext.new)
     end
   end
@@ -39,27 +70,9 @@ describe Sidekiq::Worker do
 
       str = pool.redis { |c| c.lpop("queue:default") }
       hash = JSON.parse(str.to_s)
-      job = Sidekiq::Job.new
-      job.load(hash.as_h)
+      job = Sidekiq::Job.from_json(str.to_s)
       job.execute(MockContext.new)
     end
 
-    it "can persist in bulk" do
-      POOL.redis { |c| c.flushdb }
-      jids = MyWorker.async.perform_bulk([[1_i64, 2_i64, "3"], [1_i64, 2_i64, "4"]])
-      jids.size.should eq(2)
-      jids[0].should_not eq(jids[1])
-
-      pool = Sidekiq::Pool.new
-
-      size = pool.redis { |c| c.llen("queue:default") }
-      size.should eq(2)
-
-      str = pool.redis { |c| c.lpop("queue:default") }
-      hash = JSON.parse(str.to_s)
-      job = Sidekiq::Job.new
-      job.load(hash.as_h)
-      job.execute(MockContext.new)
-    end
   end
 end

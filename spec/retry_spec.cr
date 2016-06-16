@@ -9,7 +9,7 @@ describe "retry" do
     job = Sidekiq::Job.new
     job.queue = "default"
     job.klass = "MyWorker"
-    job.args = [1_i64] of JSON::Type
+    job.args = "1"
     rt = Sidekiq::Middleware::RetryJobs.new
 
     expect_raises do

@@ -144,9 +144,10 @@ module Sidekiq
     end
 
     def display_args(args, truncate_after_chars = 2000)
-      args.map do |arg|
-        h(truncate(to_display(arg), truncate_after_chars))
-      end.join(", ")
+      h args[1..-2]
+      #args.map do |arg|
+        #h(truncate(to_display(arg), truncate_after_chars))
+      #end.join(", ")
     end
 
     def csrf_tag

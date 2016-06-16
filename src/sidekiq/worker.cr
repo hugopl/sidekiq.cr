@@ -37,16 +37,30 @@ module Sidekiq
 
       macro method_added(a_def)
         \{% if a_def.name.id == "perform".id %}
-          def _perform(args : Array(JSON::Type))
-            perform(
-              \{% for arg, index in a_def.args %}
-                \{% if arg.restriction %}
-                  args[\{{index}}].as(\{{arg.restriction}}),
-                \{% else %}
-                  \{{ raise "argument '#{arg}' must have a type restriction" }}
-                \{% end %}
-              \{% end %}
-            )
+          \{% if a_def.args.size > 0 %}
+            # We define a tuple with types from each of the arguments.
+            # For example, if the args are `name : String, age : Int32`
+            # we generate `tuple = Tuple(String, Int32)`.
+            ARGS_TUPLE = Tuple(\{{
+                                  a_def.args.map do |arg|
+                                    if arg.restriction
+                                      arg.restriction
+                                    else
+                                      raise "argument '#{arg}' must have a type restriction"
+                                    end
+                                  end.join(", ").id
+                                  }})
+          \{% end %}
+
+          def _perform(data : String)
+            \{% if a_def.args.size > 0 %}
+              # Then we parse the JSON to this tuple
+              tuple = ARGS_TUPLE.from_json(data)
+              # And splat it into `perform`
+              perform(*tuple)
+            \{% else %}
+              perform()
+            \{% end %}
           end
 
           class PerformProxy < Sidekiq::Job
@@ -54,19 +68,25 @@ module Sidekiq
             \{% args = a_def.args.map { |a| a.name }.join(", ").id %}
 
             def perform(\{{args_list}})
-              _perform(\{{args}})
-            end
-            def perform_bulk(\{{args_list}})
-              _perform_bulk(\{{args}})
-            end
-            def perform_bulk(args : Array(Array(JSON::Type)))
-              _perform_bulk(args)
+              data = ""
+              \{% if a_def.args.size > 0 %}
+                data = ARGS_TUPLE.new(\{{args}}).to_json
+              \{% end %}
+              _perform(data)
             end
             def perform_at(interval : Time, \{{args_list}})
-              _perform_at(interval, \{{args}})
+              data = ""
+              \{% if a_def.args.size > 0 %}
+                data = ARGS_TUPLE.new(\{{args}}).to_json
+              \{% end %}
+              _perform_at(interval, data)
             end
             def perform_in(interval : Time::Span, \{{args_list}})
-              _perform_in(interval, \{{args}})
+              data = ""
+              \{% if a_def.args.size > 0 %}
+                data = ARGS_TUPLE.new(\{{args}}).to_json
+              \{% end %}
+              _perform_in(interval, data)
             end
           end
         \{% end %}

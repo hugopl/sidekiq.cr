@@ -122,7 +122,7 @@ describe "api" do
 
       x = q.first
       x.display_class.should eq("ApiWorker")
-      x.display_args.should eq([1, "mike"])
+      x.display_args.should eq("[1,\"mike\"]")
 
       q.map(&.delete).should eq([true])
       q.size.should eq(0)
@@ -346,7 +346,7 @@ describe "api" do
 end
 
 def add_retry(jid = "bob", at = Time.now.epoch_f)
-  payload = {"class" => "ApiWorker", "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.epoch_f}.to_json
+  payload = {"class" => "ApiWorker", "created_at" => Time.now.epoch_f, "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.epoch_f}.to_json
   Sidekiq.redis do |conn|
     conn.zadd("retry", at.to_s, payload)
   end

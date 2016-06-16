@@ -95,9 +95,7 @@ module Sidekiq
       jobstr = work.job
       ack = false
       begin
-        hash = JSON.parse(jobstr)
-        job = Sidekiq::Job.new
-        job.load(hash.as_h)
+        job = Sidekiq::Job.from_json(jobstr)
 
         stats(job, jobstr) do
           @mgr.server_middleware.invoke(job, Sidekiq::Client.default_context.not_nil!) do

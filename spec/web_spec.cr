@@ -138,15 +138,13 @@ describe "sidekiq web" do
 
   it "can delete a single retry" do
     params = add_retry
-    msg = params[0]
-    str = msg["args"].as(Array)[2].to_s
     post "/retries/#{job_params(*params)}", {"delete" => "Delete"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
 
     get "/retries"
     assert_equal 200, last_response.status_code
-    refute_match(/#{str}/, last_response.body)
+    refute_match(/#{params[1]}/, last_response.body)
   end
 
   it "can delete all retries" do
@@ -167,8 +165,7 @@ describe "sidekiq web" do
     get "/queues/default"
     assert_equal 200, last_response.status_code
     msg = params[0]
-    str = msg["args"].as(Array)[2].to_s
-    assert_match(/#{str}/, last_response.body)
+    assert_match(/#{params[1]}/, last_response.body)
   end
 
   it "can kill a single retry now" do
@@ -218,7 +215,7 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    assert_match(/#{params.first["args"][2]}/, last_response.body)
+    assert_match(/#{params[1]}/, last_response.body)
   end
 
   it "can delete a single scheduled job" do
@@ -229,7 +226,7 @@ describe "sidekiq web" do
 
     get "/scheduled"
     assert_equal 200, last_response.status_code
-    refute_match(/#{params.first["args"][2]}/, last_response.body)
+    refute_match(/#{params[1]}/, last_response.body)
   end
 
   it "can delete scheduled" do
@@ -256,12 +253,12 @@ describe "sidekiq web" do
       assert_equal 1, q.size
       get "/queues/default"
       assert_equal 200, last_response.status_code
-      assert_match(/#{params[0]["args"][2]}/, last_response.body)
+      assert_match(/#{params[1]}/, last_response.body)
     end
   end
 
   it "can retry all retries" do
-    msg = add_retry.first
+    msg, score = add_retry
     add_retry
 
     post "/retries/all/retry", {"retry" => "Retry"}
@@ -271,8 +268,7 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    str = msg["args"].as(Array)[2].to_s
-    assert_match(/#{str}/, last_response.body)
+    assert_match(/#{score}/, last_response.body)
   end
 
   it "calls updatePage() once when polling" do
@@ -300,7 +296,7 @@ describe "sidekiq web" do
       conn.sadd("processes", pro)
       conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.now.epoch_f, "labels" => ["frumduz"], "queues" => ["default"]}.to_json, "busy" => 1, "beat" => Time.now.epoch_f})
       identity = "#{pro}:workers"
-      hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"]}, :run_at => Time.now.epoch}
+      hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"], "created_at" => Time.now.epoch_f}, :run_at => Time.now.epoch}
       conn.hmset(identity, {"100001" => hash.to_json})
       conn.incr("busy")
     end
@@ -459,11 +455,13 @@ describe "sidekiq web" do
 end
 
 private def add_scheduled
-  score = Time.now.epoch_f
+  now = Time.now.epoch_f
   msg = {"class" => "HardWorker",
-    "queue" => "default",
-    "args"  => ["bob", 1, Time.now.epoch_f],
-    "jid"   => SecureRandom.hex(12)}
+         "queue" => "default",
+         "created_at" => now,
+         "args"  => ["bob", 1, now],
+         "jid"   => SecureRandom.hex(12)}
+  score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("schedule", score, msg.to_json)
   end
@@ -475,6 +473,7 @@ private def add_retry
   msg = {"class"         => "HardWorker",
     "args"          => ["bob", 1, now.to_s],
     "queue"         => "default",
+    "created_at" => now,
     "error_message" => "Some fake message",
     "error_class"   => "RuntimeError",
     "retry_count"   => 0,
@@ -493,13 +492,14 @@ private def add_dead
   msg = {"class"         => "HardWorker",
     "args"          => ["bob", 1, now],
     "queue"         => "foo",
+    "created_at" => now,
     "error_message" => "Some fake message",
     "error_class"   => "RuntimeError",
     "retry_count"   => 20,
     "retried_at"    => now,
     "failed_at"     => now,
     "jid"           => SecureRandom.hex(12)}
-  score = now
+  score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("dead", score, msg.to_json)
   end
@@ -507,15 +507,17 @@ private def add_dead
 end
 
 private def add_xss_retry
+  now = Time.now.epoch_f
   msg = {"class"         => "FailWorker",
     "args"          => ["<a>hello</a>"],
     "queue"         => "foo",
+    "created_at" => now,
     "error_message" => "fail message: <a>hello</a>",
     "error_class"   => "RuntimeError",
     "retry_count"   => 0,
-    "failed_at"     => Time.now.epoch_f,
+    "failed_at"     => now,
     "jid"           => SecureRandom.hex(12)}
-  score = Time.now.epoch_f
+  score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
   end
@@ -524,7 +526,7 @@ end
 
 private def add_worker
   key = "#{System.hostname}:#{Process.pid}"
-  msg = "{\"queue\":\"default\",\"payload\":{\"retry\":true,\"queue\":\"critical\",\"timeout\":20,\"backtrace\":5,\"class\":\"HardWorker\",\"args\":[\"bob\",10,5],\"jid\":\"2b5ad2b016f5e063a1c62872\"},\"run_at\":1361208995}"
+  msg = "{\"queue\":\"default\",\"payload\":{\"retry\":true,\"queue\":\"critical\",\"timeout\":20,\"backtrace\":5,\"class\":\"HardWorker\",\"args\":[\"bob\",10,5],\"jid\":\"2b5ad2b016f5e063a1c62872\",\"created_at\":1361208995.1234},\"run_at\":1361208995}"
   Sidekiq.redis do |conn|
     conn.multi do |m|
       m.sadd("processes", key)
