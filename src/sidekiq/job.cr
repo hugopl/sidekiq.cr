@@ -70,6 +70,7 @@ module Sidekiq
       worker.bid = self.bid
       worker.logger = ctx.logger
       worker._perform(self.args)
+      nil
     end
 
     def _perform(args : String)
