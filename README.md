@@ -12,7 +12,7 @@ Runtime | RSS | Time | Throughput
 --------|-----|------|-------------
 MRI 2.3.0 | 50MB | 21.3 | 4,600 jobs/sec
 MRI/hiredis | 55MB | 19.2 | 5,200 jobs/sec
-Crystal 0.17 | 18MB | 5.9 | 16,900 jobs/sec
+Crystal 0.18.2 | 16MB | 5.9 | 16,900 jobs/sec
 
 If you have jobs which are CPU-intensive or require very high throughput,
 Crystal is an excellent alternative to native Ruby extensions.  It
