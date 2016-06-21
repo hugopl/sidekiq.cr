@@ -121,7 +121,7 @@ module Sidekiq
       end
     end
 
-    @@worker_state = Hash(String, Hash(String, String)).new
+    @@worker_state = Hash(String, Hash(String, (String | Int64))).new
     @@processed = 0
     @@failure = 0
 
@@ -141,7 +141,7 @@ module Sidekiq
     end
 
     def stats(job, str)
-      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch.to_s}
+      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch}
 
       begin
         yield
