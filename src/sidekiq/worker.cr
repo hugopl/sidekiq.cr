@@ -67,32 +67,21 @@ module Sidekiq
             \{% args_list = a_def.args.join(", ").id %}
             \{% args = a_def.args.map { |a| a.name }.join(", ").id %}
             \{% res = a_def.args.map { |a| a.restriction }.join(", ").id %}
+            \{% json = (a_def.args.size > 0) ? "ARGS_TUPLE.new(#{args}).to_json".id : "" %}
 
             def perform(\{{args_list}})
-              data = ""
-              \{% if a_def.args.size > 0 %}
-                data = ARGS_TUPLE.new(\{{args}}).to_json
-              \{% end %}
-              _perform(data)
+              _perform(\{{json}})
             end
             \{% if a_def.args.size > 0 %}
               def perform_bulk(argses : Array({\{{res}}}))
-                _perform_bulk(argses.map {|(\{{args}})| ARGS_TUPLE.new(\{{args}}).to_json })
+                _perform_bulk(argses.map {|(\{{args}})| \{{json}} })
               end
             \{% end %}
             def perform_at(interval : Time, \{{args_list}})
-              data = ""
-              \{% if a_def.args.size > 0 %}
-                data = ARGS_TUPLE.new(\{{args}}).to_json
-              \{% end %}
-              _perform_at(interval, data)
+              _perform_at(interval, \{{json}})
             end
             def perform_in(interval : Time::Span, \{{args_list}})
-              data = ""
-              \{% if a_def.args.size > 0 %}
-                data = ARGS_TUPLE.new(\{{args}}).to_json
-              \{% end %}
-              _perform_in(interval, data)
+              _perform_in(interval, \{{json}})
             end
           end
         \{% end %}
