@@ -26,9 +26,9 @@ module Sidekiq
 
     WEB_ASSETS = Hash(String, StaticFile).new
 
-    {% for filename in `find web/assets -type f | cut -c11-`.stringify.split("\n") %}
+    {% for filename in `cd #{__DIR__}/.. && find web/assets -type f | cut -c11-`.stringify.split("\n") %}
       {% if filename.size > 0 %}
-        WEB_ASSETS[{{filename}}] = StaticFile.new({{ `base64 web/assets#{filename.id}`.stringify }}, {{ filename }})
+        WEB_ASSETS[{{filename}}] = StaticFile.new({{ `cd #{__DIR__}/.. && base64 web/assets#{filename.id}`.stringify }}, {{ filename }})
       {% end %}
     {% end %}
 

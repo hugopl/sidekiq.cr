@@ -29,7 +29,7 @@ describe "sidekiq web" do
       resp = get("/images/logo.png")
       resp.headers["Content-Type"].should eq("application/octet-stream")
       content = resp.body
-      content.should eq(File.read("web/assets/images/logo.png"))
+      content.should eq(File.read("src/web/assets/images/logo.png"))
     end
   end
 

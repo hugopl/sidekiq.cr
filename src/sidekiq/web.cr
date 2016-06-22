@@ -36,9 +36,9 @@ root_path = ""
 
 macro ecr(xxx)
   {% if xxx.starts_with?('_') %}
-    render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr"
+    render "#{{{__DIR__}}}/../web/views/#{{{xxx}}}.ecr"
   {% else %}
-    render "#{{{__DIR__}}}/../../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../../web/views/layout.ecr"
+    render "#{{{__DIR__}}}/../web/views/#{{{xxx}}}.ecr", "#{{{__DIR__}}}/../web/views/layout.ecr"
   {% end %}
 end
 

@@ -4,7 +4,7 @@ require "uri"
 module Sidekiq
   module WebHelpers
     LANGS        = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
-    LOCALE_PATHS = ["../../web/locales"]
+    LOCALE_PATHS = ["../web/locales"]
 
     @locale : String?
 
