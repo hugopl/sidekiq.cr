@@ -13,7 +13,7 @@ module Sidekiq
       def call(ex : Exception, ctxHash : Hash(String, JSON::Type)? = nil)
         @output.warn(ctxHash.to_json) if ctxHash && !ctxHash.empty?
         @output.warn "#{ex.class.name}: #{ex.message}"
-        @output.warn ex.backtrace[5...-1].join("\n")
+        @output.warn ex.backtrace.join("\n")
       end
     end
 
