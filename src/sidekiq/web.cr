@@ -1,6 +1,7 @@
 require "../sidekiq"
 require "./api"
 require "./web_helpers"
+require "./web_fs"
 
 require "kemal"
 
@@ -31,7 +32,6 @@ class HTTP::Server::Context
   include Sidekiq::WebHelpers
 end
 
-public_folder "web/assets"
 root_path = ""
 
 macro ecr(xxx)
@@ -255,6 +255,12 @@ post "/scheduled/:key" do |x|
   job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
   delete_or_add_queue job, x.params.body if job
   x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
+end
+
+Sidekiq::Filesystem::WEB_ASSETS.each_key do |file|
+  get(file) do |env|
+    Sidekiq::Filesystem.serve(file, env.response)
+  end
 end
 
 private def retry_or_delete_or_kill(job, params)

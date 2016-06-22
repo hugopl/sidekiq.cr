@@ -24,6 +24,15 @@ describe "sidekiq web" do
     assert_match(/Oversikt/, last_response.body)
   end
 
+  describe "assets" do
+    it "serves static files" do
+      resp = get("/images/logo.png")
+      resp.headers["Content-Type"].should eq("application/octet-stream")
+      content = resp.body
+      content.should eq(File.read("web/assets/images/logo.png"))
+    end
+  end
+
   describe "busy" do
     it "can display workers" do
       add_worker
@@ -565,6 +574,7 @@ private def get(path, params = nil, headers = nil)
   res.mem = io
   Kemal::RouteHandler::INSTANCE.call(HTTP::Server::Context.new(req, res))
   res.flush
+  res
 end
 
 private def post(path, params = nil, headers = nil)
@@ -581,4 +591,5 @@ private def post(path, params = nil, headers = nil)
   res.mem = io
   Kemal::RouteHandler::INSTANCE.call(HTTP::Server::Context.new(req, res))
   res.flush
+  res
 end
