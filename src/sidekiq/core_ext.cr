@@ -1,10 +1,8 @@
-require "big_float"
-
 module Sidekiq
   module EpochConverter
     # https://github.com/crystal-lang/crystal/issues/2643
     def self.to_json(value : Time, io : IO)
-      io << value.epoch_f.to_s
+      io << value.epoch_f
     end
 
     def self.from_json(value : JSON::PullParser) : Time
