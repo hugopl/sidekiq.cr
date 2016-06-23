@@ -22,6 +22,8 @@ r = Redis.new
 r.flushdb
 
 devnull = ::Logger.new(File.open("/dev/null", "w"))
+devnull.formatter = Sidekiq::Logger::PRETTY
+devnull.level = ::Logger::INFO
 s = Sidekiq::CLI.new
 x = s.configure(devnull) do |config|
   # nothing

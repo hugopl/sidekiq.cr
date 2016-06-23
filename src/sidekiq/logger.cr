@@ -4,17 +4,35 @@ module Sidekiq
   class Logger
     SPACE = " "
 
-    # 2016-05-19T04:19:24.323Z
     PRETTY = Logger::Formatter.new do |severity, time, progname, message, io|
-      io.print "#{time.to_utc.to_s("%FT%T.%LZ")} #{::Process.pid} TID-#{Fiber.current.object_id.to_s(36)}#{Sidekiq::Logger.context} #{severity}: #{message}"
+      # 2016-05-19T04:19:24.323Z
+      time.to_utc.to_s("%FT%T.%LZ", io)
+      io << " "
+      io << ::Process.pid
+      io << " TID-"
+      Fiber.current.object_id.to_s(36, io)
+      io << " "
+      io << Sidekiq::Logger.context
+      io << " "
+      io << severity
+      io << ": "
+      io << message
     end
     NO_TS = Logger::Formatter.new do |severity, time, progname, message, io|
-      io.print "#{::Process.pid} TID-#{Fiber.current.object_id.to_s(36)}#{context} #{severity}: #{message}"
+      io << ::Process.pid
+      io << " TID-"
+      Fiber.current.object_id.to_s(36, io)
+      io << " "
+      io << Sidekiq::Logger.context
+      io << " "
+      io << severity
+      io << ": "
+      io << message
     end
 
     def self.context
       c = Fiber.current.logging_context
-      " #{c.join(SPACE)}" if c && c.size > 0
+      c && c.size > 0 ? " #{c.join(SPACE)}" : ""
     end
 
     def self.with_context(msg)
