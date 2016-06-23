@@ -54,8 +54,7 @@ describe Sidekiq::Worker do
     it "can create a basic job" do
       jid = MyWorker.async.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
-      pool = Sidekiq::Pool.new
-      pool.redis { |c| c.lpop("queue:default") }
+      POOL.redis { |c| c.lpop("queue:default") }
     end
 
     it "can schedule a basic job" do
@@ -67,9 +66,8 @@ describe Sidekiq::Worker do
       jid = MyWorker.async.perform(1, 2, "3")
       jid.should_not be_nil
 
-      pool = Sidekiq::Pool.new
 
-      str = pool.redis { |c| c.lpop("queue:default") }
+      str = POOL.redis { |c| c.lpop("queue:default") }
       hash = JSON.parse(str.to_s)
       job = Sidekiq::Job.from_json(str.to_s)
       job.execute(MockContext.new)

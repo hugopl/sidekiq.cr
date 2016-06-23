@@ -11,9 +11,19 @@ module Sidekiq
         [] of Sidekiq::ExceptionHandler::Base
       end
 
-      def initialize(pool, logger)
+      def initialize
+        @pool = RedisConfig.new.new_pool
+        @logger = Sidekiq::Logger.build
+      end
+
+      def initialize(redis_cfg : Sidekiq::RedisConfig, logger : ::Logger? = nil)
+        @pool = redis_cfg.new_pool
+        @logger = logger || Sidekiq::Logger.build
+      end
+
+      def initialize(pool : Sidekiq::Pool, logger : ::Logger? = nil)
         @pool = pool
-        @logger = logger
+        @logger = logger || Sidekiq::Logger.build
       end
     end
 

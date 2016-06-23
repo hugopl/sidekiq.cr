@@ -33,7 +33,7 @@ describe Sidekiq do
 
   describe "redis pooling" do
     it "works" do
-      r = Sidekiq::Pool.new
+      r = Sidekiq::Pool.new(1)
       r.redis do |conn|
         conn.get("mike")
         conn.set("mike", "bob")

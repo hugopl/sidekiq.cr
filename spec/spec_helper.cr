@@ -1,7 +1,7 @@
 require "spec"
 require "../src/sidekiq"
 
-POOL = Sidekiq::Pool.new
+POOL = Sidekiq::Pool.new(1)
 
 class MockContext < Sidekiq::Context
   getter pool

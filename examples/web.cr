@@ -1,6 +1,6 @@
 require "../src/sidekiq/web"
 
-# Build this with `crystal build --release -o kiqweb web.cr
+# Build this with `crystal compile --release web.cr
 
 Kemal.config do |config|
   # To enable SSL termination:
@@ -14,11 +14,21 @@ Kemal.config do |config|
   # config.add_handler Kemal::Middleware::HTTPBasicAuth.new("username", "password")
 end
 
-pool = Sidekiq::Pool.new(
-  ConnectionPool(Redis).new(capacity: 30, timeout: 5.0) do
-    Redis.new(host: "localhost", port: 6379)
-  end
-)
-Sidekiq::Client.default_context = Sidekiq::Client::Context.new(pool, Sidekiq::Logger.build)
+# The main thing you need to configure with Sidekiq.cr is how to connect to
+# Redis. The default is localhost:6379 and typically appropriate for local development.
+#
+# Redis location should be configured via the REDIS_PROVIDER env variable.
+# You set two variables:
+#   - REDIS_URL = "redis://:password@hostname:port/db"
+#   - REDIS_PROVIDER = "REDIS_URL"
+#
+# Sidekiq looks for the REDIS_PROVIDER env variable to tell it which env variable holds the
+# actual Redis URL.  This works perfectly when using a Redis SaaS on Heroku, e.g., where the
+# SaaS add-on will set an env var like REDISTOGO_URL.  You just need to set REDIS_PROVIDER:
+#
+#   heroku config:set REDIS_PROVIDER=REDISTOGO_URL
+#
+
+Sidekiq::Client.default_context = Sidekiq::Client::Context.new
 
 Kemal.run

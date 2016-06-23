@@ -6,8 +6,7 @@ describe Sidekiq::Job do
       it "deserializes a simple job" do
         load_fixtures("ruby_compat")
 
-        r = Sidekiq::Pool.new
-        str = r.redis do |conn|
+        str = POOL.redis do |conn|
           conn.lpop("queue:default")
         end.as(String)
 
@@ -18,8 +17,7 @@ describe Sidekiq::Job do
       it "deserializes a retry" do
         load_fixtures("ruby_compat")
 
-        r = Sidekiq::Pool.new
-        results = r.redis do |conn|
+        results = POOL.redis do |conn|
           conn.zrangebyscore("retry", "-inf", "inf")
         end.as(Array)
 
