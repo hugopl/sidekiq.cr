@@ -29,6 +29,17 @@ module Sidekiq
         @hostname = redis_url.host.not_nil!
         @port = redis_url.port
         @password = redis_url.password
+        if redis_url.path
+          x = redis_url.path.not_nil!
+          if x.size > 1
+            begin
+              @db = x[1..-1].to_i
+            rescue ex : ArgumentError
+              raise ArgumentError.new("Invalid Redis DB value '#{x[1..-1]}', should be a number from 0 to 15")
+            end
+          end
+        end
+        @password = redis_url.password
       end
     end
 

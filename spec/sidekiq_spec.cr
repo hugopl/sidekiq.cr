@@ -50,5 +50,30 @@ describe Sidekiq do
       arr[0]?.should eq("bob")
       arr[1]?.should be_nil
     end
+
+    it "uses env vars" do
+      begin
+        ENV["REDIS_PROVIDER"] = "FOO_URL"
+        ENV["FOO_URL"] = "redis://localhost:6379/dev"
+
+        expect_raises ArgumentError, /Invalid Redis/ do
+          r = Sidekiq::Pool.new(1)
+        end
+      ensure
+        ENV["REDIS_PROVIDER"] = nil
+      end
+    end
+
+    it "allows a redis provider" do
+      ENV["REDIS_PROVIDER"] = "FOO_URL"
+      ENV["FOO_URL"] = "redis://:xyzzy@acmecorp.com:1234/14"
+
+      r = Sidekiq::RedisConfig.new
+      r.hostname.should eq("acmecorp.com")
+      r.port.should eq(1234)
+      r.password.should eq("xyzzy")
+      r.db.should eq(14)
+      r.pool_size.should eq(5)
+    end
   end
 end
