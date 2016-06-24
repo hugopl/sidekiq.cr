@@ -22,16 +22,7 @@
     <% jobs.each_with_index do |msg, index| %>
       <tr>
         <td><%= x.h(msg.display_class) %></td>
-        <td>
-          <% a = msg.display_args.inspect %>
-          <% if a.size > 100 %>
-            <%= x.h(a[0..100]) + "... " %>
-            <button data-toggle="collapse" data-target="#worker_<%= index %>" class="btn btn-default btn-xs"><%= x.t("ShowAll") %></button>
-            <div class="toggle" id="worker_<%= index %>" style="display: none;"><%= x.h(a) %></div>
-          <% else %>
-            <%= x.h(a) %>
-          <% end %>
-        </td>
+        <td><%= x.display_args(msg.display_args) %></td>
         <td>
           <form action="<%= x.root_path %>queues/<%= name %>/delete" method="post">
             <%= x.csrf_tag %>

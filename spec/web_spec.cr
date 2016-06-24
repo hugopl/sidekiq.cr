@@ -297,7 +297,7 @@ describe "sidekiq web" do
     last_response.body.should_not contain("fail message: <a>hello</a>")
 
     last_response.body.should contain("args\">&quot;&lt;a&gt;hello&lt;/a&gt;&quot;<")
-    last_response.body.should_not contain("args\"><a>hello</a><")
+    last_response.body.should_not contain("args\">\"<a>hello</a>\"<")
 
     # on /workers page
     Sidekiq.redis do |conn|
