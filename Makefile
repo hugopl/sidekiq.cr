@@ -10,7 +10,8 @@ profile:
 	instruments -w MikeMBP -t "Time Profiler" ./load
 
 bench:
-	crystal run --release bench/load.cr
+	crystal compile --release bench/load.cr && ./load
+	#crystal run --release bench/load.cr
 	#ruby bench/load.rb
 
 bin: clean
