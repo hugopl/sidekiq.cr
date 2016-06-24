@@ -77,18 +77,8 @@ module Sidekiq
       end.map { |msg| JSON.parse(msg).as_h }
     end
 
-    def location
-      # Sidekiq.redis { |conn| conn.client.location }
-      ""
-    end
-
-    def redis_connection
-      # Sidekiq.redis { |conn| conn.client.id }
-      ""
-    end
-
-    def namespace
-      nil
+    def redis_location
+      Sidekiq.redis { |conn| conn.location }
     end
 
     def redis_info
@@ -151,6 +141,7 @@ module Sidekiq
     end
 
     def csrf_tag
+      # TODO issue #28
       # "<input type='hidden' name='authenticity_token' value='#{session[:csrf]}'/>"
       ""
     end
@@ -208,13 +199,6 @@ module Sidekiq
 
     def product_version
       "Sidekiq v#{Sidekiq::VERSION}"
-    end
-
-    def redis_connection_and_namespace
-      @redis_connection_and_namespace ||= begin
-        namespace_suffix = namespace == nil ? "" : "##{namespace}"
-        "#{redis_connection}#{namespace_suffix}"
-      end
     end
 
     def list_page(key, pageidx = 1, page_size = 25)
