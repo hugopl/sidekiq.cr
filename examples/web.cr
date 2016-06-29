@@ -12,6 +12,7 @@ Kemal.config do |config|
   # Basic authentication:
   #
   # config.add_handler Kemal::Middleware::HTTPBasicAuth.new("username", "password")
+  config.add_handler Kemal::Middleware::CSRF.new
 end
 
 # The main thing you need to configure with Sidekiq.cr is how to connect to

@@ -14,5 +14,5 @@ dependencies:
     github: ysbaddaden/pool
     version: ~> 0.2.3
   kemal:
-    github: sdogruyol/kemal
+    github: mperham/kemal
     branch: master

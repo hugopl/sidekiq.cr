@@ -1,6 +1,11 @@
 require "./spec_helper"
 require "../src/sidekiq/web"
 
+Kemal.config do |config|
+  config.env = "test"
+  config.add_handler Kemal::RouteHandler::INSTANCE
+end
+
 describe "sidekiq web" do
   it "can show text with any locales" do
     empty = {} of String => String
@@ -572,7 +577,8 @@ private def get(path, params = nil, headers = nil)
   io = MemoryIO.new
   $last_response = res = HTTP::Server::Response.new(io)
   res.mem = io
-  Kemal::RouteHandler::INSTANCE.call(HTTP::Server::Context.new(req, res))
+  handler = HTTP::Server.build_middleware Kemal.config.handlers
+  handler.call(HTTP::Server::Context.new(req, res))
   res.flush
   res
 end
@@ -589,7 +595,9 @@ private def post(path, params = nil, headers = nil)
   io = MemoryIO.new
   $last_response = res = HTTP::Server::Response.new(MemoryIO.new)
   res.mem = io
-  Kemal::RouteHandler::INSTANCE.call(HTTP::Server::Context.new(req, res))
+
+  handler = HTTP::Server.build_middleware Kemal.config.handlers
+  handler.call(HTTP::Server::Context.new(req, res))
   res.flush
   res
 end
