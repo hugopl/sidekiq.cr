@@ -32,7 +32,7 @@ describe "sidekiq web" do
   describe "assets" do
     it "serves static files" do
       resp = get("/images/logo.png")
-      resp.headers["Content-Type"].should eq("application/octet-stream")
+      resp.headers["Content-Type"].should eq("image/png")
       content = resp.body
       content.should eq(File.read("src/web/assets/images/logo.png"))
     end
