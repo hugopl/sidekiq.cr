@@ -16,3 +16,6 @@ dependencies:
   kemal:
     github: mperham/kemal
     branch: master
+  baked_file_system:
+    github: schovi/baked_file_system
+    version: ~> 0.9.0
