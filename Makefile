@@ -1,6 +1,9 @@
 test:
 	crystal spec
 
+web:
+	crystal run examples/web.cr
+
 run:
 	crystal run examples/sidekiq.cr
 
