@@ -31,7 +31,7 @@ describe "sidekiq web" do
 
   describe "assets" do
     it "serves gzipped static files" do
-      resp = get("/images/logo.png", nil, { "Accepts" => "gzip, deflate" })
+      resp = get("/images/logo.png", nil, { "Accept-Encoding" => "gzip, deflate" })
       resp.status_code.should eq(200)
       resp.headers["Content-Type"]?.should eq("image/png")
       resp.headers["Content-Encoding"]?.should eq("gzip")

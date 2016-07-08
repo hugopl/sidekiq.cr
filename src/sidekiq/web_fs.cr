@@ -9,7 +9,7 @@ module Sidekiq
       resp = ctx.response
       resp.status_code = 200
       resp.content_type = file.mime_type
-      if req.headers["Accepts"]? =~ /gzip/
+      if req.headers["Accept-Encoding"]? =~ /gzip/
         resp.headers["Content-Encoding"] = "gzip"
         resp.content_length = file.compressed_size
         file.write_to_io(resp, compressed: true)
