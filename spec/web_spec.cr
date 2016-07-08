@@ -30,11 +30,25 @@ describe "sidekiq web" do
   end
 
   describe "assets" do
-    it "serves static files" do
+    it "serves gzipped static files" do
+      resp = get("/images/logo.png", nil, { "Accepts" => "gzip, deflate" })
+      resp.status_code.should eq(200)
+      resp.headers["Content-Type"]?.should eq("image/png")
+      resp.headers["Content-Encoding"]?.should eq("gzip")
+      resp.headers["Content-Length"]?.should eq("3916")
+      content = resp.body
+      content.to_slice.size.should eq(4143)
+    end
+
+    it "serves raw static files" do
       resp = get("/images/logo.png")
-      resp.headers["Content-Type"].should eq("application/octet-stream")
+      resp.status_code.should eq(200)
+      resp.headers["Content-Type"]?.should eq("image/png")
+      resp.headers["Content-Encoding"]?.should be_nil
+      resp.headers["Content-Length"]?.should eq("4143")
       content = resp.body
       content.should eq(File.read("src/web/assets/images/logo.png"))
+      content.to_slice.size.should eq(4143)
     end
   end
 

@@ -257,9 +257,9 @@ post "/scheduled/:key" do |x|
   x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
 end
 
-Sidekiq::Filesystem::WEB_ASSETS.each_key do |file|
-  get(file) do |env|
-    Sidekiq::Filesystem.serve(file, env.response)
+Sidekiq::Filesystem.files.each do |file|
+  get(file.path) do |env|
+    Sidekiq::Filesystem.serve(file, env)
   end
 end
 
