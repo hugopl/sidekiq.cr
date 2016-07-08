@@ -78,7 +78,7 @@ module Sidekiq
     end
 
     def redis_location
-      Sidekiq.redis { |conn| conn.location }
+      Sidekiq.redis { |conn| conn.url }
     end
 
     def redis_info
