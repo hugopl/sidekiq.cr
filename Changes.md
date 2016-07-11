@@ -3,4 +3,4 @@
 0.5.0
 ----------
 
-- Initial release
+- Initial release.  See the wiki for how to [Get Started](https://github.com/mperham/sidekiq.cr/wiki/Getting-Started)!
