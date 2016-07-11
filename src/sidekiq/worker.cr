@@ -8,18 +8,26 @@ module Sidekiq
   # class HardWorker
   #   include Sidekiq::Worker
   #
-  #   def perform(a : Int64, b : Int64, c : Float64)
+  #   def perform(a : Int64, b : Int32, c : Float64)
   #     # do some work
   #   end
   # end
   #
   # Note that you **must** annotate your perform method arguments so
   # so that Sidekiq knows how to marshal your jobs at compile-time.
-  # Only JSON::Type parameters are allowed, e.g. Int64 is allowed but Int32 is not.
   #
   # To create a new job, you do this:
   #
-  #   HardWorker.async.perform(1_i64, 2_i64, 3_f64)
+  #   HardWorker.async.perform(1_i64, 2, 3_f64)
+  #
+  # Sidekiq.cr does not support the `sidekiq_options` method allowed by Ruby.
+  # Instead you can programmatically customize a job by passing a block to +async+, like so:
+  #
+  #   HardWorker.async do |job|
+  #     # job is a Sidekiq::Job
+  #     job.queue = "foo"
+  #     job.retry = false
+  #   end.perform(1_i64, 2, 3_f64)
   #
   module Worker
     property jid : String = ""
@@ -27,7 +35,7 @@ module Sidekiq
     property! logger : ::Logger
 
     def logger
-      @logger = ::Logger.new(STDOUT) unless @logger
+      @logger ||= Sidekiq::Client.default.context.logger
       @logger.not_nil!
     end
 
@@ -90,21 +98,19 @@ module Sidekiq
 
     module ClassMethods
       # no block
-      def async(queue = "default")
+      def async
         {% begin %}
         job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
-        job.queue = queue
         job
         {% end %}
       end
 
       # if passed a block, yields the job
-      def async(queue = "default")
+      def async
         {% begin %}
         job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
-        job.queue = queue
         yield job
         job
         {% end %}

@@ -86,7 +86,7 @@ describe "sidekiq web" do
   end
 
   it "can display queues" do
-    WebWorker.async("foo").perform(1_i64, 3_i64)
+    WebWorker.async {|j| j.queue = "foo" }.perform(1_i64, 3_i64).should_not be_nil
 
     get "/queues"
     assert_equal 200, last_response.status_code
@@ -100,7 +100,7 @@ describe "sidekiq web" do
   end
 
   it "can delete a queue" do
-    WebWorker.async("foo").perform(1_i64, 2_i64).should_not be_nil
+    WebWorker.async {|j|j.queue = "foo" }.perform(1_i64, 2_i64).should_not be_nil
 
     get "/queues/foo"
     assert_equal 200, last_response.status_code
@@ -115,10 +115,9 @@ describe "sidekiq web" do
   end
 
   it "can delete a job" do
-    WebWorker.async("foo").perform(1_i64, 2_i64).should_not be_nil
-    jid = WebWorker.async("foo").perform(2_i64, 4_i64)
+    jid = WebWorker.async {|j|j.queue = "foo"}.perform(1_i64, 2_i64)
     jid.should_not be_nil
-    WebWorker.async("foo").perform(3_i64, 6_i64).should_not be_nil
+    WebWorker.async {|j|j.queue = "foo"}.perform(3_i64, 6_i64).should_not be_nil
     job = Sidekiq::Queue.new("foo").find_job(jid).not_nil!
 
     get "/queues/foo"
