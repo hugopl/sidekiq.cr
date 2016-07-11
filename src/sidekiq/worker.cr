@@ -35,7 +35,7 @@ module Sidekiq
     property! logger : ::Logger
 
     def logger
-      @logger ||= Sidekiq::Client.default.context.logger
+      @logger ||= Sidekiq::Client.default_context.logger
       @logger.not_nil!
     end
 

@@ -50,11 +50,22 @@ describe Sidekiq::Worker do
     end
   end
 
+  describe "server-side" do
+    it "can access jid and logger" do
+      work = MyWorker.new
+      work.jid = "123456789abcdef"
+      work.logger.info { "Hello world" }
+      work.jid.should eq("123456789abcdef")
+      work.bid.should be_nil
+    end
+  end
+
   describe "client-side" do
     it "can create a basic job" do
-      jid = MyWorker.async.perform(1, 2, "3")
+      jid = MyWorker.async {|j| j.queue = "foo" }.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
-      POOL.redis { |c| c.lpop("queue:default") }
+      job = POOL.redis { |c| c.lpop("queue:foo") }
+      job.should_not be_nil
     end
 
     it "can schedule a basic job" do

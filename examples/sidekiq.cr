@@ -6,7 +6,7 @@ require "../src/cli"
 #
 # You must define one or more Sidekiq::Worker classes
 # before you start the server!
-class MyWorker
+class CrystalWorker
   include Sidekiq::Worker
 
   def perform(x : Int64)
@@ -49,7 +49,7 @@ server = cli.configure do |config|
   #
 end
 
-MyWorker.async.perform(1_i64)
-MyWorker.async.perform(2_i64)
+CrystalWorker.async.perform(1_i64)
+CrystalWorker.async.perform(2_i64)
 
 cli.run(server)
