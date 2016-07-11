@@ -27,6 +27,11 @@ clean:
 fixtures:
 	cd spec/fixtures && ruby create_fixtures.rb
 
+tag:
+	git tag `crystal eval 'require "./src/sidekiq.cr"; puts "v#{Sidekiq::VERSION}"'`
+
+release: test bin tag
+
 all: test bin bench
 
 .PHONY: test run bench all bin clean fixtures
