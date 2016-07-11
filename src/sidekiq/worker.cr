@@ -30,7 +30,7 @@ module Sidekiq
   #   end.perform(1_i64, 2, 3_f64)
   #
   module Worker
-    property jid : String = ""
+    property! jid : String
     property bid : String?
     property! logger : ::Logger
 
