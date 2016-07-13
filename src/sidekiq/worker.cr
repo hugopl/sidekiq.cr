@@ -20,8 +20,16 @@ module Sidekiq
   #
   #   HardWorker.async.perform(1_i64, 2, 3_f64)
   #
-  # Sidekiq.cr does not support the `sidekiq_options` method allowed by Ruby.
-  # Instead you can programmatically customize a job by passing a block to +async+, like so:
+  # You can set default job options per-Worker with `sidekiq_options`:
+  #
+  #   class HardWorker
+  #     include Sidekiq::Worker
+  #     sidekiq_options do |job|
+  #       job.queue = "critical"
+  #       job.retry = 5
+  #     end
+  #
+  # You can dynamically customize job options by passing a block to +async+, like so:
   #
   #   HardWorker.async do |job|
   #     # job is a Sidekiq::Job
@@ -30,6 +38,8 @@ module Sidekiq
   #   end.perform(1_i64, 2, 3_f64)
   #
   module Worker
+    OPTION_BLOCKS = Hash(String, Proc(Sidekiq::Job, Nil)).new
+
     property! jid : String
     property bid : String?
     property! logger : ::Logger
@@ -102,6 +112,7 @@ module Sidekiq
         {% begin %}
         job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
+        Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"]?.try &.call(job)
         job
         {% end %}
       end
@@ -111,8 +122,19 @@ module Sidekiq
         {% begin %}
         job = {{@type.id}}::PerformProxy.new
         job.klass = self.name
+        Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"]?.try &.call(job)
         yield job
         job
+        {% end %}
+      end
+
+      def sidekiq_options(&block : Sidekiq::Job -> Nil)
+        captured = block
+        {% begin %}
+        if Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"]?
+          raise ArgumentError.new("Already defined sidekiq_options for {{@type.id}}")
+        end
+        Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"] = captured
         {% end %}
       end
     end

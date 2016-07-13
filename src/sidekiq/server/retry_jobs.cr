@@ -47,7 +47,9 @@ module Sidekiq
     #
     #    class MyWorker
     #      include Sidekiq::Worker
-    #      sidekiq_options :retry => 10
+    #      sidekiq_options do |job|
+    #        job.retry = 10
+    #      end
     #    end
     #
     class RetryJobs < ServerEntry

@@ -2,6 +2,9 @@ require "./spec_helper"
 
 class MyWorker
   include Sidekiq::Worker
+  sidekiq_options do |job|
+    job.retry = 5
+  end
 
   def perform(a : Int32, b : Int32, c : String)
   end
@@ -95,6 +98,16 @@ describe Sidekiq::Worker do
       ])
       count = POOL.redis { |c| c.llen("queue:default") }
       count.should eq(4)
+    end
+
+    it "can statically and dynamically control job options" do
+      job = MyWorker.async
+      job.retry.should eq(5)
+
+      j2 = MyWorker.async do |job|
+        job.retry = 6
+      end
+      j2.retry.should eq(6)
     end
 
   end
