@@ -1,5 +1,11 @@
 # Sidekiq.cr Changelog
 
+0.6.0
+----------
+
+- Implement `sidekiq_options` for Workers. [#3]
+
+
 0.5.0
 ----------
 
