@@ -37,7 +37,7 @@ module Sidekiq
       end
 
       def remove(klass)
-        entries.delete_if { |entry| entry.klass == klass }
+        entries.reject! { |entry| entry.class == klass }
       end
 
       def add(klass)
