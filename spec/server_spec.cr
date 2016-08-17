@@ -21,6 +21,15 @@ describe "Sidekiq::Server" do
     s.server_middleware.entries.size.should eq(3)
   end
 
+  it "allows removing middleware" do
+    s = Sidekiq::Server.new
+    s.server_middleware.entries.size.should eq(2)
+    s.server_middleware.entries[0].should be_a(Sidekiq::Middleware::Logger)
+    s.server_middleware.remove(Sidekiq::Middleware::Logger)
+    s.server_middleware.entries.size.should eq(1)
+    s.server_middleware.entries[0].should be_a(Sidekiq::Middleware::RetryJobs)
+  end
+
   it "will stop" do
     s = Sidekiq::Server.new
     s.stopping?.should be_false
