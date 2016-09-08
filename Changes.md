@@ -4,7 +4,7 @@
 ----------
 
 - Implement `sidekiq_options` for Workers. [#3]
-
+- Fixes for Crystal 0.19
 
 0.5.0
 ----------
