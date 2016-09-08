@@ -44,7 +44,7 @@ module Sidekiq
     end
 
     def new_client
-      Redis.new(host: hostname, port: port, password: password)
+      Redis.new(host: hostname, port: port, password: password, database: db)
     end
 
     def new_pool
