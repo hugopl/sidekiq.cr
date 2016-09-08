@@ -182,6 +182,66 @@ module Sidekiq
   end
 
   # #
+  # Encapsulates a pending job within a Sidekiq queue or
+  # sorted set.
+  #
+  # The job should be considered immutable but may be
+  # removed from the queue via Job#delete.
+  #
+  class JobProxy < ::Sidekiq::Job
+    getter item : Hash(String, JSON::Type)
+    getter value : String
+
+    def initialize(str)
+      super(JSON::PullParser.new(str))
+      @value = str
+      @item = JSON.parse(str).as_h
+    end
+
+    def display_class
+      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
+      klass
+    end
+
+    def display_args : String
+      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
+      args
+    end
+
+    def latency
+      (Time.now.to_utc - (enqueued_at || created_at)).to_f
+    end
+
+    # #
+    # Remove this job from the queue.
+    def delete
+      count = Sidekiq.redis do |conn|
+        conn.lrem("queue:#{@queue}", 1, @value)
+      end.as(Int64)
+      count != 0
+    end
+
+    def [](name)
+      @item[name]
+    end
+
+    def []?(name)
+      @item[name]?
+    end
+
+    private def safe_load(content, default)
+      begin
+        yield(*YAML.load(content))
+      rescue ex
+        # #1761 in dev mode, it"s possible to have jobs enqueued which haven"t been loaded into
+        # memory yet so the YAML can"t be loaded.
+        puts "Unable to load YAML: #{ex.message}"
+        default
+      end
+    end
+  end
+
+  # #
   # Encapsulates a queue within Sidekiq.
   # Allows enumeration of all jobs within the queue
   # and deletion of jobs.
@@ -276,66 +336,6 @@ module Sidekiq
     end
   end
 
-  # #
-  # Encapsulates a pending job within a Sidekiq queue or
-  # sorted set.
-  #
-  # The job should be considered immutable but may be
-  # removed from the queue via Job#delete.
-  #
-  class JobProxy < ::Sidekiq::Job
-    getter item : Hash(String, JSON::Type)
-    getter value : String
-
-    def initialize(str)
-      super(JSON::PullParser.new(str))
-      @value = str
-      @item = JSON.parse(str).as_h
-    end
-
-    def display_class
-      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      klass
-    end
-
-    def display_args : String
-      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      args
-    end
-
-    def latency
-      (Time.now.to_utc - (enqueued_at || created_at)).to_f
-    end
-
-    # #
-    # Remove this job from the queue.
-    def delete
-      count = Sidekiq.redis do |conn|
-        conn.lrem("queue:#{@queue}", 1, @value)
-      end.as(Int64)
-      count != 0
-    end
-
-    def [](name)
-      @item[name]
-    end
-
-    def []?(name)
-      @item[name]?
-    end
-
-    private def safe_load(content, default)
-      begin
-        yield(*YAML.load(content))
-      rescue ex
-        # #1761 in dev mode, it"s possible to have jobs enqueued which haven"t been loaded into
-        # memory yet so the YAML can"t be loaded.
-        puts "Unable to load YAML: #{ex.message}"
-        default
-      end
-    end
-  end
-
   class SortedEntry < JobProxy
     getter score : Float64
     getter parent : Sidekiq::JobSet?
@@ -420,8 +420,8 @@ module Sidekiq
           hash = arr.group_by do |message|
             msg = message
             if msg.index(jid)
-              hash = JSON.parse(msg).as_h
-              msg["jid"] == jid
+              h = JSON.parse(msg).as_h
+              h["jid"] == jid
             else
               false
             end
@@ -613,6 +613,78 @@ module Sidekiq
     end
   end
 
+  #
+  # Sidekiq::Process represents an active Sidekiq process talking with Redis.
+  # Each process has a set of attributes which look like this:
+  #
+  # {
+  #   "hostname" => "app-1.example.com",
+  #   "started_at" => <process start time>,
+  #   "pid" => 12345,
+  #   "tag" => "myapp"
+  #   "concurrency" => 25,
+  #   "queues" => ["default", "low"],
+  #   "busy" => 10,
+  #   "beat" => <last heartbeat>,
+  #   "identity" => <unique string identifying the process>,
+  # }
+  class Process
+    def initialize(hash : Hash(String, JSON::Type))
+      @attribs = hash
+    end
+
+    def started_at
+      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i64)
+    end
+
+    def tag
+      @attribs["tag"]?
+    end
+
+    def labels
+      x = @attribs["labels"]?
+      x ? x.as(Array).map { |x| x.as(String) } : [] of String
+    end
+
+    def queues
+      self["queues"].as(Array).map { |x| x.as(String) }
+    end
+
+    def [](key)
+      @attribs[key]
+    end
+
+    def quiet!
+      signal("USR1")
+    end
+
+    def stop!
+      signal("TERM")
+    end
+
+    def dump_threads
+      signal("TTIN")
+    end
+
+    def stopping?
+      self["quiet"] == "true"
+    end
+
+    private def signal(sig)
+      key = "#{identity}-signals"
+      Sidekiq.redis do |c|
+        c.multi do |m|
+          m.lpush(key, sig)
+          m.expire(key, 60)
+        end
+      end
+    end
+
+    def identity
+      self["identity"]
+    end
+  end
+
   # #
   # Enumerates the set of Sidekiq processes which are actively working
   # right now.  Each process send a heartbeat to Redis every 5 seconds
@@ -697,78 +769,6 @@ module Sidekiq
     # 60 seconds.
     def size
       Sidekiq.redis { |conn| conn.scard("processes") }
-    end
-  end
-
-  #
-  # Sidekiq::Process represents an active Sidekiq process talking with Redis.
-  # Each process has a set of attributes which look like this:
-  #
-  # {
-  #   "hostname" => "app-1.example.com",
-  #   "started_at" => <process start time>,
-  #   "pid" => 12345,
-  #   "tag" => "myapp"
-  #   "concurrency" => 25,
-  #   "queues" => ["default", "low"],
-  #   "busy" => 10,
-  #   "beat" => <last heartbeat>,
-  #   "identity" => <unique string identifying the process>,
-  # }
-  class Process
-    def initialize(hash : Hash(String, JSON::Type))
-      @attribs = hash
-    end
-
-    def started_at
-      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i64)
-    end
-
-    def tag
-      @attribs["tag"]?
-    end
-
-    def labels
-      x = @attribs["labels"]?
-      x ? x.as(Array).map { |x| x.as(String) } : [] of String
-    end
-
-    def queues
-      self["queues"].as(Array).map { |x| x.as(String) }
-    end
-
-    def [](key)
-      @attribs[key]
-    end
-
-    def quiet!
-      signal("USR1")
-    end
-
-    def stop!
-      signal("TERM")
-    end
-
-    def dump_threads
-      signal("TTIN")
-    end
-
-    def stopping?
-      self["quiet"] == "true"
-    end
-
-    private def signal(sig)
-      key = "#{identity}-signals"
-      Sidekiq.redis do |c|
-        c.multi do |m|
-          m.lpush(key, sig)
-          m.expire(key, 60)
-        end
-      end
-    end
-
-    def identity
-      self["identity"]
     end
   end
 

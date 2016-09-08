@@ -8,18 +8,18 @@ run:
 	crystal run examples/sidekiq.cr
 
 profile:
-	crystal compile bench/load.cr
+	crystal build bench/load.cr
 # use `instruments -s` to find out your device name
 	instruments -w MikeMBP -t "Time Profiler" ./load
 
 bench:
-	crystal compile --release bench/load.cr && ./load
+	crystal build --release bench/load.cr && ./load
 	#crystal run --release bench/load.cr
 	#ruby bench/load.rb
 
 bin: clean
-	time crystal compile -s --release -o sidekiq examples/sidekiq.cr
-	time crystal compile -s --release -o sideweb examples/web.cr
+	time crystal build -s --release -o sidekiq examples/sidekiq.cr
+	time crystal build -s --release -o sideweb examples/web.cr
 
 clean:
 	rm -f sidekiq sideweb

@@ -564,8 +564,8 @@ private def add_worker
   key
 end
 
-private def last_response
-  $last_response.not_nil!
+def last_response
+  WebWorker.new.last_response
 end
 
 private def job_params(msg, score)
@@ -578,6 +578,18 @@ class WebWorker
   def perform(a : Int64, b : Int64)
     a + b
   end
+
+  # Can you even handle the grossness of this bloody hack?
+  # Can't use top-level class variables so just stick this
+  # in the first place possible.
+  @@last_response : HTTP::Server::Response?
+  def last_response
+    @@last_response.not_nil!
+  end
+
+  def last_response=(resp)
+    @@last_response = resp
+  end
 end
 
 private def get(path, params = nil, headers = nil)
@@ -588,7 +600,7 @@ private def get(path, params = nil, headers = nil)
   end if headers
   req = HTTP::Request.new("GET", resource, hdrs)
   io = MemoryIO.new
-  $last_response = res = HTTP::Server::Response.new(io)
+  WebWorker.new.last_response = res = HTTP::Server::Response.new(io)
   res.mem = io
   handler = HTTP::Server.build_middleware Kemal.config.handlers
   handler.call(HTTP::Server::Context.new(req, res))
@@ -606,7 +618,7 @@ private def post(path, params = nil, headers = nil)
   hdrs["Content-Type"] = "application/x-www-form-urlencoded"
   req = HTTP::Request.new("POST", resource, hdrs, body)
   io = MemoryIO.new
-  $last_response = res = HTTP::Server::Response.new(MemoryIO.new)
+  WebWorker.new.last_response = res = HTTP::Server::Response.new(MemoryIO.new)
   res.mem = io
 
   handler = HTTP::Server.build_middleware Kemal.config.handlers

@@ -4,7 +4,7 @@ module Sidekiq
   class Logger
     SPACE = " "
 
-    PRETTY = Logger::Formatter.new do |severity, time, progname, message, io|
+    PRETTY = ::Logger::Formatter.new do |severity, time, progname, message, io|
       # 2016-05-19T04:19:24.323Z
       time.to_utc.to_s("%FT%T.%LZ", io)
       io << " "
@@ -18,7 +18,7 @@ module Sidekiq
       io << ": "
       io << message
     end
-    NO_TS = Logger::Formatter.new do |severity, time, progname, message, io|
+    NO_TS = ::Logger::Formatter.new do |severity, time, progname, message, io|
       io << ::Process.pid
       io << " TID-"
       Fiber.current.object_id.to_s(36, io)
@@ -45,7 +45,7 @@ module Sidekiq
 
     def self.build(log_target = STDOUT)
       logger = ::Logger.new(log_target)
-      logger.level = Logger::INFO
+      logger.level = ::Logger::INFO
       logger.formatter = ENV["DYNO"]? ? NO_TS : PRETTY
       logger
     end
