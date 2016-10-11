@@ -29,6 +29,16 @@ class ComplexWorker
   end
 end
 
+class NoArgumentsWorker
+  include Sidekiq::Worker
+  sidekiq_options do |job|
+    job.retry = 0
+  end
+
+  def perform
+  end
+end
+
 describe Sidekiq::Worker do
   describe "arguments" do
     it "handles arbitrary complexity" do
@@ -40,6 +50,14 @@ describe Sidekiq::Worker do
       msg = Sidekiq.redis { |c| c.lpop("queue:default") }
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[[{\"x\":1.0,\"y\":3.0},{\"x\":4.3,\"y\":12.5}],{\"radius\":9,\"diameter\":17}]")
+      job.execute(MockContext.new)
+    end
+
+    it "works without arguments" do
+      NoArgumentsWorker.async.perform
+      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      job = Sidekiq::Job.from_json(msg.as(String))
+      job.args.should eq("[]")
       job.execute(MockContext.new)
     end
   end
