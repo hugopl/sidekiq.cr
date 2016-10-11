@@ -45,7 +45,7 @@ module Sidekiq
 
     def initialize
       @queue = "default"
-      @args = ""
+      @args = "[]"
       @klass = ""
       @created_at = Time.now.to_utc
       @enqueued_at = nil
