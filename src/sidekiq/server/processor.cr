@@ -97,7 +97,7 @@ module Sidekiq
       begin
         job = Sidekiq::Job.from_json(jobstr)
 
-        stats(job, jobstr) do
+        stats(job) do
           @mgr.server_middleware.invoke(job, Sidekiq::Client.default_context.not_nil!) do
             # Only ack if we either attempted to start this job or
             # successfully completed it. This prevents us from
@@ -121,7 +121,7 @@ module Sidekiq
       end
     end
 
-    @@worker_state = Hash(String, Hash(String, (String | Int64))).new
+    @@worker_state = Hash(String, Hash(String, (String | Int64 | Sidekiq::Job))).new
     @@processed = 0
     @@failure = 0
 
@@ -140,8 +140,8 @@ module Sidekiq
       @@failure += f
     end
 
-    def stats(job, str)
-      @@worker_state[@identity] = {"queue" => job.queue, "payload" => str, "run_at" => Time.now.epoch}
+    def stats(job)
+      @@worker_state[@identity] = {"queue" => job.queue, "payload" => job, "run_at" => Time.now.epoch}
 
       begin
         yield
