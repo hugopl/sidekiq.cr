@@ -81,9 +81,12 @@ module Sidekiq
 
       count = 0
       ctx.pool.redis do |conn|
-        conn.pipelined do
+        conn.pipelined do |pipeline|
           jobs_to_requeue.each do |queue, jobs|
-            conn.rpush("queue:#{queue}", jobs)
+            jobs.each do |job|
+              # Crystal-Redis sends array as one value, we are unable to do rpush("queue", jobs)
+              pipeline.rpush("queue:#{queue}", job)
+            end
             count += jobs.size
           end
         end
