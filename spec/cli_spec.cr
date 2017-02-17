@@ -26,7 +26,7 @@ describe "Sidekiq::CLI" do
   end
 
   it "handles no arguments gracefully" do
-    logger = ::Logger.new(MemoryIO.new)
+    logger = ::Logger.new(IO::Memory.new)
     logger.level = Logger::DEBUG
 
     cli = Sidekiq::CLI.new
