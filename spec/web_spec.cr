@@ -447,13 +447,13 @@ describe "sidekiq web" do
 
   describe "dead jobs" do
     it "shows empty index" do
-      get "morgue"
+      get "/morgue"
       assert_equal 200, last_response.status_code
     end
 
     it "shows index with jobs" do
       _, score = add_dead
-      get "morgue"
+      get "/morgue"
       assert_equal 200, last_response.status_code
       assert_match(/#{score}/, last_response.body)
     end
