@@ -17,7 +17,7 @@ module Sidekiq
       end
     end
 
-    def handle_exception(ctx : Sidekiq::Context, ex : Exception, ctxHash : Hash(String, JSON::Type) = nil)
+    def handle_exception(ctx : Sidekiq::Context, ex : Exception, ctxHash : Hash(String, JSON::Type)? = nil)
       ctx.error_handlers.each do |handler|
         begin
           handler.call(ex, ctxHash)
