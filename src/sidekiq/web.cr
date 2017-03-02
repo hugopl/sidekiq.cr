@@ -147,7 +147,7 @@ get "/morgue/:key" do |x|
 end
 
 post "/morgue" do |x|
-  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  bdy = HTTP::Params.parse(x.request.body.not_nil!.gets_to_end)
   bdy.fetch_all("key").each do |key|
     score, jid = key.split("-")
     job = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first?
@@ -193,7 +193,7 @@ get "/retries/:key" do |x|
 end
 
 post "/retries" do |x|
-  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  bdy = HTTP::Params.parse(x.request.body.not_nil!.gets_to_end)
   bdy.fetch_all("key").each do |key|
     score, jid = key.split("-")
     job = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
@@ -239,7 +239,7 @@ get "/scheduled/:key" do |x|
 end
 
 post "/scheduled" do |x|
-  bdy = HTTP::Params.parse(x.request.body.not_nil!)
+  bdy = HTTP::Params.parse(x.request.body.not_nil!.gets_to_end)
   ss = Sidekiq::ScheduledSet.new
   bdy.fetch_all("key").each do |key|
     score, jid = key.split("-")
