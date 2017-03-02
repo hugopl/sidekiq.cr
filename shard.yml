@@ -18,7 +18,7 @@ dependencies:
     version: ~> 0.18.2
   kemal-csrf:
     github: kemalcr/kemal-csrf
-    version: ~> 0.1.0
+    branch: master
 
   baked_file_system:
     github: waghanza/baked_file_system
