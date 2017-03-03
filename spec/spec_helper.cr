@@ -11,7 +11,7 @@ class MockContext < Sidekiq::Context
 
   def initialize
     @pool = POOL
-    @output = MemoryIO.new
+    @output = IO::Memory.new
     @logger = ::Logger.new(@output)
     @error_handlers = [] of Sidekiq::ExceptionHandler::Base
   end
@@ -56,7 +56,7 @@ end
 require "http"
 
 class HTTP::Server::Response
-  property! mem : MemoryIO
+  property! mem : IO::Memory
   property! cresp : HTTP::Client::Response
 
   def body : String

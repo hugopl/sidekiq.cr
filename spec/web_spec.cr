@@ -447,13 +447,13 @@ describe "sidekiq web" do
 
   describe "dead jobs" do
     it "shows empty index" do
-      get "morgue"
+      get "/morgue"
       assert_equal 200, last_response.status_code
     end
 
     it "shows index with jobs" do
       _, score = add_dead
-      get "morgue"
+      get "/morgue"
       assert_equal 200, last_response.status_code
       assert_match(/#{score}/, last_response.body)
     end
@@ -599,7 +599,7 @@ private def get(path, params = nil, headers = nil)
     hdrs[k] = v
   end if headers
   req = HTTP::Request.new("GET", resource, hdrs)
-  io = MemoryIO.new
+  io = IO::Memory.new
   WebWorker.new.last_response = res = HTTP::Server::Response.new(io)
   res.mem = io
   handler = HTTP::Server.build_middleware Kemal.config.handlers
@@ -617,8 +617,8 @@ private def post(path, params = nil, headers = nil)
   end if headers
   hdrs["Content-Type"] = "application/x-www-form-urlencoded"
   req = HTTP::Request.new("POST", resource, hdrs, body)
-  io = MemoryIO.new
-  WebWorker.new.last_response = res = HTTP::Server::Response.new(MemoryIO.new)
+  io = IO::Memory.new
+  WebWorker.new.last_response = res = HTTP::Server::Response.new(IO::Memory.new)
   res.mem = io
 
   handler = HTTP::Server.build_middleware Kemal.config.handlers

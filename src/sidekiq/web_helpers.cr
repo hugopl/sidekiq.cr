@@ -141,7 +141,7 @@ module Sidekiq
     end
 
     def csrf_tag
-      "<input type='hidden' name='authenticity_token' value='#{session["csrf"]?}'/>"
+      "<input type='hidden' name='authenticity_token' value="#{session.string('csrf')?}"/>"
     end
 
     def to_display(arg)
