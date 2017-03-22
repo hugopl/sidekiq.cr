@@ -9,17 +9,16 @@ license: LGPL-3.0
 dependencies:
   redis:
     github: stefanwille/crystal-redis
-    version: ~> 1.7.1
+    version: ~> 1.8.0
   pool:
     github: ysbaddaden/pool
     version: ~> 0.2.3
   kemal:
-    github: sdogruyol/kemal
-    version: ~> 0.18.2
+    github: kemalcr/kemal
+    version: ~> 0.18.3
   kemal-csrf:
     github: kemalcr/kemal-csrf
     branch: master
-
   baked_file_system:
-    github: waghanza/baked_file_system
-    branch: master
+    github: schovi/baked_file_system
+    version: ~> 0.9.4
