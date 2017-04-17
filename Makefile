@@ -1,6 +1,9 @@
 test:
 	crystal spec
 
+prepare:
+	shards
+
 web:
 	crystal run examples/web.cr
 
@@ -18,8 +21,8 @@ bench:
 	#ruby bench/load.rb
 
 bin: clean
-	time crystal build -s --release -o sidekiq examples/sidekiq.cr
-	time crystal build -s --release -o sideweb examples/web.cr
+	time crystal build -s --no-debug --release -o sidekiq examples/sidekiq.cr
+	time crystal build -s --no-debug --release -o sideweb examples/web.cr
 
 clean:
 	rm -f sidekiq sideweb
