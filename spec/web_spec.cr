@@ -7,6 +7,7 @@ Session.config do |config|
 end
 
 Kemal.config do |config|
+  config.logger = Kemal::NullLogHandler.new
   config.env = "test"
   # Uncomment this and all POSTs in the test suite will fail since
   # the tests don't round trip the session cookies.
