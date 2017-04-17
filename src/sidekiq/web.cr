@@ -4,6 +4,7 @@ require "./web_helpers"
 require "./web_fs"
 
 require "kemal"
+require "kemal-session"
 require "kemal-csrf"
 
 module Sidekiq

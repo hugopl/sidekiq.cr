@@ -2,6 +2,11 @@ require "../src/sidekiq/web"
 
 # Build this with `crystal compile --release web.cr
 
+Session.config do |config|
+  # crystal eval 'require "secure_random"; puts SecureRandom.hex(64)'
+  config.secret = "3ae480ffc18380c6afa05e96c8a2262c"
+end
+
 Kemal.config do |config|
   # To enable SSL termination:
   # ./kiqweb --ssl --ssl-key-file your_key_file --ssl-cert-file your_cert_file
@@ -12,7 +17,7 @@ Kemal.config do |config|
   # Basic authentication:
   #
   # config.add_handler Kemal::Middleware::HTTPBasicAuth.new("username", "password")
-  config.add_handler Kemal::Middleware::CSRF.new
+  config.add_handler CSRF.new
 end
 
 # The main thing you need to configure with Sidekiq.cr is how to connect to

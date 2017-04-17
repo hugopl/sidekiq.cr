@@ -1,8 +1,16 @@
 require "./spec_helper"
 require "../src/sidekiq/web"
 
+Session.config do |config|
+  # crystal eval 'require "secure_random"; puts SecureRandom.hex(64)'
+  config.secret = "3ae480ffc18380c6afa05e96c8a2262c"
+end
+
 Kemal.config do |config|
   config.env = "test"
+  # Uncomment this and all POSTs in the test suite will fail since
+  # the tests don't round trip the session cookies.
+  # config.add_handler CSRF.new
   config.add_handler Kemal::RouteHandler::INSTANCE
 end
 
@@ -346,43 +354,10 @@ describe "sidekiq web" do
     last_response.body.should_not contain("<a>hello</a>")
   end
 
-  # it "can show user defined tab" do
-  # begin
-  # Sidekiq::Web.tabs["Custom Tab"] = "/custom"
-
-  # get "/"
-  # assert_match "Custom Tab", last_response.body
-
-  # ensure
-  # Sidekiq::Web.tabs.delete "Custom Tab"
-  # end
-  # end
-
   it "can display home" do
     get "/"
     assert_equal 200, last_response.status_code
   end
-
-  # describe "custom locales" do
-  # before do
-  # Sidekiq::Web.settings.locales << File.join(File.dirname(__FILE__), "fixtures")
-  # Sidekiq::Web.tabs["Custom Tab"] = "/custom"
-  # Sidekiq::Web.get("/custom") do
-  # clear_caches # ugly hack since I can"t figure out how to access WebHelpers outside of this context
-  # t("translated_text")
-  # end
-  # end
-
-  # after do
-  # Sidekiq::Web.tabs.delete "Custom Tab"
-  # Sidekiq::Web.settings.locales.pop
-  # end
-
-  # it "can show user defined tab with custom locales" do
-  # get "/custom"
-  # assert_match(/Changed text/, last_response.body)
-  # end
-  # end
 
   describe "dashboard/stats" do
     it "redirects to stats" do
