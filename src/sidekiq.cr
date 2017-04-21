@@ -1,3 +1,4 @@
+require "./sidekiq/version"
 require "./sidekiq/pool"
 require "./sidekiq/job"
 require "./sidekiq/middleware"
@@ -8,7 +9,6 @@ require "./sidekiq/logger"
 
 module Sidekiq
   NAME    = "Sidekiq"
-  VERSION = "0.6.0"
   LICENSE = "Licensed for use under the terms of the GNU LGPL-3.0 license."
 
   def self.redis

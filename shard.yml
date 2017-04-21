@@ -1,5 +1,5 @@
 name: sidekiq
-version: 0.1.0
+version: 0.7.0
 
 authors:
   - Mike Perham <mike@contribsys.com>
@@ -18,7 +18,7 @@ dependencies:
     version: ~> 0.18.3
   kemal-csrf:
     github: kemalcr/kemal-csrf
-    branch: master
+    version: ~> 0.2.0
   baked_file_system:
     github: schovi/baked_file_system
     version: ~> 0.9.4
