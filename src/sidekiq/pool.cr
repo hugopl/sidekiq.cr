@@ -24,7 +24,7 @@ module Sidekiq
 
     def initialize(@hostname = "localhost", @port = 6379, @db = 0, @pool_size = 5, @pool_timeout = 5.0, @password = nil)
       if ENV["REDIS_PROVIDER"]?
-        url = ENV[ENV["REDIS_PROVIDER"]]
+        url = ENV["REDIS_PROVIDER"]
         redis_url = URI.parse(url)
         @hostname = redis_url.host.not_nil!
         @port = redis_url.port
