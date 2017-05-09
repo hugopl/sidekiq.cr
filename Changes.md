@@ -1,6 +1,6 @@
 # Sidekiq.cr Changelog
 
-0.7.0
+0.6.1
 ----------
 
 - Updates for latest Crystal, Kemal versions
