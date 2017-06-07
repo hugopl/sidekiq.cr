@@ -1,3 +1,4 @@
+require "json"
 require "./spec_helper"
 require "../src/sidekiq/server/heartbeat"
 
@@ -6,10 +7,11 @@ describe Sidekiq::Heartbeat do
     svr = Sidekiq::Server.new
 
     hb = Sidekiq::Heartbeat.new
-    j = hb.server_json(svr)
-    hostname = `hostname`.strip
-    j.should match /#{hostname}/
+    json = hb.server_json(svr)
+    ret = JSON.parse json
 
-    hb.❤(svr, j)
+    ret["hostname"].should eq(System.hostname)
+
+    hb.❤(svr, json)
   end
 end
