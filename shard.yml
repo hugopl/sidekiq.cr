@@ -15,10 +15,10 @@ dependencies:
     version: ~> 0.2.3
   kemal:
     github: kemalcr/kemal
-    version: ~> 0.19.0
+    version: ~> 0.21.0
   kemal-csrf:
     github: kemalcr/kemal-csrf
-    version: ~> 0.2.0
+    version: ~> 0.3.0
   baked_file_system:
     github: schovi/baked_file_system
     version: ~> 0.9.4
