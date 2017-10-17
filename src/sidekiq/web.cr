@@ -241,9 +241,8 @@ get "/scheduled/:key" do |x|
 end
 
 post "/scheduled" do |x|
-  bdy = HTTP::Params.parse(x.request.body.not_nil!.gets_to_end)
   ss = Sidekiq::ScheduledSet.new
-  bdy.fetch_all("key").each do |key|
+  x.params.body.fetch_all("key").each do |key|
     score, jid = key.split("-")
     job = ss.fetch(score.to_f, jid).first?
     delete_or_add_queue job, x.params.body if job

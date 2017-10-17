@@ -12,7 +12,7 @@ Kemal.config do |config|
   # Uncomment this and all POSTs in the test suite will fail since
   # the tests don't round trip the session cookies.
   # config.add_handler CSRF.new
-  config.add_handler Kemal::RouteHandler::INSTANCE
+  config.handlers = [Kemal::RouteHandler::INSTANCE]
 end
 
 describe "sidekiq web" do
@@ -594,7 +594,7 @@ private def post(path, params = nil, headers = nil)
   hdrs["Content-Type"] = "application/x-www-form-urlencoded"
   req = HTTP::Request.new("POST", resource, hdrs, body)
   io = IO::Memory.new
-  WebWorker.new.last_response = res = HTTP::Server::Response.new(IO::Memory.new)
+  WebWorker.new.last_response = res = HTTP::Server::Response.new(io)
   res.mem = io
 
   handler = HTTP::Server.build_middleware Kemal.config.handlers
