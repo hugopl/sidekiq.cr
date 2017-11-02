@@ -25,7 +25,7 @@ module Sidekiq
     def initialize(@environment = "development", @queues = ["default"],
                    @concurrency = 25, @logger = Sidekiq::Logger.build)
       @hostname = ENV["DYNO"]? || System.hostname
-      nonce = SecureRandom.hex(6)
+      nonce = Random::Secure.hex(6)
       @identity = "#{@hostname}:#{::Process.pid}:#{nonce}"
       @busy = 0
       @tag = ""
