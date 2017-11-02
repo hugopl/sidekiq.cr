@@ -49,7 +49,7 @@ module Sidekiq
       @klass = ""
       @created_at = Time.now.to_utc
       @enqueued_at = nil
-      @jid = SecureRandom.hex(12)
+      @jid = Random::Secure.hex(12)
       @retry = true
     end
 
