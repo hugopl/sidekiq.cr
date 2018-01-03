@@ -12,7 +12,7 @@ describe "retry" do
     job.args = "1"
     rt = Sidekiq::Middleware::RetryJobs.new
 
-    expect_raises do
+    expect_raises(Exception) do
       rt.call(job, ctx) do
         raise "boom"
       end

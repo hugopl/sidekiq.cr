@@ -3,7 +3,7 @@ require "../src/sidekiq/web"
 # Build this with `crystal compile --release web.cr
 
 Kemal::Session.config do |config|
-  # crystal eval 'require "secure_random"; puts SecureRandom.hex(64)'
+  # crystal eval 'require "random/secure"; puts Random::Secure.hex(64)'
   config.secret = "3ae480ffc18380c6afa05e96c8a2262c"
 end
 

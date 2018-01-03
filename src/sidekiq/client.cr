@@ -1,4 +1,4 @@
-require "secure_random"
+require "random/secure"
 require "./types"
 
 module Sidekiq
@@ -125,7 +125,7 @@ module Sidekiq
     def push_bulk(job : Sidekiq::Job, allargs : Array(String))
       payloads = allargs.map do |args|
         copy = Sidekiq::Job.new
-        copy.jid = SecureRandom.hex(12)
+        copy.jid = Random::Secure.hex(12)
         copy.klass = job.klass
         copy.queue = job.queue
         copy.args = args

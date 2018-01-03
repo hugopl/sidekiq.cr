@@ -2,7 +2,7 @@ require "./spec_helper"
 require "../src/sidekiq/web"
 
 Kemal::Session.config do |config|
-  # crystal eval 'require "secure_random"; puts SecureRandom.hex(64)'
+  # crystal eval 'require "random_secure"; puts Random::Secure.hex(64)'
   config.secret = "3ae480ffc18380c6afa05e96c8a2262c"
 end
 
@@ -463,7 +463,7 @@ private def add_scheduled
          "queue" => "default",
          "created_at" => now,
          "args"  => ["bob", 1, now],
-         "jid"   => SecureRandom.hex(12)}
+         "jid"   => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("schedule", score, msg.to_json)
@@ -482,7 +482,7 @@ private def add_retry
     "retry_count"   => 0,
     "retried_at"    => now,
     "failed_at"     => now,
-    "jid"           => SecureRandom.hex(12)}
+    "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
@@ -501,7 +501,7 @@ private def add_dead
     "retry_count"   => 20,
     "retried_at"    => now,
     "failed_at"     => now,
-    "jid"           => SecureRandom.hex(12)}
+    "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("dead", score, msg.to_json)
@@ -519,7 +519,7 @@ private def add_xss_retry
     "error_class"   => "RuntimeError",
     "retry_count"   => 0,
     "failed_at"     => now,
-    "jid"           => SecureRandom.hex(12)}
+    "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)

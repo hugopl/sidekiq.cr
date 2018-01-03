@@ -1,4 +1,4 @@
-require "secure_random"
+require "random/secure"
 require "./util"
 
 module Sidekiq
