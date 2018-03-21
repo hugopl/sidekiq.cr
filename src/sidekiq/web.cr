@@ -123,7 +123,7 @@ end
 post "/queues/:name" do |x|
   name = x.params.url["name"]
   Sidekiq::Queue.new(name).clear
-  x.redirect "#{x.root_path}/queues"
+  x.redirect "#{x.root_path}queues"
 end
 
 post "/queues/:name/delete" do |x|

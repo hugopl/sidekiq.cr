@@ -40,7 +40,7 @@ describe "sidekiq web" do
 
   describe "assets" do
     it "serves gzipped static files" do
-      resp = get("/images/logo.png", nil, { "Accept-Encoding" => "gzip, deflate" })
+      resp = get("/images/logo.png", nil, {"Accept-Encoding" => "gzip, deflate"})
       resp.status_code.should eq(200)
       resp.headers["Content-Type"]?.should eq("image/png")
       resp.headers["Content-Encoding"]?.should eq("gzip")
@@ -95,7 +95,7 @@ describe "sidekiq web" do
   end
 
   it "can display queues" do
-    WebWorker.async {|j| j.queue = "foo" }.perform(1_i64, 3_i64).should_not be_nil
+    WebWorker.async { |j| j.queue = "foo" }.perform(1_i64, 3_i64).should_not be_nil
 
     get "/queues"
     assert_equal 200, last_response.status_code
@@ -109,13 +109,14 @@ describe "sidekiq web" do
   end
 
   it "can delete a queue" do
-    WebWorker.async {|j|j.queue = "foo" }.perform(1_i64, 2_i64).should_not be_nil
+    WebWorker.async { |j| j.queue = "foo" }.perform(1_i64, 2_i64).should_not be_nil
 
     get "/queues/foo"
     assert_equal 200, last_response.status_code
 
     post "/queues/foo"
     assert_equal 302, last_response.status_code
+    assert_equal "/queues", last_response.headers["Location"]
 
     Sidekiq.redis do |conn|
       conn.smembers("queues").includes?("foo").should be_false
@@ -124,9 +125,9 @@ describe "sidekiq web" do
   end
 
   it "can delete a job" do
-    jid = WebWorker.async {|j|j.queue = "foo"}.perform(1_i64, 2_i64)
+    jid = WebWorker.async { |j| j.queue = "foo" }.perform(1_i64, 2_i64)
     jid.should_not be_nil
-    WebWorker.async {|j|j.queue = "foo"}.perform(3_i64, 6_i64).should_not be_nil
+    WebWorker.async { |j| j.queue = "foo" }.perform(3_i64, 6_i64).should_not be_nil
     job = Sidekiq::Queue.new("foo").find_job(jid).not_nil!
 
     get "/queues/foo"
@@ -138,6 +139,7 @@ describe "sidekiq web" do
 
     post "/queues/foo/delete", {"key_val" => job.value}
     assert_equal 302, last_response.status_code
+    assert_equal "/queues/foo", last_response.headers["Location"]
 
     Sidekiq.redis do |conn|
       conn.lrange("queue:foo", 0, -1).includes?(job.value).should be_false
@@ -459,11 +461,11 @@ end
 
 private def add_scheduled
   now = Time.now.epoch_f
-  msg = {"class" => "HardWorker",
-         "queue" => "default",
+  msg = {"class"      => "HardWorker",
+         "queue"      => "default",
          "created_at" => now,
-         "args"  => ["bob", 1, now],
-         "jid"   => Random::Secure.hex(12)}
+         "args"       => ["bob", 1, now],
+         "jid"        => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("schedule", score, msg.to_json)
@@ -474,15 +476,15 @@ end
 private def add_retry
   now = Time.now.epoch_f
   msg = {"class"         => "HardWorker",
-    "args"          => ["bob", 1, now.to_s],
-    "queue"         => "default",
-    "created_at" => now,
-    "error_message" => "Some fake message",
-    "error_class"   => "RuntimeError",
-    "retry_count"   => 0,
-    "retried_at"    => now,
-    "failed_at"     => now,
-    "jid"           => Random::Secure.hex(12)}
+         "args"          => ["bob", 1, now.to_s],
+         "queue"         => "default",
+         "created_at"    => now,
+         "error_message" => "Some fake message",
+         "error_class"   => "RuntimeError",
+         "retry_count"   => 0,
+         "retried_at"    => now,
+         "failed_at"     => now,
+         "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
@@ -493,15 +495,15 @@ end
 private def add_dead
   now = Time.now.epoch_f
   msg = {"class"         => "HardWorker",
-    "args"          => ["bob", 1, now],
-    "queue"         => "foo",
-    "created_at" => now,
-    "error_message" => "Some fake message",
-    "error_class"   => "RuntimeError",
-    "retry_count"   => 20,
-    "retried_at"    => now,
-    "failed_at"     => now,
-    "jid"           => Random::Secure.hex(12)}
+         "args"          => ["bob", 1, now],
+         "queue"         => "foo",
+         "created_at"    => now,
+         "error_message" => "Some fake message",
+         "error_class"   => "RuntimeError",
+         "retry_count"   => 20,
+         "retried_at"    => now,
+         "failed_at"     => now,
+         "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("dead", score, msg.to_json)
@@ -512,14 +514,14 @@ end
 private def add_xss_retry
   now = Time.now.epoch_f
   msg = {"class"         => "FailWorker",
-    "args"          => ["<a>hello</a>"],
-    "queue"         => "foo",
-    "created_at" => now,
-    "error_message" => "fail message: <a>hello</a>",
-    "error_class"   => "RuntimeError",
-    "retry_count"   => 0,
-    "failed_at"     => now,
-    "jid"           => Random::Secure.hex(12)}
+         "args"          => ["<a>hello</a>"],
+         "queue"         => "foo",
+         "created_at"    => now,
+         "error_message" => "fail message: <a>hello</a>",
+         "error_class"   => "RuntimeError",
+         "retry_count"   => 0,
+         "failed_at"     => now,
+         "jid"           => Random::Secure.hex(12)}
   score = now.to_s
   Sidekiq.redis do |conn|
     conn.zadd("retry", score, msg.to_json)
@@ -559,6 +561,7 @@ class WebWorker
   # Can't use top-level class variables so just stick this
   # in the first place possible.
   @@last_response : HTTP::Server::Response?
+
   def last_response
     @@last_response.not_nil!
   end
