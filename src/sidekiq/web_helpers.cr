@@ -135,9 +135,9 @@ module Sidekiq
 
     def display_args(args, truncate_after_chars = 2000)
       h args[1..-2]
-      #args.map do |arg|
-        #h(truncate(to_display(arg), truncate_after_chars))
-      #end.join(", ")
+      # args.map do |arg|
+      # h(truncate(to_display(arg), truncate_after_chars))
+      # end.join(", ")
     end
 
     def csrf_tag
@@ -172,7 +172,7 @@ module Sidekiq
     end
 
     def number_with_delimiter(number)
-      number.to_s
+      number.to_s.gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
     end
 
     def h(text)
