@@ -1,4 +1,5 @@
 require "./spec_helper"
+require "../src/sidekiq/web_helpers"
 
 class ClassWithWebHelpers
   include Sidekiq::WebHelpers
