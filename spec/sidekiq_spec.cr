@@ -65,15 +65,19 @@ describe Sidekiq do
     end
 
     it "allows a redis provider" do
-      ENV["REDIS_PROVIDER"] = "FOO_URL"
-      ENV["FOO_URL"] = "redis://:xyzzy@acmecorp.com:1234/14"
+      begin
+        ENV["REDIS_PROVIDER"] = "FOO_URL"
+        ENV["FOO_URL"] = "redis://:xyzzy@acmecorp.com:1234/14"
 
-      r = Sidekiq::RedisConfig.new
-      r.hostname.should eq("acmecorp.com")
-      r.port.should eq(1234)
-      r.password.should eq("xyzzy")
-      r.db.should eq(14)
-      r.pool_size.should eq(5)
+        r = Sidekiq::RedisConfig.new
+        r.hostname.should eq("acmecorp.com")
+        r.port.should eq(1234)
+        r.password.should eq("xyzzy")
+        r.db.should eq(14)
+        r.pool_size.should eq(5)
+      ensure
+        ENV["REDIS_PROVIDER"] = nil
+      end
     end
   end
 end
