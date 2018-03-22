@@ -18,7 +18,6 @@ module Sidekiq
     getter labels : Array(String)
     getter queues : Array(String)
     getter tag : String
-    getter busy : Int32
     getter identity : String
     getter hostname : String
 
@@ -27,7 +26,6 @@ module Sidekiq
       @hostname = ENV["DYNO"]? || System.hostname
       nonce = Random::Secure.hex(6)
       @identity = "#{@hostname}:#{::Process.pid}:#{nonce}"
-      @busy = 0
       @tag = ""
       @labels = ["crystal"]
       @alive = true
