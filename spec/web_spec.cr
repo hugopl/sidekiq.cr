@@ -362,6 +362,12 @@ describe "sidekiq web" do
     assert_equal 200, last_response.status_code
   end
 
+  it "can display home with days param and highlights links accordingly" do
+    get "/", {"days" => "180"}
+    assert_equal 200, last_response.status_code
+    last_response.body.should match(/\?days=180" class=".*active/)
+  end
+
   describe "dashboard/stats" do
     it "redirects to stats" do
       get "/dashboard/stats"

@@ -90,7 +90,7 @@ module Sidekiq
     end
 
     def current_path
-      request.resource.gsub(/^\//, "")
+      request.path.gsub(/^\//, "")
     end
 
     def current_status
