@@ -1,7 +1,7 @@
 require "./spec_helper"
 require "../src/sidekiq/web_helpers"
 
-class ClassWithNumerHelper
+class ClassWithNumberHelper
   include Sidekiq::WebHelpers
 end
 
@@ -17,7 +17,7 @@ end
 describe Sidekiq::WebHelpers do
   describe "#number_with_delimiter" do
     it "returns formatted number with delimiter" do
-      klass = ClassWithNumerHelper.new
+      klass = ClassWithNumberHelper.new
 
       klass.number_with_delimiter(1).should eq "1"
       klass.number_with_delimiter(123).should eq "123"
