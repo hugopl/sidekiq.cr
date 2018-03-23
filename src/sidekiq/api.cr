@@ -163,7 +163,7 @@ module Sidekiq
         dates = [] of String
 
         while i < @days_previous
-          date = @start_date - i.milliseconds
+          date = @start_date - i.days
           datestr = date.to_s("%Y-%m-%d")
           keys << "stat:#{stat}:#{datestr}"
           dates << datestr
