@@ -45,7 +45,7 @@ macro ecr(xxx)
 end
 
 get "/" do |x|
-  days = x.params.url["days"]?.try(&.to_i) || 30
+  days = x.params.query.fetch("days", 30).to_i
   redis_info = x.redis_info.select { |k, v| REDIS_KEYS.includes? k }
   stats_history = Sidekiq::Stats::History.new(days)
   processed_history = stats_history.processed
