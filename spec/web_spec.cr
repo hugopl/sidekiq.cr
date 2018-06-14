@@ -44,7 +44,7 @@ describe "sidekiq web" do
       resp.status_code.should eq(200)
       resp.headers["Content-Type"]?.should eq("image/png")
       resp.headers["Content-Encoding"]?.should eq("gzip")
-      resp.headers["Content-Length"]?.should eq("3916")
+      resp.headers["Content-Length"]?.should eq("3907")
       content = resp.body
       content.to_slice.size.should eq(4143)
     end
