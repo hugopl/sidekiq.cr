@@ -10,14 +10,14 @@ module Sidekiq
       def initialize(@output)
       end
 
-      def call(ex : Exception, ctxHash : Hash(String, JSON::Type)? = nil)
+      def call(ex : Exception, ctxHash : Hash(String, JSON::Any)? = nil)
         @output.warn(ctxHash.to_json) if ctxHash && !ctxHash.empty?
         @output.warn "#{ex.class.name}: #{ex.message}"
         @output.warn ex.backtrace.join("\n")
       end
     end
 
-    def handle_exception(ctx : Sidekiq::Context, ex : Exception, ctxHash : Hash(String, JSON::Type)? = nil)
+    def handle_exception(ctx : Sidekiq::Context, ex : Exception, ctxHash : Hash(String, JSON::Any)? = nil)
       ctx.error_handlers.each do |handler|
         begin
           handler.call(ex, ctxHash)

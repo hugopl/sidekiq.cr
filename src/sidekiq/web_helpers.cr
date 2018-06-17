@@ -18,7 +18,7 @@ module Sidekiq
           h = YAML.parse(io)
           h = h[{{lang}}].as_h
           h.each do |k, v|
-            text[k.as(String)] = v.as(String)
+            text[k.as_s] = v.as_s
           end
         {% end %}
         end
@@ -164,7 +164,7 @@ module Sidekiq
     ))
 
     def retry_extra_items(retry_job)
-      Hash(String, JSON::Type).new.tap do |extra|
+      Hash(String, JSON::Any).new.tap do |extra|
         retry_job.item.each do |key, value|
           extra[key] = value unless RETRY_JOB_KEYS.includes?(key)
         end

@@ -1,4 +1,4 @@
-#require "sidekiq/cli"
+# require "sidekiq/cli"
 require "../src/cli"
 
 # This file is an example of how to start a Sidekiq.cr

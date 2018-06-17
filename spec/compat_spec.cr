@@ -16,5 +16,3 @@ describe "ruby compatibility" do
     end
   end
 end
-
-

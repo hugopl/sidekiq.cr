@@ -53,7 +53,6 @@ module Sidekiq
   end
 
   class Pool
-
     # Set up a pool of connections to Redis on localhost:6379:
     #
     #     Sidekiq::Pool.new(5)

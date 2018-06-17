@@ -22,24 +22,24 @@ module Sidekiq
     end
 
     JSON.mapping({
-      queue: String,
-      jid: String,
-      klass: {type: String, key: "class"},
-      args: {type: String, converter: String::RawConverter},
+      queue:      String,
+      jid:        String,
+      klass:      {type: String, key: "class"},
+      args:       {type: String, converter: String::RawConverter},
       created_at: {type: Time, converter: Sidekiq::EpochConverter},
 
-      at: {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
-      failed_at: {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
-      enqueued_at: {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
-      retried_at: {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
-      error_class: {type: String, nilable: true},
-      error_message: {type: String, nilable: true},
-      retry_count: {type: Int32, nilable: true},
-      bid: {type: String, nilable: true},
-      dead: {type: Bool, nilable: true},
+      at:              {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
+      failed_at:       {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
+      enqueued_at:     {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
+      retried_at:      {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
+      error_class:     {type: String, nilable: true},
+      error_message:   {type: String, nilable: true},
+      retry_count:     {type: Int32, nilable: true},
+      bid:             {type: String, nilable: true},
+      dead:            {type: Bool, nilable: true},
       error_backtrace: {type: Array(String), nilable: true},
-      backtrace: {type: (Bool | Int32 | Nil), nilable: true},
-      retry: {type: (Bool | Int32 | Nil), nilable: true},
+      backtrace:       {type: (Bool | Int32 | Nil), nilable: true},
+      retry:           {type: (Bool | Int32 | Nil), nilable: true},
     })
 
     def initialize
@@ -96,6 +96,5 @@ module Sidekiq
 
       client.push(self)
     end
-
   end
 end

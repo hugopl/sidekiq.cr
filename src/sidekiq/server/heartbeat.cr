@@ -78,9 +78,9 @@ module Sidekiq
           conn.multi do |multi|
             multi.sadd("processes", svr.identity)
             multi.hmset(svr.identity, {"info"  => json,
-              "busy"  => Processor.worker_state.size,
-              "beat"  => Time.now.epoch_f,
-              "quiet" => svr.stopping?})
+                                       "busy"  => Processor.worker_state.size,
+                                       "beat"  => Time.now.epoch_f,
+                                       "quiet" => svr.stopping?})
             multi.expire(svr.identity, 60)
             multi.rpop("#{svr.identity}-signals")
           end

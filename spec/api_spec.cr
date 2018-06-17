@@ -246,12 +246,12 @@ describe "api" do
 
     it "can enumerate processes" do
       identity_string = "identity_string"
-      odata = Hash(String, JSON::Type){
-        "pid"        => 123_i64,
-        "hostname"   => System.hostname,
-        "key"        => identity_string,
-        "identity"   => identity_string,
-        "started_at" => Time.now.epoch_f - 15,
+      odata = Hash(String, JSON::Any){
+        "pid"        => JSON::Any.new(123_i64),
+        "hostname"   => JSON::Any.new(System.hostname),
+        "key"        => JSON::Any.new(identity_string),
+        "identity"   => JSON::Any.new(identity_string),
+        "started_at" => JSON::Any.new(Time.now.epoch_f - 15),
       }
 
       time = Time.now.epoch_f
@@ -299,7 +299,7 @@ describe "api" do
         entry.process_id.should eq(key)
         entry.thread_id.should eq("1234")
         entry.work["queue"].should eq("default")
-        Time.epoch(entry.work["run_at"].as(Int)).year.should eq(Time.now.year)
+        Time.epoch(entry.work["run_at"].as_i).year.should eq(Time.now.year)
         count += 1
       end
       count.should eq(1)
