@@ -391,19 +391,19 @@ describe "sidekiq web" do
       response = JSON.parse(last_response.body).as_h
       assert_equal 200, last_response.status_code
       response.keys.should contain "sidekiq"
-      hash = response["sidekiq"].as(Hash)
-      assert_equal 5, hash["processed"]
-      assert_equal 2, hash["failed"]
-      assert_equal 4, hash["busy"]
-      assert_equal 1, hash["processes"]
-      assert_equal 2, hash["retries"]
-      assert_equal 3, hash["scheduled"]
-      assert_equal 0, hash["default_latency"]
+      hash = response["sidekiq"].as_h
+      assert_equal 5, hash["processed"].as_i
+      assert_equal 2, hash["failed"].as_i
+      assert_equal 4, hash["busy"].as_i
+      assert_equal 1, hash["processes"].as_i
+      assert_equal 2, hash["retries"].as_i
+      assert_equal 3, hash["scheduled"].as_i
+      assert_equal 0, hash["default_latency"].as_f
       response.keys.should contain "redis"
-      hash = response["redis"].as(Hash)
-      hash["redis_version"].should match /\d\.\d\.\d/
-      hash["uptime_in_days"].to_s.to_i.should be >= 0
-      hash["connected_clients"].to_s.to_i.should be > 0
+      hash = response["redis"].as_h
+      hash["redis_version"].as_s.should match /\d\.\d\.\d/
+      hash["uptime_in_days"].as_s.to_i.should be >= 0
+      hash["connected_clients"].as_s.to_i.should be > 0
       hash["used_memory_human"].should_not be_nil
       hash["used_memory_peak_human"].should_not be_nil
     end

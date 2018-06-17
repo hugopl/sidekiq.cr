@@ -52,7 +52,7 @@
         </tr>
       <% end %>
       <% if type == :retry %>
-        <% if job["retry_count"]? && job["retry_count"].as(Int) > 0 %>
+        <% if job["retry_count"]? && job["retry_count"].as_i > 0 %>
           <tr>
             <th><%= x.t("RetryCount") %></th>
             <td><%= job["retry_count"] %></td>

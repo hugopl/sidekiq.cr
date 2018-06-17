@@ -2,7 +2,7 @@ require "./job"
 
 module Sidekiq
   class Stats
-    @stats : Hash(String, JSON::Type)
+    @stats : Hash(String, JSON::Any)
 
     def initialize
       @stats = fetch_stats!
@@ -86,17 +86,17 @@ module Sidekiq
                               else
                                 0.0_f64
                               end
-      Hash(String, JSON::Type){
-        "processed"      => pipe1_res[0] ? pipe1_res[0].as(String).to_i64 { 0_i64 } : 0_i64,
-        "failed"         => pipe1_res[1] ? pipe1_res[1].as(String).to_i64 { 0_i64 } : 0_i64,
-        "scheduled_size" => pipe1_res[2].as(Int64),
-        "retry_size"     => pipe1_res[3].as(Int64),
-        "dead_size"      => pipe1_res[4].as(Int64),
-        "processes_size" => pipe1_res[5].as(Int64),
+      Hash(String, JSON::Any){
+        "processed"      => JSON::Any.new(pipe1_res[0] ? pipe1_res[0].as(String).to_i64 { 0_i64 } : 0_i64),
+        "failed"         => JSON::Any.new(pipe1_res[1] ? pipe1_res[1].as(String).to_i64 { 0_i64 } : 0_i64),
+        "scheduled_size" => JSON::Any.new(pipe1_res[2].as(Int64)),
+        "retry_size"     => JSON::Any.new(pipe1_res[3].as(Int64)),
+        "dead_size"      => JSON::Any.new(pipe1_res[4].as(Int64)),
+        "processes_size" => JSON::Any.new(pipe1_res[5].as(Int64)),
 
-        "default_queue_latency" => default_queue_latency,
-        "workers_size"          => workers_size.to_i64,
-        "enqueued"              => enqueued.to_i64,
+        "default_queue_latency" => JSON::Any.new(default_queue_latency),
+        "workers_size"          => JSON::Any.new(workers_size.to_i64),
+        "enqueued"              => JSON::Any.new(enqueued.to_i64),
       }
     end
 
@@ -189,7 +189,7 @@ module Sidekiq
   # removed from the queue via Job#delete.
   #
   class JobProxy < ::Sidekiq::Job
-    getter item : Hash(String, JSON::Type)
+    getter item : Hash(String, JSON::Any)
     getter value : String
 
     def initialize(str)
@@ -292,7 +292,7 @@ module Sidekiq
       msg = entries[0].as(String)
 
       hash = JSON.parse(msg).as_h
-      was = hash["enqueued_at"].as(Float64)
+      was = hash["enqueued_at"].as_f
       Time.now.epoch_f - was
     end
 
@@ -629,12 +629,12 @@ module Sidekiq
   #   "identity" => <unique string identifying the process>,
   # }
   class Process
-    def initialize(hash : Hash(String, JSON::Type))
+    def initialize(hash : Hash(String, JSON::Any))
       @attribs = hash
     end
 
     def started_at
-      Time.epoch_ms((self["started_at"].as(Float64) * 1000).to_i64)
+      Time.epoch_ms((self["started_at"].as_f * 1000).to_i64)
     end
 
     def tag
@@ -643,11 +643,11 @@ module Sidekiq
 
     def labels
       x = @attribs["labels"]?
-      x ? x.as(Array).map { |x| x.as(String) } : [] of String
+      x ? x.as_a.map { |x| x.as_s } : [] of String
     end
 
     def queues
-      self["queues"].as(Array).map { |x| x.as(String) }
+      self["queues"].as_a.map { |x| x.as_s }
     end
 
     def [](key)
@@ -753,9 +753,9 @@ module Sidekiq
           quiet = packet[3]?.to_s == "true"
 
           hash = JSON.parse(info).as_h
-          hash["busy"] = busy
-          hash["beat"] = beat
-          hash["quiet"] = quiet
+          hash["busy"] = JSON::Any.new(busy)
+          hash["beat"] = JSON::Any.new(beat)
+          hash["quiet"] = JSON::Any.new(quiet)
           yield Process.new(hash)
         end
       end
@@ -775,7 +775,7 @@ module Sidekiq
   class WorkerEntry
     getter! process_id : String
     getter! thread_id : String
-    getter! work : Hash(String, JSON::Type)
+    getter! work : Hash(String, JSON::Any)
 
     def initialize(@process_id, @thread_id, @work)
     end
@@ -785,7 +785,7 @@ module Sidekiq
     end
 
     def run_at : Time
-      Time.epoch(work["run_at"].as(Int))
+      Time.epoch(work["run_at"].as_i)
     end
   end
 

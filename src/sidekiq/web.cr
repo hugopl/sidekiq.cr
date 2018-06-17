@@ -94,7 +94,7 @@ end
 post "/busy" do |x|
   id = x.params.body["identity"]?
   if id
-    p = Sidekiq::Process.new({"identity" => id.as(JSON::Type)})
+    p = Sidekiq::Process.new({"identity" => JSON::Any.new(id)})
     p.quiet! if x.params.body["quiet"]?
     p.stop! if x.params.body["stop"]?
   else

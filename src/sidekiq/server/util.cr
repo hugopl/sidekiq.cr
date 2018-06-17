@@ -12,7 +12,7 @@ module Sidekiq
     def watchdog(ctx, last_words)
       yield
     rescue ex : Exception
-      handle_exception(ctx, ex, {"context" => last_words})
+      handle_exception(ctx, ex, {"context" => JSON::Any.new(last_words)})
       raise ex
     end
 

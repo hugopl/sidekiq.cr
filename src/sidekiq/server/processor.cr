@@ -114,7 +114,7 @@ module Sidekiq
         # we didn't properly finish it.
         # ack = false
       rescue ex : Exception
-        handle_exception(@mgr, ex, {"job" => jobstr})
+        handle_exception(@mgr, ex, {"job" => JSON::Any.new(jobstr)})
         raise ex
       ensure
         work.acknowledge if ack

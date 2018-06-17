@@ -11,12 +11,12 @@ end
 describe "Sidekiq::CLI" do
   it "parses" do
     cli = Sidekiq::CLI.new(["-v",
-      "-q", "foo,3",
-      "-q", "xxx",
-      "-c", "50",
-      "-g", "smoky",
-      "-e", "staging",
-      "-t", "9",
+                            "-q", "foo,3",
+                            "-q", "xxx",
+                            "-c", "50",
+                            "-g", "smoky",
+                            "-e", "staging",
+                            "-t", "9",
     ])
     cli.@concurrency.should eq(50)
     cli.@tag.should eq("smoky")

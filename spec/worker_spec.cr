@@ -12,12 +12,14 @@ end
 
 class Point
   JSON.mapping({x: Float64, y: Float64})
+
   def initialize(@x, @y)
   end
 end
 
 class Circle
   JSON.mapping({radius: Int32, diameter: Int32})
+
   def initialize(@radius, @diameter)
   end
 end
@@ -83,7 +85,7 @@ describe Sidekiq::Worker do
 
   describe "client-side" do
     it "can create a basic job" do
-      jid = MyWorker.async {|j| j.queue = "foo" }.perform(1, 2, "3")
+      jid = MyWorker.async { |j| j.queue = "foo" }.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
       job = POOL.redis { |c| c.lpop("queue:foo") }
       job.should_not be_nil
@@ -97,7 +99,6 @@ describe Sidekiq::Worker do
     it "can execute a persistent job" do
       jid = MyWorker.async.perform(1, 2, "3")
       jid.should_not be_nil
-
 
       str = POOL.redis { |c| c.lpop("queue:default") }
       hash = JSON.parse(str.to_s)
@@ -127,6 +128,5 @@ describe Sidekiq::Worker do
       end
       j2.retry.should eq(6)
     end
-
   end
 end
