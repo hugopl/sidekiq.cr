@@ -1,7 +1,7 @@
 language: crystal
 install:
   - gem install redis
-  - crystal deps
+  - shards install
   - redis-cli info
 services:
   - redis-server
