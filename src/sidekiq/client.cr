@@ -129,6 +129,7 @@ module Sidekiq
         copy.klass = job.klass
         copy.queue = job.queue
         copy.args = args
+        copy.retry = job.retry
         result = middleware.invoke(copy, @ctx) do
           !!copy
         end
