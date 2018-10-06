@@ -41,6 +41,15 @@ class NoArgumentsWorker
   end
 end
 
+module Worker
+  class SimpleWorker
+    include Sidekiq::Worker
+
+    def perform
+    end
+  end
+end
+
 describe Sidekiq::Worker do
   describe "arguments" do
     it "handles arbitrary complexity" do
@@ -61,6 +70,14 @@ describe Sidekiq::Worker do
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[]")
       job.execute(MockContext.new)
+    end
+  end
+
+  describe ".async" do
+    it "does not fail to compile when name of first module is Worker" do
+      # N.B: the spec suite will not even run if this fails
+      ::Worker::SimpleWorker.async.perform
+      ::Worker::SimpleWorker.async() { }.perform
     end
   end
 
