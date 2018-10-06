@@ -110,7 +110,7 @@ module Sidekiq
       # no block
       def async
         {% begin %}
-        job = {{@type.id}}::PerformProxy.new
+        job = ::{{@type.id}}::PerformProxy.new
         job.klass = self.name
         Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"]?.try &.call(job)
         job
@@ -120,7 +120,7 @@ module Sidekiq
       # if passed a block, yields the job
       def async
         {% begin %}
-        job = {{@type.id}}::PerformProxy.new
+        job = ::{{@type.id}}::PerformProxy.new
         job.klass = self.name
         Sidekiq::Worker::OPTION_BLOCKS["{{@type.id}}"]?.try &.call(job)
         yield job
