@@ -39,7 +39,7 @@ module Sidekiq
     def server_json(svr)
       data = {
         "hostname"    => svr.hostname,
-        "started_at"  => Time.now.epoch_f,
+        "started_at"  => Time.now.to_unix_ms,
         "pid"         => ::Process.pid,
         "tag"         => svr.tag,
         "concurrency" => svr.concurrency,
@@ -79,7 +79,7 @@ module Sidekiq
             multi.sadd("processes", svr.identity)
             multi.hmset(svr.identity, {"info"  => json,
                                        "busy"  => Processor.worker_state.size,
-                                       "beat"  => Time.now.epoch_f,
+                                       "beat"  => Time.now.to_unix_ms,
                                        "quiet" => svr.stopping?})
             multi.expire(svr.identity, 60)
             multi.rpop("#{svr.identity}-signals")
