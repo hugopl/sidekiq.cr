@@ -20,7 +20,7 @@ dependencies:
     branch: master
   kemal-session:
     github: kemalcr/kemal-session
-    commit: bc720cca9c27e391b4b3fc32ae7cc23f4d3f3fdc
+    commit: a16f164d3dcfc6e720d566f9085285abdd5b7825
   kemal-csrf:
     github: kemalcr/kemal-csrf
     version: 0.5.0
