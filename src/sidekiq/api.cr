@@ -82,7 +82,7 @@ module Sidekiq
       default_queue_latency = if (entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?)
                                 hash = JSON.parse(entry.as(String))
                                 was = hash["enqueued_at"].as_f
-                                Time.now.epoch_f - was
+                                Time.now.to_unix_ms - was
                               else
                                 0.0_f64
                               end
@@ -293,7 +293,7 @@ module Sidekiq
 
       hash = JSON.parse(msg).as_h
       was = hash["enqueued_at"].as_f
-      Time.now.epoch_f - was
+      Time.now.to_unix_ms - was
     end
 
     def each
@@ -347,7 +347,10 @@ module Sidekiq
     end
 
     def at
-      Time.epoch_ms((score * 1000).to_i64)
+      Time.unix_ms((score * 1000).to_i64)
+    rescue ArgumentError
+      # Rescue: Invalid time: seconds out of range (ArgumentError)
+      Time.unix_ms((score.to_i32 * 1000).to_i64)
     end
 
     def delete
@@ -386,7 +389,7 @@ module Sidekiq
     def kill!
       raise "Kill not available on jobs which have not failed" unless item["failed_at"]
       remove_job do |message|
-        now = Time.now.epoch_f
+        now = Time.now.to_unix_ms
         Sidekiq.redis do |conn|
           conn.multi do |m|
             m.zadd("dead", now, message)
@@ -634,7 +637,7 @@ module Sidekiq
     end
 
     def started_at
-      Time.epoch_ms((self["started_at"].as_f * 1000).to_i64)
+      Time.unix_ms((self["started_at"].as_f * 1000).to_i64)
     end
 
     def tag
@@ -785,7 +788,7 @@ module Sidekiq
     end
 
     def run_at : Time
-      Time.epoch(work["run_at"].as_i)
+      Time.unix(work["run_at"].as_i)
     end
   end
 

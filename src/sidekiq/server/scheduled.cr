@@ -9,7 +9,7 @@ module Sidekiq
         # A job's "score" in Redis is the time at which it should be processed.
         # Just check Redis for the set of jobs with a timestamp before now.
         count = 0
-        nowstr = "%.6f" % now.epoch_f
+        nowstr = "%.6f" % now.to_unix_ms
         ctx.pool.redis do |conn|
           sorted_sets.each do |sorted_set|
             # Get the next item in the queue if it's score (time to execute) is <= now.

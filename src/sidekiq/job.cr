@@ -83,7 +83,7 @@ module Sidekiq
 
     # Run this job at or after the given instant in Time
     def _perform_at(interval : Time, args : String)
-      perform_in(interval.epoch_f, args)
+      perform_in(interval.to_unix_ms, args)
     end
 
     # Run this job +interval+ from now.

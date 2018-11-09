@@ -154,7 +154,7 @@ module Sidekiq
         all = [] of Redis::RedisValue
         payloads.each do |hash|
           at, hash.at = hash.at, nil
-          all << at.not_nil!.epoch_f.to_s
+          all << at.not_nil!.to_unix_f.to_s
           all << hash.to_json
         end
         conn.zadd("schedule", all)

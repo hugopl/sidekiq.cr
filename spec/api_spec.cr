@@ -166,7 +166,7 @@ describe "api" do
     end
 
     it "can fetch by score" do
-      same_time = Time.now.epoch_f
+      same_time = Time.now.to_unix_f
       add_retry("bob1", same_time)
       add_retry("bob2", same_time)
       r = Sidekiq::RetrySet.new
@@ -174,7 +174,7 @@ describe "api" do
     end
 
     it "can fetch by score and jid" do
-      same_time = Time.now.epoch_f
+      same_time = Time.now.to_unix_f
       add_retry("bob1", same_time)
       add_retry("bob2", same_time)
       r = Sidekiq::RetrySet.new
@@ -198,11 +198,11 @@ describe "api" do
       retri.klass.should eq("ApiWorker")
       retri.queue.should eq("default")
       retri.jid.should eq("bob")
-      Time.now.epoch_f.should be_close(retri.at.epoch_f, 0.02)
+      Time.now.to_unix_f.should be_close(retri.at.to_unix_f, 0.02)
     end
 
     it "can delete a single retry from score and jid" do
-      same_time = Time.now.epoch_f
+      same_time = Time.now.to_unix_f
       add_retry("bob1", same_time)
       add_retry("bob2", same_time)
       r = Sidekiq::RetrySet.new
@@ -251,10 +251,10 @@ describe "api" do
         "hostname"   => JSON::Any.new(System.hostname),
         "key"        => JSON::Any.new(identity_string),
         "identity"   => JSON::Any.new(identity_string),
-        "started_at" => JSON::Any.new(Time.now.epoch_f - 15),
+        "started_at" => JSON::Any.new(Time.now.to_unix_f - 15),
       }
 
-      time = Time.now.epoch_f
+      time = Time.now.to_unix_f
       Sidekiq.redis do |conn|
         conn.multi do |m|
           m.sadd("processes", odata["key"])
@@ -282,14 +282,14 @@ describe "api" do
 
       hn = System.hostname
       key = "#{hn}:#{Process.pid}"
-      pdata = {"pid" => Process.pid, "hostname" => hn, "started_at" => Time.now.epoch}
+      pdata = {"pid" => Process.pid, "hostname" => hn, "started_at" => Time.now.to_unix}
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
-        conn.hmset(key, {"info" => pdata.to_json, "busy" => 0, "beat" => Time.now.epoch_f})
+        conn.hmset(key, {"info" => pdata.to_json, "busy" => 0, "beat" => Time.now.to_unix_f})
       end
 
       s = "#{key}:workers"
-      data = {"payload" => "{}", "queue" => "default", "run_at" => Time.now.epoch}.to_json
+      data = {"payload" => "{}", "queue" => "default", "run_at" => Time.now.to_unix}.to_json
       Sidekiq.redis do |c|
         c.hmset(s, {"1234" => data})
       end
@@ -299,7 +299,7 @@ describe "api" do
         entry.process_id.should eq(key)
         entry.thread_id.should eq("1234")
         entry.work["queue"].should eq("default")
-        Time.epoch(entry.work["run_at"].as_i).year.should eq(Time.now.year)
+        Time.unix(entry.work["run_at"].as_i).year.should eq(Time.now.year)
         count += 1
       end
       count.should eq(1)
@@ -311,22 +311,22 @@ describe "api" do
 
       retries = Sidekiq::RetrySet.new
       retries.size.should eq(2)
-      retries.select { |r| r.score > (Time.now.epoch_f + 9) }.size.should eq(0)
+      retries.select { |r| r.score > (Time.now.to_unix_f + 9) }.size.should eq(0)
 
       retries.each do |retri|
-        retri.reschedule(Time.now.epoch_f + 10) if retri.jid == "foo2"
+        retri.reschedule(Time.now.to_unix_f + 10) if retri.jid == "foo2"
       end
 
       retries.size.should eq(2)
-      retries.select { |r| r.score > (Time.now.epoch_f + 9) }.size.should eq(1)
+      retries.select { |r| r.score > (Time.now.to_unix_f + 9) }.size.should eq(1)
     end
 
     it "prunes processes which have died" do
-      data = {"pid" => rand(10_000), "hostname" => "app#{rand(1_000)}", "started_at" => Time.now.epoch_f}
+      data = {"pid" => rand(10_000), "hostname" => "app#{rand(1_000)}", "started_at" => Time.now.to_unix_f}
       key = "#{data["hostname"]}:#{data["pid"]}"
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
-        conn.hmset(key, {"info" => data.to_json, "busy" => 0, "beat" => Time.now.epoch_f})
+        conn.hmset(key, {"info" => data.to_json, "busy" => 0, "beat" => Time.now.to_unix_f})
       end
 
       ps = Sidekiq::ProcessSet.new
@@ -345,8 +345,8 @@ describe "api" do
   end
 end
 
-def add_retry(jid = "bob", at = Time.now.epoch_f)
-  payload = {"class" => "ApiWorker", "created_at" => Time.now.epoch_f, "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.epoch_f}.to_json
+def add_retry(jid = "bob", at = Time.now.to_unix_f)
+  payload = {"class" => "ApiWorker", "created_at" => Time.now.to_unix_f, "args" => [1, "mike"], "queue" => "default", "jid" => jid, "retry_count" => 2, "failed_at" => Time.now.to_unix_f}.to_json
   Sidekiq.redis do |conn|
     conn.zadd("retry", at.to_s, payload)
   end
