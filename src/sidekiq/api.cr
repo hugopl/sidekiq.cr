@@ -82,7 +82,7 @@ module Sidekiq
       default_queue_latency = if (entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?)
                                 hash = JSON.parse(entry.as(String))
                                 was = hash["enqueued_at"].as_f
-                                Time.now.to_unix_ms - was
+                                Time.now.to_unix_f - was
                               else
                                 0.0_f64
                               end
@@ -293,7 +293,7 @@ module Sidekiq
 
       hash = JSON.parse(msg).as_h
       was = hash["enqueued_at"].as_f
-      Time.now.to_unix_ms - was
+      Time.now.to_unix_f - was
     end
 
     def each
@@ -348,9 +348,6 @@ module Sidekiq
 
     def at
       Time.unix_ms((score * 1000).to_i64)
-    rescue ArgumentError
-      # Rescue: Invalid time: seconds out of range (ArgumentError)
-      Time.unix_ms((score.to_i32 * 1000).to_i64)
     end
 
     def delete
@@ -389,7 +386,7 @@ module Sidekiq
     def kill!
       raise "Kill not available on jobs which have not failed" unless item["failed_at"]
       remove_job do |message|
-        now = Time.now.to_unix_ms
+        now = Time.now.to_unix_f
         Sidekiq.redis do |conn|
           conn.multi do |m|
             m.zadd("dead", now, message)

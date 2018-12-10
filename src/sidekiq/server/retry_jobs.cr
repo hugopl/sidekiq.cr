@@ -114,7 +114,7 @@ module Sidekiq
           retry_at = Time.now + delay.seconds
           payload = job.to_json
           ctx.pool.redis do |conn|
-            conn.zadd("retry", retry_at.to_unix_ms.to_s, payload)
+            conn.zadd("retry", retry_at.to_unix_f.to_s, payload)
           end
         else
           # Goodbye dear message, you (re)tried your best I'm sure.
@@ -136,7 +136,7 @@ module Sidekiq
         now = Time.now
         ctx.pool.redis do |conn|
           conn.multi do
-            conn.zadd("dead", now.to_unix_ms.to_s, payload)
+            conn.zadd("dead", now.to_unix_f.to_s, payload)
             conn.zremrangebyscore("dead", "-inf", now - 6.months)
             conn.zremrangebyrank("dead", 0, -10_000)
           end
