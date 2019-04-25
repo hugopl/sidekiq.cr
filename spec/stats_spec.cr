@@ -14,8 +14,8 @@ describe Sidekiq::Stats do
     end
 
     it "returns correct data from redis" do
-      yesterday = (Time.now.to_utc.at_beginning_of_day - 1.day).to_s("%Y-%m-%d")
-      today = Time.now.to_utc.at_beginning_of_day.to_s("%Y-%m-%d")
+      yesterday = (Time.utc.at_beginning_of_day - 1.day).to_s("%Y-%m-%d")
+      today = Time.utc.at_beginning_of_day.to_s("%Y-%m-%d")
 
       Sidekiq.redis do |redis|
         redis.set("stat:failed:#{yesterday}", 42)

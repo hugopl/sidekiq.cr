@@ -44,7 +44,7 @@ iter = 10
 count = 10_000_i64
 total = iter * count
 
-a = Time.now
+a = Time.utc
 iter.times do
   args = [] of {Int64}
   count.times do |idx|
@@ -52,20 +52,20 @@ iter.times do
   end
   LoadWorker.async.perform_bulk(args)
 end
-puts "Created #{count*iter} jobs in #{Time.now - a}"
+puts "Created #{count*iter} jobs in #{Time.utc - a}"
 
 require "../src/sidekiq/server"
 
 spawn do
-  a = Time.now
+  a = Time.utc
   loop do
     count = r.llen("queue:default")
     if count == 0
-      b = Time.now
+      b = Time.utc
       puts "Done in #{b - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec".colorize(:green)
       exit
     end
-    p [Time.now, count, Process.rss]
+    p [Time.utc, count, Process.rss]
     sleep 0.2
   end
 end

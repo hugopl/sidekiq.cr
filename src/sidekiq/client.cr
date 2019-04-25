@@ -160,7 +160,7 @@ module Sidekiq
         conn.zadd("schedule", all)
       else
         q = payloads.first.queue
-        now = Time.now
+        now = Time.utc
         to_push = payloads.map do |entry|
           entry.enqueued_at = now
           entry.to_json

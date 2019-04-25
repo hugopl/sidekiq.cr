@@ -9,7 +9,7 @@
             <p class="navbar-text redis-url" title="<%= x.redis_location %>"><%= x.redis_location %></p>
           </li>
           <li>
-            <p class="navbar-text"><%= Time.now.to_utc.to_s("%H:%M:%S UTC") %></p>
+            <p class="navbar-text"><%= Time.utc.to_s("%H:%M:%S UTC") %></p>
           </li>
         </ul>
     </div>

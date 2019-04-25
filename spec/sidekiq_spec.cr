@@ -19,7 +19,7 @@ describe Sidekiq do
 
   describe "pool" do
     it "works" do
-      t = Time.now
+      t = Time.local
       pool = ConnectionPool.new { Redis.new }
       pool.connection do |conn|
         conn.set("foo", t)

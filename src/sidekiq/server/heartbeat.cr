@@ -39,7 +39,7 @@ module Sidekiq
     def server_json(svr)
       data = {
         "hostname"    => svr.hostname,
-        "started_at"  => Time.now.to_unix_f,
+        "started_at"  => Time.utc.to_unix_f,
         "pid"         => ::Process.pid,
         "tag"         => svr.tag,
         "concurrency" => svr.concurrency,
@@ -58,7 +58,7 @@ module Sidekiq
         procd, fails = Processor.fetch_counts
 
         workers_key = "#{svr.identity}:workers"
-        nowdate = @daily.format(Time.now.to_utc)
+        nowdate = @daily.format(Time.utc)
         svr.pool.redis do |conn|
           conn.multi do |multi|
             multi.incrby("stat:processed", procd)
@@ -79,7 +79,7 @@ module Sidekiq
             multi.sadd("processes", svr.identity)
             multi.hmset(svr.identity, {"info"  => json,
                                        "busy"  => Processor.worker_state.size,
-                                       "beat"  => Time.now.to_unix_f,
+                                       "beat"  => Time.utc.to_unix_f,
                                        "quiet" => svr.stopping?})
             multi.expire(svr.identity, 60)
             multi.rpop("#{svr.identity}-signals")

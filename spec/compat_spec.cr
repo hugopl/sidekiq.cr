@@ -10,7 +10,7 @@ describe "ruby compatibility" do
         rs.size.should eq(1)
         rs.each do |retri|
           retri.queue.should eq("foo")
-          retri.at.should be < Time.now
+          retri.at.should be < Time.local
         end
       end
     end
