@@ -145,7 +145,7 @@ module Sidekiq
 
       def initialize(days_previous, start_date = nil)
         @days_previous = days_previous
-        @start_date = start_date || Time.now.to_utc.date
+        @start_date = start_date || Time.now.to_utc.at_beginning_of_day
       end
 
       def processed
