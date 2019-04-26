@@ -3,7 +3,7 @@
 0.7.0
 ----------
 
-- Fixes for Crystal 0.8.0 [#78]
+- Fixes for Crystal 0.28.0 [#78]
 
 0.6.1
 ----------
