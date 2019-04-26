@@ -1,5 +1,10 @@
 # Sidekiq.cr Changelog
 
+0.7.0
+----------
+
+- Fixes for Crystal 0.8.0 [#78]
+
 0.6.1
 ----------
 
