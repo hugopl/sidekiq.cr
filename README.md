@@ -10,13 +10,13 @@ give you options.  Ruby is friendly and flexible but not terribly fast.
 Crystal is statically-typed, compiled and **very fast** but retains a similar syntax to
 Ruby.
 
-Rough, initial benchmarks on OSX 10.11.5:
+Rough, initial benchmarks on macOS 10.14.5:
 
 Runtime | RSS | Time | Throughput
 --------|-----|------|-------------
-MRI 2.3.0 | 50MB | 21.3 | 4,600 jobs/sec
-MRI/hiredis | 55MB | 19.2 | 5,200 jobs/sec
-Crystal 0.18.4 | 12MB | 5.9 | 16,900 jobs/sec
+MRI 2.6.3 | 55MB | 11.1 | 9,000 jobs/sec
+MRI/hiredis | 62MB | 8.3 | 12,000 jobs/sec
+Crystal 0.29.0 | 15MB | 1.4 | 69,200 jobs/sec
 
 If you have jobs which are CPU-intensive or require very high throughput,
 Crystal is an excellent alternative to native Ruby extensions.  It
