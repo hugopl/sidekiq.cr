@@ -142,8 +142,10 @@ module Sidekiq
 
     def raw_push(payloads)
       @ctx.pool.redis do |conn|
-        conn.multi do |multi|
-          atomic_push(multi, payloads)
+        conn.pipelined do |pipeline|
+          pipeline.command ["MULTI"]
+          atomic_push(pipeline, payloads)
+          pipeline.command ["EXEC"]
         end
       end
       true
