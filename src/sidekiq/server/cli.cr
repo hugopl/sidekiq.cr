@@ -70,12 +70,12 @@ module Sidekiq
       channel = Channel(Int32).new
 
       Signal::INT.trap do
-        shutdown_started_at = Time.now
+        shutdown_started_at = Time.local
         svr.request_stop
         channel.send 0
       end
       Signal::TERM.trap do
-        shutdown_started_at = Time.now
+        shutdown_started_at = Time.local
         svr.request_stop
         channel.send 0
       end
@@ -88,7 +88,7 @@ module Sidekiq
       channel.receive
 
       deadline = shutdown_started_at.not_nil! + @timeout.seconds
-      while Time.now < deadline && !svr.processors.empty?
+      while Time.local < deadline && !svr.processors.empty?
         sleep 0.1
       end
 

@@ -46,7 +46,7 @@ module Sidekiq
       @queue = "default"
       @args = "[]"
       @klass = ""
-      @created_at = Time.now.to_utc
+      @created_at = Time.utc
       @enqueued_at = nil
       @jid = Random::Secure.hex(12)
       @retry = true
@@ -88,7 +88,7 @@ module Sidekiq
 
     # Run this job +interval+ from now.
     def _perform_in(interval : Time::Span, args : String)
-      now = Time.now
+      now = Time.local
       ts = now + interval
 
       @args = args
