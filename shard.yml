@@ -6,7 +6,7 @@ authors:
 
 license: LGPL-3.0
 
-crystal: 0.27.0
+crystal: 0.32.0
 
 dependencies:
   redis:

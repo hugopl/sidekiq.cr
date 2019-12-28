@@ -77,7 +77,7 @@ Sidekiq.logger.error "Created #{count*iter} jobs"
 
 Monitoring = Thread.new do
   watchdog("monitor thread") do
-    a = Time.now
+    a = Time.local
     while true
       sleep 0.2
       total = Sidekiq.redis do |conn|
@@ -85,8 +85,8 @@ Monitoring = Thread.new do
       end
       Sidekiq.logger.error("RSS: #{Process.rss} Pending: #{total}")
       if total == 0
-        b = Time.now
-        Sidekiq.logger.error("Done in #{Time.now - a}: #{(iter*count) / (b - a).to_f} jobs/sec")
+        b = Time.local
+        Sidekiq.logger.error("Done in #{Time.local - a}: #{(iter*count) / (b - a).to_f} jobs/sec")
         exit(0)
       end
     end

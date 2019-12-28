@@ -9,7 +9,7 @@ class FakeWorker
 end
 
 class Foo < Sidekiq::Middleware::ServerEntry
-  def call(job, ctx)
+  def call(job, ctx) : Bool
     yield
   end
 end

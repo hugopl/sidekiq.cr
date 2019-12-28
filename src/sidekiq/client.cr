@@ -7,7 +7,7 @@ module Sidekiq
       getter! pool : Sidekiq::Pool
       getter! logger : ::Logger
 
-      def error_handlers
+      def error_handlers : Array(Sidekiq::ExceptionHandler::Base)
         [] of Sidekiq::ExceptionHandler::Base
       end
 
@@ -160,7 +160,7 @@ module Sidekiq
         conn.zadd("schedule", all)
       else
         q = payloads.first.queue
-        now = Time.now
+        now = Time.local
         to_push = payloads.map do |entry|
           entry.enqueued_at = now
           entry.to_json

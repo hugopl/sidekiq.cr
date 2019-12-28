@@ -4,10 +4,10 @@ require "../src/sidekiq"
 POOL = Sidekiq::Pool.new(1)
 
 class MockContext < Sidekiq::Context
-  getter pool
-  getter logger
+  getter pool : Sidekiq::Pool
+  getter logger : Logger
   getter output
-  getter error_handlers
+  getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
 
   def initialize
     @pool = POOL

@@ -332,9 +332,9 @@ describe "sidekiq web" do
     Sidekiq.redis do |conn|
       pro = "foo:1234"
       conn.sadd("processes", pro)
-      conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.now.to_unix_f, "labels" => ["frumduz"], "queues" => ["default"]}.to_json, "busy" => 1, "beat" => Time.now.to_unix_f})
+      conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.local.to_unix_f, "labels" => ["frumduz"], "queues" => ["default"]}.to_json, "busy" => 1, "beat" => Time.local.to_unix_f})
       identity = "#{pro}:workers"
-      hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"], "created_at" => Time.now.to_unix_f}, :run_at => Time.now.to_unix}
+      hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"], "created_at" => Time.local.to_unix_f}, :run_at => Time.local.to_unix}
       conn.hmset(identity, {"100001" => hash.to_json})
       conn.incr("busy")
     end
@@ -466,7 +466,7 @@ describe "sidekiq web" do
 end
 
 private def add_scheduled
-  now = Time.now.to_unix_f
+  now = Time.local.to_unix_f
   msg = {"class"      => "HardWorker",
          "queue"      => "default",
          "created_at" => now,
@@ -480,7 +480,7 @@ private def add_scheduled
 end
 
 private def add_retry
-  now = Time.now.to_unix_f
+  now = Time.local.to_unix_f
   msg = {"class"         => "HardWorker",
          "args"          => ["bob", 1, now.to_s],
          "queue"         => "default",
@@ -499,7 +499,7 @@ private def add_retry
 end
 
 private def add_dead
-  now = Time.now.to_unix_f
+  now = Time.local.to_unix_f
   msg = {"class"         => "HardWorker",
          "args"          => ["bob", 1, now],
          "queue"         => "foo",
@@ -518,7 +518,7 @@ private def add_dead
 end
 
 private def add_xss_retry
-  now = Time.now.to_unix_f
+  now = Time.local.to_unix_f
   msg = {"class"         => "FailWorker",
          "args"          => ["<a>hello</a>"],
          "queue"         => "foo",
@@ -541,7 +541,7 @@ private def add_worker
   Sidekiq.redis do |conn|
     conn.multi do |m|
       m.sadd("processes", key)
-      m.hmset(key, {"info" => {"concurrency" => 25, "identity" => key, "pid" => Process.pid, "hostname" => "foo", "started_at" => Time.now.to_unix_f, "queues" => ["default", "critical"]}.to_json, "beat" => Time.now.to_unix_f, "busy" => 4})
+      m.hmset(key, {"info" => {"concurrency" => 25, "identity" => key, "pid" => Process.pid, "hostname" => "foo", "started_at" => Time.local.to_unix_f, "queues" => ["default", "critical"]}.to_json, "beat" => Time.local.to_unix_f, "busy" => 4})
       m.hmset("#{key}:workers", {"1001" => msg})
     end
   end
@@ -578,7 +578,7 @@ class WebWorker
 end
 
 private def get(path, params = nil, headers = nil)
-  resource = "#{path}?#{params.try(&.map { |k, v| "#{URI.escape(k)}=#{URI.escape(v)}" }.join("&"))}"
+  resource = "#{path}?#{params.try(&.map { |k, v| "#{URI.encode(k)}=#{URI.encode(v)}" }.join("&"))}"
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v
@@ -595,7 +595,7 @@ end
 
 private def post(path, params = nil, headers = nil)
   resource = path
-  body = params.try(&.map { |k, v| "#{URI.escape(k, true)}=#{URI.escape(v, true)}" }.join("&"))
+  body = params.try(&.map { |k, v| "#{URI.encode(string: k, space_to_plus: true)}=#{URI.encode(string: v, space_to_plus: true)}" }.join("&"))
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v

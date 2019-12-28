@@ -5,7 +5,7 @@ module Sidekiq
     SETS = %w(retry schedule)
 
     class Enq
-      def enqueue_jobs(ctx, now = Time.now, sorted_sets = SETS)
+      def enqueue_jobs(ctx, now = Time.local, sorted_sets = SETS)
         # A job's "score" in Redis is the time at which it should be processed.
         # Just check Redis for the set of jobs with a timestamp before now.
         count = 0

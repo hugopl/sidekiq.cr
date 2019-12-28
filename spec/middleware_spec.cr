@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 class SomeMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx)
+  def call(job, ctx) : Bool
     ctx.logger.info "start"
     yield
     ctx.logger.info "done"
@@ -10,7 +10,7 @@ class SomeMiddleware < Sidekiq::Middleware::ClientEntry
 end
 
 class StopperMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx)
+  def call(job, ctx) : Bool
     if false
       yield
     else
