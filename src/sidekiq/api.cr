@@ -68,7 +68,7 @@ module Sidekiq
 
       pipe2_res = Sidekiq.redis do |conn|
         conn.pipelined do |ppp|
-          procs.each { |key| ppp.hget(key, "busy") }
+          procs.each { |key| ppp.hget(key.to_s, "busy") }
           qs.each { |queue| ppp.llen("queue:#{queue}") }
         end
       end.as(Array(Redis::RedisValue))
@@ -855,7 +855,7 @@ module Sidekiq
         unless procs.empty?
           res = conn.pipelined do |ppp|
             procs.each do |key|
-              ppp.hget(key, "busy")
+              ppp.hget(key.to_s, "busy")
             end
           end
           arr = res.as(Array(Redis::RedisValue))
