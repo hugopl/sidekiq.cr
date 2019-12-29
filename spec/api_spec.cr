@@ -258,7 +258,7 @@ describe "api" do
       Sidekiq.redis do |conn|
         conn.multi do |m|
           m.sadd("processes", odata["key"])
-          m.hmset(odata["key"], {"info" => odata.to_json, "busy" => 10, "beat" => time})
+          m.hmset(odata["key"].as_s, {"info" => odata.to_json, "busy" => 10, "beat" => time})
           m.sadd("processes", "fake:pid")
         end
       end
