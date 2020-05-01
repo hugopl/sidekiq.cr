@@ -5,7 +5,7 @@ POOL = Sidekiq::Pool.new(1)
 
 class MockContext < Sidekiq::Context
   getter pool : Sidekiq::Pool
-  getter logger : Logger
+  getter logger : Log
   getter output
   getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
 

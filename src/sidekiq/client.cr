@@ -5,7 +5,7 @@ module Sidekiq
   class Client
     class Context < Sidekiq::Context
       getter! pool : Sidekiq::Pool
-      getter! logger : ::Logger
+      getter! logger : ::Log
 
       def error_handlers : Array(Sidekiq::ExceptionHandler::Base)
         [] of Sidekiq::ExceptionHandler::Base
@@ -13,17 +13,17 @@ module Sidekiq
 
       def initialize
         @pool = RedisConfig.new.new_pool
-        @logger = Sidekiq::Logger.build
+        @logger = Sidekiq::Logger.build(self)
       end
 
-      def initialize(redis_cfg : Sidekiq::RedisConfig, logger : ::Logger? = nil)
+      def initialize(redis_cfg : Sidekiq::RedisConfig, logger : ::Log? = nil)
         @pool = redis_cfg.new_pool
-        @logger = logger || Sidekiq::Logger.build
+        @logger = logger || Sidekiq::Logger.build(self)
       end
 
-      def initialize(pool : Sidekiq::Pool, logger : ::Logger? = nil)
+      def initialize(pool : Sidekiq::Pool, logger : ::Log? = nil)
         @pool = pool
-        @logger = logger || Sidekiq::Logger.build
+        @logger = logger || Sidekiq::Logger.build(self)
       end
     end
 

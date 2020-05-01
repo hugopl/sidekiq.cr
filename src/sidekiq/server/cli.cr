@@ -5,7 +5,7 @@ require "../server"
 
 module Sidekiq
   class CLI
-    getter logger : ::Logger
+    getter logger : ::Log = ::Log.for(Sidekiq::CLI)
 
     def initialize(args = ARGV)
       @concurrency = 25
@@ -13,7 +13,7 @@ module Sidekiq
       @timeout = 8
       @environment = "development"
       @tag = ""
-      @logger = Sidekiq::Logger.build
+      @logger = Sidekiq::Logger.build(self)
 
       OptionParser.parse(args) do |parser|
         parser.banner = "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}\n#{Sidekiq::LICENSE}\n\
@@ -32,7 +32,7 @@ module Sidekiq
         end
         parser.on("-t SEC", "Shutdown timeout") { |t| @timeout = t.to_i }
         parser.on("-v", "Enable verbose logging") do |c|
-          @logger.level = ::Logger::DEBUG
+          @logger.level = :debug
         end
         parser.on("-V", "Print version and exit") { |c| puts "Sidekiq #{Sidekiq::VERSION}"; exit }
         parser.on("-h", "--help", "Show this help") { puts parser; exit }
@@ -58,10 +58,10 @@ module Sidekiq
     def run(svr)
       # hack to avoid printing banner in test suite
       print_banner if logger == @logger
-      logger.info "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}"
-      logger.info Sidekiq::LICENSE
-      logger.info "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org"
-      logger.info "Starting processing with #{@concurrency} workers"
+      logger.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
+      logger.info { Sidekiq::LICENSE }
+      logger.info { "Upgrade to Sidekiq Enterprise for more features and support: http://sidekiq.org" }
+      logger.info { "Starting processing with #{@concurrency} workers" }
 
       logger.debug { self.inspect }
 
@@ -83,7 +83,7 @@ module Sidekiq
         svr.request_stop
       end
 
-      logger.info "Press Ctrl-C to stop"
+      logger.info { "Press Ctrl-C to stop" }
       # We block here infinitely until signalled to shutdown
       channel.receive
 
@@ -93,11 +93,11 @@ module Sidekiq
       end
 
       if !svr.processors.empty?
-        logger.info "Re-enqueuing #{svr.processors.size} busy jobs"
+        logger.info { "Re-enqueuing #{svr.processors.size} busy jobs" }
         svr.fetcher.bulk_requeue(svr, svr.processors.map { |p| p.job }.compact)
       end
 
-      logger.info "Done, bye!"
+      logger.info { "Done, bye!" }
       exit(0)
     end
 
