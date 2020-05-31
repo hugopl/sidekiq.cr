@@ -17,7 +17,6 @@ dependencies:
     version: ~> 0.2.3
   kemal:
     github: kemalcr/kemal
-    # branch: master
     version: ~> 0.26.0
   kemal-session:
     github: kemalcr/kemal-session
