@@ -12,7 +12,7 @@ module Sidekiq
 
       def call(ex : Exception, ctxHash : Hash(String, JSON::Any)? = nil)
         @output.warn { ctxHash.to_json } if ctxHash && !ctxHash.empty?
-        @output.warn(exception: ex) { "#{ex.class.name}: #{ex.message}" }
+        @output.warn(exception: ex) { }
       end
     end
 
