@@ -21,8 +21,7 @@ module Sidekiq
         begin
           handler.call(ex, ctxHash)
         rescue ex2
-          ctx.logger.error { "!!! ERROR HANDLER THREW AN ERROR !!!" }
-          ctx.logger.error(exception: ex2) { }
+          ctx.logger.error(exception: ex2) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
         end
       end
     end
