@@ -23,7 +23,6 @@ module Sidekiq
         rescue ex2
           ctx.logger.error { "!!! ERROR HANDLER THREW AN ERROR !!!" }
           ctx.logger.error(exception: ex2) { }
-          # ctx.logger.error ex2.backtrace.join("\n")
         end
       end
     end
