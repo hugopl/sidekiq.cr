@@ -6,7 +6,7 @@ authors:
 
 license: LGPL-3.0
 
-crystal: 0.32.0
+crystal: 0.35.1
 
 dependencies:
   redis:
@@ -18,7 +18,8 @@ dependencies:
   kemal:
     github: kemalcr/kemal
     # branch: master
-    version: ">= 0.26.0"
+    # version: ">= 0.26.0"
+    commit: a8c0f09b858162bd13c96663febef5527b322a32
   kemal-session:
     github: kemalcr/kemal-session
     version: ">= 0.12.0"
