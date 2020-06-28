@@ -1,4 +1,5 @@
 require "spec"
+require "json_mapping"
 require "../src/sidekiq"
 
 POOL = Sidekiq::Pool.new(1)
@@ -12,8 +13,8 @@ class MockContext < Sidekiq::Context
   def initialize
     @pool = POOL
     @output = IO::Memory.new
-    @logger = ::Logger.new(@output)
     @error_handlers = [] of Sidekiq::ExceptionHandler::Base
+    @logger = Sidekiq::Logger.build(MockContext, @output)
   end
 end
 

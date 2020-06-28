@@ -2,35 +2,17 @@ require "log"
 
 module Sidekiq
   class Logger
-    class PrettyBackend < ::Log::IOBackend
-      def initialize(@io = STDOUT)
-        @mutex = Mutex.new(:unchecked)
-        @progname = File.basename(PROGRAM_NAME)
-        # @formatter = ->formater(::Log::Entry, IO)
-        @formatter = ::Log::StaticFormatter
-      end
+    # ::Log.define_formatter ::Sidekiq::Logger::PrettyFormat, "#{severity}, [#{timestamp.to_rfc3339} " \
+    #                                                         "##{::Process.pid}] -- TID-#{Fiber.current.object_id.to_s(36, io)}" \
+    #                                                         ":#{Sidekiq::Logger.context}#{message}"
 
-      private def formater(entry : ::Log::Entry, io : IO)
-        pretty_format(entry)
-      end
+    # "#{timestamp} #{severity} - #{source(after: ": ")}#{message}" \
+    # "#{data(before: " -- ")}#{context(before: " -- ")}#{exception}"
 
-      # Emits the *entry* to the given *io*.
-      def default_format(entry : ::Log::Entry)
-        label = entry.severity.label
-        io << label[0] << ", ["
-        entry.timestamp.to_rfc3339(io)
-        io << " #" << ::Process.pid << "] "
-        label.rjust(7, io)
-        io << " -- " << @progname << ":" << entry.source << ": " << entry.message
-        if entry.context.size > 0
-          io << " -- " << entry.context
-        end
-        if ex = entry.exception
-          io << " -- " << ex.class << ": " << ex
-        end
-      end
+    struct PrettyFormat
+      extend ::Log::Formatter
 
-      def pretty_format(entry : ::Log::Entry)
+      def self.format(entry : Log::Entry, io : IO)
         label = entry.severity.label
         io << label[0] << ", ["
         entry.timestamp.to_rfc3339(io)
@@ -41,7 +23,6 @@ module Sidekiq
         # io << @progname
         io << "TID-"
         Fiber.current.object_id.to_s(36, io)
-
         io << ":"
 
         # io << entry.source << ": "
@@ -54,6 +35,15 @@ module Sidekiq
         if ex = entry.exception
           io << " -- " << ex.class << ": " << ex
         end
+      end
+    end
+
+    class PrettyBackend < ::Log::IOBackend
+      def initialize(@io = STDOUT)
+        @mutex = Mutex.new(:unchecked)
+        @progname = File.basename(PROGRAM_NAME)
+        # @formatter = ->formater(::Log::Entry, IO)
+        @formatter = PrettyFormat
       end
     end
 

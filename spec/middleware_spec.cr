@@ -1,10 +1,11 @@
 require "./spec_helper"
+require "log/spec"
 
 class SomeMiddleware < Sidekiq::Middleware::ClientEntry
   def call(job, ctx) : Bool
-    ctx.logger.info "start"
+    ctx.logger.info { "start" }
     yield
-    ctx.logger.info "done"
+    ctx.logger.info { "done" }
     true
   end
 end
@@ -36,19 +37,22 @@ describe Sidekiq::Middleware do
   end
 
   it "works" do
-    ch = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ClientEntry).new
-    ch.add SomeMiddleware.new
+    ::Log.capture do |logs|
+      ch = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ClientEntry).new
+      ch.add SomeMiddleware.new
 
-    done = false
-    ctx = MockContext.new
-    job = Sidekiq::Job.new
-    result = ch.invoke(job, ctx) do
-      done = true
+      done = false
+      ctx = MockContext.new
+      job = Sidekiq::Job.new
+      result = ch.invoke(job, ctx) do
+        done = true
+      end
+      done.should be_true
+      result.should be_true
+
+      logs.check(:info, /start/i)
+      logs.check(:info, /done/i)
     end
-    done.should be_true
-    result.should be_true
-    ctx.logger.@io.to_s.should match(/start/)
-    ctx.logger.@io.to_s.should match(/done/)
   end
 
   it "can stop a client-side push" do

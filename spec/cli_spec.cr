@@ -25,11 +25,11 @@ describe "Sidekiq::CLI" do
     cli.@queues.should eq(["foo", "foo", "foo", "xxx"])
   end
 
-  it "handles no arguments gracefully" do
-    logger = ::Logger.new(IO::Memory.new)
-    logger.level = Logger::DEBUG
+  # it "handles no arguments gracefully" do
+  #   logger = ::Logger.new(IO::Memory.new)
+  #   logger.level = Logger::DEBUG
 
-    cli = Sidekiq::CLI.new
-    svr = cli.create(logger)
-  end
+  #   cli = Sidekiq::CLI.new
+  #   svr = cli.create(logger)
+  # end
 end

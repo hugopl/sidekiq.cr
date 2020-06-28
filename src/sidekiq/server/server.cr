@@ -22,7 +22,7 @@ module Sidekiq
     getter hostname : String
 
     def initialize(@environment = "development", @queues = ["default"],
-                   @concurrency = 25, @logger = Sidekiq::Logger.build)
+                   @concurrency = 25, @logger = Sidekiq::Logger.build(Sidekiq::Server))
       @hostname = ENV["DYNO"]? || System.hostname
       nonce = Random::Secure.hex(6)
       @identity = "#{@hostname}:#{::Process.pid}:#{nonce}"
