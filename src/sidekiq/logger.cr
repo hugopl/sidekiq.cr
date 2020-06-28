@@ -6,7 +6,8 @@ module Sidekiq
       def initialize(@io = STDOUT)
         @mutex = Mutex.new(:unchecked)
         @progname = File.basename(PROGRAM_NAME)
-        @formatter = ->formater(::Log::Entry, IO)
+        # @formatter = ->formater(::Log::Entry, IO)
+        @formatter = ::Log::StaticFormatter
       end
 
       private def formater(entry : ::Log::Entry, io : IO)
