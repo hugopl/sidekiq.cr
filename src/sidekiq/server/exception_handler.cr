@@ -12,8 +12,7 @@ module Sidekiq
 
       def call(ex : Exception, ctxHash : Hash(String, JSON::Any)? = nil)
         @output.warn { ctxHash.to_json } if ctxHash && !ctxHash.empty?
-        @output.warn(exception: ex) { "#{ex.class.name}: #{ex.message}" }
-        # @output.warn
+        @output.warn(exception: ex) { }
       end
     end
 
@@ -22,9 +21,7 @@ module Sidekiq
         begin
           handler.call(ex, ctxHash)
         rescue ex2
-          ctx.logger.error { "!!! ERROR HANDLER THREW AN ERROR !!!" }
-          ctx.logger.error(exception: ex2) { }
-          # ctx.logger.error ex2.backtrace.join("\n")
+          ctx.logger.error(exception: ex2) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
         end
       end
     end
