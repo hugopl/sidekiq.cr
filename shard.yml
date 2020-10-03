@@ -29,4 +29,9 @@ dependencies:
   baked_file_system:
     github: schovi/baked_file_system
     version: ~> 0.9.5
-    commit: e1447549d5ac0560720fae62179b2f2c62c9bfd1
+    # commit: e1447549d5ac0560720fae62179b2f2c62c9bfd1
+  json_mapping:
+    github: crystal-lang/json_mapping.cr
+  db:
+    github: crystal-lang/crystal-db
+    version: ">= 0.9.0"
