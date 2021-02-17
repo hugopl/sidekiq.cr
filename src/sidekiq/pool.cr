@@ -67,9 +67,9 @@ module Sidekiq
       @pool = DB::Pool.new(
         checkout_timeout: redis_cfg.pool_timeout,
         max_pool_size: redis_cfg.pool_size
-      ) {
+      ) do
         redis_cfg.new_client
-      }
+      end
     end
 
     # Execute one or more Redis operations:
@@ -93,7 +93,7 @@ module Sidekiq
       begin
         yield conn
       ensure
-        @pool.release conn
+        @pool.release(conn)
       end
     end
   end

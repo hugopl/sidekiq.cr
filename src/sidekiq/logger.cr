@@ -40,6 +40,7 @@ module Sidekiq
 
     class PrettyBackend < ::Log::IOBackend
       def initialize(@io = STDOUT)
+        super
         @mutex = Mutex.new(:unchecked)
         @progname = File.basename(PROGRAM_NAME)
         # @formatter = ->formater(::Log::Entry, IO)

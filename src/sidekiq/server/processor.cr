@@ -43,14 +43,12 @@ module Sidekiq
     end
 
     def run
-      begin
-        until @mgr.stopping?
-          process_one
-        end
-        @mgr.processor_stopped(self)
-      rescue ex : Exception
-        @mgr.processor_died(self, ex)
+      until @mgr.stopping?
+        process_one
       end
+      @mgr.processor_stopped(self)
+    rescue ex : Exception
+      @mgr.processor_died(self, ex)
     end
 
     def process_one
@@ -60,13 +58,11 @@ module Sidekiq
     end
 
     def get_one
-      begin
-        work = @mgr.fetcher.retrieve_work(@mgr)
-        (@mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }; @down = nil) if @down
-        work
-      rescue ex
-        handle_fetch_exception(ex)
-      end
+      work = @mgr.fetcher.retrieve_work(@mgr)
+      (@mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }; @down = nil) if @down
+      work
+    rescue ex
+      handle_fetch_exception(ex)
     end
 
     def fetch
@@ -82,10 +78,7 @@ module Sidekiq
     def handle_fetch_exception(ex)
       if !@down
         @down = Time.local
-        @mgr.logger.error { "Error fetching job: #{ex}" }
-        ex.backtrace.each do |bt|
-          @mgr.logger.error { bt }
-        end
+        @mgr.logger.error(exception: ex) { "Error fetching job: #{ex.message}" }
       end
       sleep(1)
       nil

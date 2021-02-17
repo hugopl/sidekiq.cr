@@ -5,7 +5,7 @@ require "../server"
 
 module Sidekiq
   class CLI
-    getter logger : ::Log = ::Log.for(self)
+    getter logger : ::Log = ::Log.for("sidekiq")
 
     def initialize(args = ARGV)
       @concurrency = 25
@@ -13,7 +13,7 @@ module Sidekiq
       @timeout = 8
       @environment = "development"
       @tag = ""
-      @logger = Sidekiq::Logger.build(self)
+      # @logger = Sidekiq::Logger.build(self)
 
       OptionParser.parse(args) do |parser|
         parser.banner = "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}\n#{Sidekiq::LICENSE}\n\
