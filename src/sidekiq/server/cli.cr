@@ -5,7 +5,7 @@ require "../server"
 
 module Sidekiq
   class CLI
-    getter logger : ::Log = ::Log.for(Sidekiq::CLI)
+    getter logger : ::Log = ::Log.for(self)
 
     def initialize(args = ARGV)
       @concurrency = 25
