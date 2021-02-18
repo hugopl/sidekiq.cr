@@ -1,5 +1,4 @@
 require "spec"
-require "json_mapping"
 require "../src/sidekiq"
 
 POOL = Sidekiq::Pool.new(1)
