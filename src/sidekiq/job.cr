@@ -1,4 +1,4 @@
-require "json"
+require "json_mapping"
 require "./core_ext"
 
 module Sidekiq

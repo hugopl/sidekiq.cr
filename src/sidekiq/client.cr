@@ -4,8 +4,8 @@ require "./types"
 module Sidekiq
   class Client
     class Context < Sidekiq::Context
-      getter! pool : Sidekiq::Pool
-      getter! logger : ::Logger
+      getter pool : Sidekiq::Pool
+      getter logger : ::Logger
 
       def error_handlers : Array(Sidekiq::ExceptionHandler::Base)
         [] of Sidekiq::ExceptionHandler::Base
