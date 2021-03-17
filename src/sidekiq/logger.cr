@@ -31,16 +31,16 @@ module Sidekiq
     end
 
     def self.context
-      c = Fiber.current.logging_context
+      c = Fiber.current.sidekiq_logging_context
       c && c.size > 0 ? " #{c.join(SPACE)}" : ""
     end
 
     def self.with_context(msg)
-      Fiber.current.logging_context ||= [] of String
-      Fiber.current.logging_context.not_nil! << msg
+      Fiber.current.sidekiq_logging_context ||= [] of String
+      Fiber.current.sidekiq_logging_context.not_nil! << msg
       yield
     ensure
-      Fiber.current.logging_context.not_nil!.pop
+      Fiber.current.sidekiq_logging_context.not_nil!.pop
     end
 
     def self.build(log_target = STDOUT)
@@ -53,5 +53,5 @@ module Sidekiq
 end
 
 class Fiber
-  property logging_context : Array(String)?
+  property sidekiq_logging_context : Array(String)?
 end

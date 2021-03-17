@@ -6,7 +6,7 @@ authors:
 
 license: LGPL-3.0
 
-crystal: 0.32.0
+crystal: 0.35.1
 
 dependencies:
   redis:
@@ -17,14 +17,19 @@ dependencies:
     version: ~> 0.2.3
   kemal:
     github: kemalcr/kemal
-    branch: master
+    version: "~> 0.27.0"
   kemal-session:
     github: kemalcr/kemal-session
-    commit: a16f164d3dcfc6e720d566f9085285abdd5b7825
+    version: "~> 0.12.0"
   kemal-csrf:
     github: kemalcr/kemal-csrf
-    version: 0.5.0
+    version: "~> 0.7.0"
   baked_file_system:
     github: schovi/baked_file_system
-    version: ~> 0.9.5
-    commit: e1447549d5ac0560720fae62179b2f2c62c9bfd1
+    # version: ~> 0.9.8
+    commit: 7183bfd
+  json_mapping:
+    github: crystal-lang/json_mapping.cr
+  db:
+    github: crystal-lang/crystal-db
+    version: "~> 0.10.0"

@@ -1,7 +1,12 @@
 require "spec"
 require "../src/sidekiq"
 
-POOL = Sidekiq::Pool.new(1)
+# FIXME: Tests are using 2 redis connections sometimes, because:
+# `SortedEntry#add_to_queue` calls `#remove_job` with a block that calls `Sidekiq::Client.new.push(job)`, but
+# remove_job itself also uses a redis connection.
+#
+# The solution is to let remove_job pass the redis connection on `yield`.
+POOL = Sidekiq::Pool.new(3)
 
 class MockContext < Sidekiq::Context
   getter pool : Sidekiq::Pool
