@@ -1,8 +1,6 @@
 # Sidekiq.cr
 
 [![Build Status](https://travis-ci.org/mperham/sidekiq.cr.svg)](https://travis-ci.org/mperham/sidekiq.cr)
-[![Dependency Status](https://shards.rocks/badge/github/mperham/sidekiq.cr/status.svg)](https://shards.rocks/github/mperham/sidekiq.cr)
-[![devDependency Status](https://shards.rocks/badge/github/mperham/sidekiq.cr/dev_status.svg)](https://shards.rocks/github/mperham/sidekiq.cr)
 
 Sidekiq is a well-regarded background job framework for Ruby.  Now we're
 bringing the awesomeness to Crystal, a Ruby-like language.  Why?  To
