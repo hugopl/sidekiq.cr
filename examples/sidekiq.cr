@@ -14,21 +14,23 @@ class CrystalWorker
   end
 
   def perform(x : Int64)
-    logger.info "hello!"
+    logger.info { "hello!" }
   end
 end
 
 class SomeClientMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx)
-    ctx.logger.info "Pushing job #{job.jid}"
+  def call(job, ctx) : Bool
+    ctx.logger.info { "Pushing job #{job.jid}" }
     yield
+    true
   end
 end
 
 class SomeServerMiddleware < Sidekiq::Middleware::ServerEntry
-  def call(job, ctx)
-    ctx.logger.info "Executing job #{job.jid}"
+  def call(job, ctx) : Bool
+    ctx.logger.info { "Executing job #{job.jid}" }
     yield
+    true
   end
 end
 
