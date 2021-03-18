@@ -1,4 +1,4 @@
-#!/usr/bin/env crystal
+#!/usr/bin/env -S crystal run --release
 
 require "colorize"
 require "redis"
@@ -21,11 +21,9 @@ puts "Running on #{`uname -a`}"
 r = Redis.new
 r.flushdb
 
-devnull = ::Logger.new(File.open("/dev/null", "w"))
-devnull.formatter = Sidekiq::Logger::PRETTY
-devnull.level = ::Logger::INFO
 s = Sidekiq::CLI.new
-x = s.configure(devnull) do |config|
+s.logger.backend = Log::IOBackend.new(File.open(File::NULL, "w"))
+x = s.configure do |_config|
   # nothing
 end
 
@@ -65,7 +63,7 @@ spawn do
       puts "Done in #{b - a}: #{"%.3f" % (total / (b - a).to_f)} jobs/sec".colorize(:green)
       exit
     end
-    p [Time.local, count, Process.rss]
+    puts "RSS: #{Process.rss} Pending: #{count}"
     sleep 0.2
   end
 end
