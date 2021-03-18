@@ -1,4 +1,4 @@
-require "logger"
+require "log"
 
 module Sidekiq
   # #
@@ -42,7 +42,7 @@ module Sidekiq
 
     property! jid : String
     property bid : String?
-    property! logger : ::Logger
+    property! logger : ::Log
 
     def logger
       @logger ||= Sidekiq::Client.default_context.logger

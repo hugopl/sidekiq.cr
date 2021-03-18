@@ -14,7 +14,7 @@ module Sidekiq
     getter server_middleware : Sidekiq::Middleware::Chain(Sidekiq::Middleware::ServerEntry)
     getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
     getter processors : Array(Sidekiq::Processor)
-    getter logger : ::Logger
+    getter logger : ::Log
     getter labels : Array(String)
     getter queues : Array(String)
     getter tag : String
