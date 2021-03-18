@@ -5,7 +5,7 @@ require "../server"
 
 module Sidekiq
   class CLI
-    getter logger : ::Logger
+    getter logger : ::Log
 
     def initialize(args = ARGV)
       @concurrency = 25
@@ -32,7 +32,7 @@ module Sidekiq
         end
         parser.on("-t SEC", "Shutdown timeout") { |t| @timeout = t.to_i }
         parser.on("-v", "Enable verbose logging") do |c|
-          @logger.level = ::Logger::DEBUG
+          @logger.level = :debug
         end
         parser.on("-V", "Print version and exit") { |c| puts "Sidekiq #{Sidekiq::VERSION}"; exit }
         parser.on("-h", "--help", "Show this help") { puts parser; exit }

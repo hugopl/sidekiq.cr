@@ -82,10 +82,7 @@ module Sidekiq
     def handle_fetch_exception(ex)
       if !@down
         @down = Time.local
-        @mgr.logger.error("Error fetching job: #{ex}")
-        ex.backtrace.each do |bt|
-          @mgr.logger.error(bt)
-        end
+        @mgr.logger.error(exception: ex) { "Error fetching job: #{ex}" }
       end
       sleep(1)
       nil

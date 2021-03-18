@@ -10,15 +10,18 @@ POOL = Sidekiq::Pool.new(3)
 
 class MockContext < Sidekiq::Context
   getter pool : Sidekiq::Pool
-  getter logger : Logger
-  getter output
+  getter logger : ::Log
   getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
 
   def initialize
     @pool = POOL
-    @output = IO::Memory.new
-    @logger = ::Logger.new(@output)
+    @logger = ::Log.for("Sidekiq-test", :debug)
+    @logger.backend = ::Log::MemoryBackend.new
     @error_handlers = [] of Sidekiq::ExceptionHandler::Base
+  end
+
+  def log_entries
+    @logger.backend.as(::Log::MemoryBackend).entries
   end
 end
 

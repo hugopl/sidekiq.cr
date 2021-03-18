@@ -12,7 +12,7 @@ module Sidekiq
   # The Context interface is passed around by everyone, allowing
   # all Sidekiq internals to log, report errors or safely access Redis.
   abstract class Context
-    abstract def logger : ::Logger
+    abstract def logger : ::Log
     abstract def pool : Sidekiq::Pool
 
     # server-side only, not for use within middleware

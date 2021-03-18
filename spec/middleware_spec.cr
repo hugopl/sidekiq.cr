@@ -2,9 +2,9 @@ require "./spec_helper"
 
 class SomeMiddleware < Sidekiq::Middleware::ClientEntry
   def call(job, ctx) : Bool
-    ctx.logger.info "start"
+    ctx.logger.info { "start" }
     yield
-    ctx.logger.info "done"
+    ctx.logger.info { "done" }
     true
   end
 end
@@ -47,8 +47,8 @@ describe Sidekiq::Middleware do
     end
     done.should be_true
     result.should be_true
-    ctx.logger.@io.to_s.should match(/start/)
-    ctx.logger.@io.to_s.should match(/done/)
+    ctx.log_entries.first.message.should eq("start")
+    ctx.log_entries.last.message.should eq("done")
   end
 
   it "can stop a client-side push" do

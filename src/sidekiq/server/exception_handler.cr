@@ -1,11 +1,11 @@
 require "json"
-require "logger"
+require "log"
 require "../middleware"
 
 module Sidekiq
   module ExceptionHandler
     class Logger < Base
-      @output : ::Logger
+      @output : ::Log
 
       def initialize(@output)
       end
@@ -22,9 +22,7 @@ module Sidekiq
         begin
           handler.call(ex, ctxHash)
         rescue ex2
-          ctx.logger.error { "!!! ERROR HANDLER THREW AN ERROR !!!" }
-          ctx.logger.error { ex2 }
-          ctx.logger.error { ex2.backtrace.join("\n") }
+          ctx.logger.error(exception: ex2) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
         end
       end
     end

@@ -1,57 +1,35 @@
-require "logger"
+require "log"
 
 module Sidekiq
   class Logger
-    SPACE = " "
-
-    PRETTY = ::Logger::Formatter.new do |severity, time, progname, message, io|
-      # 2016-05-19T04:19:24.323Z
-      time.to_utc.to_s("%FT%T.%LZ", io)
-      io << " "
+    NO_TS = ::Log::Formatter.new do |entry, io|
       io << ::Process.pid
       io << " TID-"
-      Fiber.current.object_id.to_s(36, io)
+      Fiber.current.object_id.to_s(io, 36)
+      entry.data.each do |key, value|
+        io << " " << key << "-" << value
+      end
       io << " "
-      io << Sidekiq::Logger.context
-      io << " "
-      io << severity
+      io << entry.severity
       io << ": "
-      io << message
+      io << entry.message
     end
-    NO_TS = ::Logger::Formatter.new do |severity, time, progname, message, io|
-      io << ::Process.pid
-      io << " TID-"
-      Fiber.current.object_id.to_s(36, io)
+
+    PRETTY = ::Log::Formatter.new do |entry, io|
+      io << entry.timestamp.to_utc.to_rfc3339(fraction_digits: 3)
       io << " "
-      io << Sidekiq::Logger.context
-      io << " "
-      io << severity
-      io << ": "
-      io << message
+      NO_TS.format(entry, io)
     end
 
-    def self.context
-      c = Fiber.current.sidekiq_logging_context
-      c && c.size > 0 ? " #{c.join(SPACE)}" : ""
-    end
-
-    def self.with_context(msg)
-      Fiber.current.sidekiq_logging_context ||= [] of String
-      Fiber.current.sidekiq_logging_context.not_nil! << msg
-      yield
-    ensure
-      Fiber.current.sidekiq_logging_context.not_nil!.pop
-    end
-
-    def self.build(log_target = STDOUT)
-      logger = ::Logger.new(log_target)
-      logger.level = ::Logger::INFO
-      logger.formatter = ENV["DYNO"]? ? NO_TS : PRETTY
+    def self.build(backend : Log::Backend? = nil)
+      logger = ::Log.for("Sidekiq", :info)
+      logger.backend = if backend
+                         backend
+                       else
+                         formatter = ENV["DYNO"]? ? NO_TS : PRETTY
+                         Log::IOBackend.new(formatter: formatter)
+                       end
       logger
     end
   end
-end
-
-class Fiber
-  property sidekiq_logging_context : Array(String)?
 end
