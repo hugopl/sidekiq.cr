@@ -56,8 +56,6 @@ module Sidekiq
     end
 
     def run(svr)
-      # hack to avoid printing banner in test suite
-      print_banner if logger == @logger
       logger.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
       logger.info { Sidekiq::LICENSE }
       logger.info { "Upgrade to Sidekiq Enterprise for more features and support: https://sidekiq.org" }
