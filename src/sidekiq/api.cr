@@ -399,6 +399,8 @@ module Sidekiq
 
     private def remove_job
       p = @parent.not_nil!
+      arr = [] of String
+
       Sidekiq.redis do |conn|
         results = conn.multi do |m|
           m.zrangebyscore(p.name, score, score)
@@ -406,31 +408,32 @@ module Sidekiq
         end.as(Array(Redis::RedisValue)).first
 
         r = results.as(Array(Redis::RedisValue))
-        arr = [] of String
         r.each do |msg|
           arr << msg.as(String)
         end
+      end
 
-        if arr.size == 1
-          yield arr.first
-        else
-          # multiple jobs with the same score
-          # find the one with the right JID and push it
-          msg = nil
-          hash = arr.group_by do |message|
-            msg = message
-            if msg.index(jid)
-              h = JSON.parse(msg).as_h
-              h["jid"] == jid
-            else
-              false
-            end
+      if arr.size == 1
+        yield arr.first
+      else
+        # multiple jobs with the same score
+        # find the one with the right JID and push it
+        msg = nil
+        hash = arr.group_by do |message|
+          msg = message
+          if msg.index(jid)
+            h = JSON.parse(msg).as_h
+            h["jid"] == jid
+          else
+            false
           end
+        end
 
-          msg = hash.fetch(true, [] of String).first?
-          yield msg if msg
+        msg = hash.fetch(true, [] of String).first?
+        yield msg if msg
 
-          # push the rest back onto the sorted set
+        # push the rest back onto the sorted set
+        Sidekiq.redis do |conn|
           conn.multi do |m|
             hash.fetch(false, [] of String).each do |message|
               m.zadd(p.name, score.to_f.to_s, message)
