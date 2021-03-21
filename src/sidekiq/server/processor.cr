@@ -21,14 +21,13 @@ module Sidekiq
   class Processor
     include Util
 
-    getter job : Sidekiq::UnitOfWork?
+    getter work : Sidekiq::UnitOfWork?
     getter identity : String
 
     def initialize(@mgr : Sidekiq::Server)
       @identity = ""
       @done = false
       @down = nil
-      @job = nil
     end
 
     def terminate
@@ -42,7 +41,7 @@ module Sidekiq
       end
     end
 
-    def run
+    private def run
       begin
         until @mgr.stopping?
           process_one
@@ -54,68 +53,72 @@ module Sidekiq
     end
 
     def process_one
-      @job = x = fetch
-      process(x) if x
-      @job = nil
+      @work = work = fetch
+      process(work) if work
     end
 
-    def get_one
+    def job : Job?
+      work = @work
+      Job.from_json(work.job) if work
+    end
+
+    private def get_one
       begin
         work = @mgr.fetcher.retrieve_work(@mgr)
-        (@mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }; @down = nil) if @down
+        if @down
+          @mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }
+          @down = nil
+        end
         work
       rescue ex
         handle_fetch_exception(ex)
       end
     end
 
-    def fetch
-      j = get_one
-      if j && @done
-        j.requeue
+    private def fetch
+      work = get_one
+      if work && @done
+        work.requeue
         nil
       else
-        j
+        work
       end
     end
 
-    def handle_fetch_exception(ex)
+    private def handle_fetch_exception(ex)
       if !@down
         @down = Time.local
         @mgr.logger.error(exception: ex) { "Error fetching job: #{ex}" }
       end
       sleep(1)
-      nil
     end
 
-    def process(work)
+    private def process(work)
       jobstr = work.job
       ack = false
-      begin
-        job = Sidekiq::Job.from_json(jobstr)
+      job = Sidekiq::Job.from_json(jobstr)
 
-        stats(job) do
-          @mgr.server_middleware.invoke(job, Sidekiq::Client.default_context.not_nil!) do
-            # Only ack if we either attempted to start this job or
-            # successfully completed it. This prevents us from
-            # losing jobs if a middleware raises an exception before yielding
-            ack = true
-            job.execute(@mgr)
-            true
-          end
+      stats(job) do
+        @mgr.server_middleware.invoke(job, Sidekiq::Client.default_context.not_nil!) do
+          # Only ack if we either attempted to start this job or
+          # successfully completed it. This prevents us from
+          # losing jobs if a middleware raises an exception before yielding
+          ack = true
+          job.execute(@mgr)
+          true
         end
-        ack = true
-        # rescue Sidekiq::Shutdown
-        # Had to force kill this job because it didn't finish
-        # within the timeout.  Don't acknowledge the work since
-        # we didn't properly finish it.
-        # ack = false
-      rescue ex : Exception
-        handle_exception(@mgr, ex, {"job" => JSON::Any.new(jobstr)})
-        raise ex
-      ensure
-        work.acknowledge if ack
       end
+      ack = true
+      # rescue Sidekiq::Shutdown
+      # Had to force kill this job because it didn't finish
+      # within the timeout.  Don't acknowledge the work since
+      # we didn't properly finish it.
+      # ack = false
+    rescue ex : Exception
+      handle_exception(@mgr, ex, {"job" => JSON::Any.new(jobstr)})
+      raise ex
+    ensure
+      work.acknowledge if ack
     end
 
     @@worker_state = Hash(String, Hash(String, (String | Int64 | Sidekiq::Job))).new
@@ -140,15 +143,13 @@ module Sidekiq
     def stats(job)
       @@worker_state[@identity] = {"queue" => job.queue, "payload" => job, "run_at" => Time.local.to_unix}
 
-      begin
-        yield
-      rescue ex : Exception
-        @@failure += 1
-        raise ex
-      ensure
-        @@worker_state.delete(@identity)
-        @@processed += 1
-      end
+      yield
+    rescue ex : Exception
+      @@failure += 1
+      raise ex
+    ensure
+      @@worker_state.delete(@identity)
+      @@processed += 1
     end
   end
 end

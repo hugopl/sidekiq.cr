@@ -6,7 +6,7 @@ module Sidekiq
   end
 
   abstract class Fetch
-    abstract def retrieve_work(ctx : Sidekiq::Context) : UnitOfWork | Nil
+    abstract def retrieve_work(ctx : Sidekiq::Context) : UnitOfWork?
     abstract def bulk_requeue(ctx : Sidekiq::Context, jobs : Array(UnitOfWork)) : Int32
   end
 
@@ -16,11 +16,9 @@ module Sidekiq
     TIMEOUT = 2
 
     class UnitOfWork < ::Sidekiq::UnitOfWork
-      def initialize(@queue : String, @job : String, @ctx : Sidekiq::Context)
-      end
+      getter job : String
 
-      def job : String
-        @job
+      def initialize(@queue : String, @job : String, @ctx : Sidekiq::Context)
       end
 
       def acknowledge : Bool
@@ -51,7 +49,7 @@ module Sidekiq
       @queues = @queues.uniq
     end
 
-    def retrieve_work(ctx) : Sidekiq::UnitOfWork | Nil
+    def retrieve_work(ctx) : Sidekiq::UnitOfWork?
       arr = ctx.pool.redis { |conn| conn.brpop(@queues, TIMEOUT) }.as(Array(Redis::RedisValue))
       if arr.size == 2
         UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)

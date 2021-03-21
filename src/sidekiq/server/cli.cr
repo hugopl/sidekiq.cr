@@ -91,7 +91,7 @@ module Sidekiq
 
       if !svr.processors.empty?
         logger.info { "Re-enqueuing #{svr.processors.size} busy jobs" }
-        svr.fetcher.bulk_requeue(svr, svr.processors.map { |p| p.job }.compact)
+        svr.fetcher.bulk_requeue(svr, svr.processors.compact_map(&.work))
       end
 
       logger.info { "Done, bye!" }
