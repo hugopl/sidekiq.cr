@@ -58,7 +58,6 @@ module Sidekiq
     def run(svr)
       logger.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
       logger.info { Sidekiq::LICENSE }
-      logger.info { "Upgrade to Sidekiq Enterprise for more features and support: https://sidekiq.org" }
       logger.info { "Starting processing with #{@concurrency} workers" }
 
       logger.debug { self.inspect }
