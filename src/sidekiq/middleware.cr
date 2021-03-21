@@ -10,7 +10,7 @@ module Sidekiq
   #
   module Middleware
     abstract class Entry
-      abstract def call(job, ctx, &block : -> Bool) : Bool
+      abstract def call(job : Sidekiq::Job, ctx : Context, &block : -> Bool) : Bool
     end
 
     # We make these two separate types so users don't

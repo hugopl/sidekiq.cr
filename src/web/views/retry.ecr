@@ -14,13 +14,13 @@
       </tr>
       <tr>
         <th><%= x.t("ErrorMessage") %></th>
-        <td><%= x.h(retri["error_message"].as_s) %></td>
+        <td><%= x.h(retri.error_message.to_s) %></td>
       </tr>
-      <% if retri["error_backtrace"]? %>
+      <% if retri.error_backtrace %>
         <tr>
           <th><%= x.t("ErrorBacktrace") %></th>
           <td>
-          <code><%= retri["error_backtrace"].as_a.map{|x|x.as_s}.join("<br/>") %></code>
+          <code><%= retri.error_backtrace.not_nil!.join("<br/>") %></code>
           </td>
         </tr>
       <% end %>

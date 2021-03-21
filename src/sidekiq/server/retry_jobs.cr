@@ -95,15 +95,8 @@ module Sidekiq
 
         job.error_message = exception.message
         job.error_class = exception.class.name
-        count = if job.retry_count.nil?
-                  job.failed_at = Time.local
-                  job.retry_count = 0
-                else
-                  job.retried_at = Time.local
-                  c = job.retry_count.not_nil!
-                  c += 1
-                  job.retry_count = c
-                end
+        job.failed_at = Time.local
+        count = job.retry_count += 1
 
         tcount = traces(job.backtrace)
         job.error_backtrace = exception.backtrace[0...tcount] if tcount > 0

@@ -34,7 +34,7 @@ module Sidekiq
       retried_at:      {type: Time, converter: Sidekiq::EpochConverter, nilable: true},
       error_class:     {type: String, nilable: true},
       error_message:   {type: String, nilable: true},
-      retry_count:     {type: Int32, nilable: true},
+      retry_count:     {type: Int32, default: 0},
       bid:             {type: String, nilable: true},
       dead:            {type: Bool, nilable: true},
       error_backtrace: {type: Array(String), nilable: true},
@@ -50,6 +50,7 @@ module Sidekiq
       @enqueued_at = nil
       @jid = Random::Secure.hex(12)
       @retry = true
+      @retry_count = 0
     end
 
     def client
