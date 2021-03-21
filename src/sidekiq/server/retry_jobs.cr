@@ -120,7 +120,7 @@ module Sidekiq
       def retries_exhausted(job, ctx, exception)
         ctx.logger.debug { "Retries exhausted for job" }
 
-        send_to_morgue(job, ctx) unless job.dead == false
+        send_to_morgue(job, ctx) if job.dead?
       end
 
       def send_to_morgue(job, ctx)

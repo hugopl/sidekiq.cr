@@ -28,6 +28,7 @@ dependencies:
     github: schovi/baked_file_system
     # version: ~> 0.9.8
     commit: 7183bfd
+  # This is only need because kemalcr/kemal-session wasn't been ported yet to JSON::Serializable.
   json_mapping:
     github: crystal-lang/json_mapping.cr
   db:
