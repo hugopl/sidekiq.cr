@@ -8,6 +8,7 @@ module Sidekiq
   # a bit of a chore.
   class Job
     include JSON::Serializable
+    include JSON::Serializable::Unmapped
     #
     # This global registration is a bloody hack.
     # Unclear of a better way of doing it.
@@ -45,7 +46,7 @@ module Sidekiq
     property? dead = false
     property error_backtrace : Array(String)?
     property backtrace : (Bool | Int32 | Nil)
-    property retry : (Bool | Int32 | Nil)
+    property retry : (Bool | Int32) = false
 
     @[JSON::Field(ignore: true)]
     @client : Sidekiq::Client?
@@ -55,10 +56,16 @@ module Sidekiq
       @args = "[]"
       @klass = ""
       @created_at = Time.utc
-      @enqueued_at = nil
       @jid = Random::Secure.hex(12)
       @retry = true
-      @retry_count = 0
+    end
+
+    def extra_params : Hash(String, JSON::Any)
+      json_unmapped
+    end
+
+    def extra_params=(value : Hash(String, JSON::Any))
+      @json_unmapped = value
     end
 
     def client
