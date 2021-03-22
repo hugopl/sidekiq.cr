@@ -23,6 +23,13 @@ end
 
 Sidekiq::Client.default_context = MockContext.new
 
+class FakeWorker
+  include Sidekiq::Worker
+
+  def perform
+  end
+end
+
 def requires_redis(op, ver, &block)
   redis_version = POOL.redis { |c| c.info["redis_version"] }.as(String)
 

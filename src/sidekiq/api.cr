@@ -188,15 +188,29 @@ module Sidekiq
   # The job should be considered immutable but may be
   # removed from the queue via Job#delete.
   #
-  class JobProxy < ::Sidekiq::Job
-    getter item : Hash(String, JSON::Any)
+  class JobProxy
     getter value : String
 
+    @job : Job
+
     def initialize(str)
-      super(JSON::PullParser.new(str))
+      @job = Job.from_json(str)
       @value = str
-      @item = JSON.parse(str).as_h
     end
+
+    delegate args, to: @job
+    delegate created_at, to: @job
+    delegate error_backtrace, to: @job
+    delegate enqueued_at, to: @job
+    delegate error_class, to: @job
+    delegate error_message, to: @job
+    delegate failed_at, to: @job
+    delegate jid, to: @job
+    delegate klass, to: @job
+    delegate queue, to: @job
+    delegate retried_at, to: @job
+    delegate retry_count, to: @job
+    delegate to_json, to: @job
 
     def display_class
       # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
@@ -214,30 +228,11 @@ module Sidekiq
 
     # #
     # Remove this job from the queue.
-    def delete
+    def delete : Bool
       count = Sidekiq.redis do |conn|
-        conn.lrem("queue:#{@queue}", 1, @value)
+        conn.lrem("queue:#{queue}", 1, @value)
       end.as(Int64)
       count != 0
-    end
-
-    def [](name)
-      @item[name]
-    end
-
-    def []?(name)
-      @item[name]?
-    end
-
-    private def safe_load(content, default)
-      begin
-        yield(*YAML.load(content))
-      rescue ex
-        # #1761 in dev mode, it"s possible to have jobs enqueued which haven"t been loaded into
-        # memory yet so the YAML can"t be loaded.
-        puts "Unable to load YAML: #{ex.message}"
-        default
-      end
     end
   end
 
@@ -362,7 +357,7 @@ module Sidekiq
     def reschedule(at)
       delete
       p = @parent.not_nil!
-      p.schedule(at, item)
+      p.schedule(at, to_json)
     end
 
     def add_to_queue
@@ -373,7 +368,7 @@ module Sidekiq
     end
 
     def retry!
-      raise "Retry not available on jobs which have not failed" unless item["failed_at"]
+      raise "Retry not available on jobs which have not failed" unless failed_at
       remove_job do |message|
         job = Sidekiq::Job.from_json(message)
         job.retry_count = job.retry_count.not_nil! - 1
@@ -384,7 +379,7 @@ module Sidekiq
     # #
     # Place job in the dead set
     def kill!
-      raise "Kill not available on jobs which have not failed" unless item["failed_at"]
+      raise "Kill not available on jobs which have not failed" unless failed_at
       remove_job do |message|
         now = Time.local.to_unix_f
         Sidekiq.redis do |conn|
@@ -467,9 +462,9 @@ module Sidekiq
   class JobSet < SortedSet
     include Enumerable(SortedEntry)
 
-    def schedule(timestamp, message)
+    def schedule(timestamp, json_message : String)
       Sidekiq.redis do |conn|
-        conn.zadd(name, timestamp.to_f.to_s, message.to_json)
+        conn.zadd(name, timestamp.to_f.to_s, json_message)
       end
     end
 

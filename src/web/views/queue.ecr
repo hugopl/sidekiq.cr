@@ -26,7 +26,7 @@
         <td>
           <form action="<%= x.root_path %>queues/<%= name %>/delete" method="post">
             <%= x.csrf_tag %>
-            <input name="key_val" value="<%= x.h msg.item.to_json %>" type="hidden" />
+            <input name="key_val" value="<%= x.h msg.value %>" type="hidden" />
             <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= x.t("Delete") %>" data-confirm="<%= x.t("AreYouSure") %>" />
           </form>
         </td>

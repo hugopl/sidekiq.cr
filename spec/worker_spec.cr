@@ -11,14 +11,19 @@ class MyWorker
 end
 
 class Point
-  JSON.mapping({x: Float64, y: Float64})
+  include JSON::Serializable
+  @x : Float64
+  @y : Float64
 
   def initialize(@x, @y)
   end
 end
 
 class Circle
-  JSON.mapping({radius: Int32, diameter: Int32})
+  include JSON::Serializable
+
+  @radius : Int32
+  @diameter : Int32
 
   def initialize(@radius, @diameter)
   end

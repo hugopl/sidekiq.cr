@@ -52,10 +52,10 @@
         </tr>
       <% end %>
       <% if type == :retry %>
-        <% if job["retry_count"]? && job["retry_count"].as_i > 0 %>
+        <% if job.retry_count > 0 %>
           <tr>
             <th><%= x.t("RetryCount") %></th>
-            <td><%= job["retry_count"] %></td>
+            <td><%= job.retry_count %></td>
           </tr>
           <tr>
             <th><%= x.t("LastRetry") %></th>

@@ -31,10 +31,10 @@
         <% scheduled.each do |entry| %>
           <tr>
             <td>
-              <input type="checkbox" name="key[]" value="<%= x.job_params(entry.item, entry.score) %>" />
+              <input type="checkbox" name="key[]" value="<%= x.job_params(entry, entry.score) %>" />
             </td>
             <td>
-               <a href="<%= x.root_path %>scheduled/<%= x.job_params(entry.item, entry.score) %>"><%= x.relative_time(entry.at) %></a>
+               <a href="<%= x.root_path %>scheduled/<%= x.job_params(entry, entry.score) %>"><%= x.relative_time(entry.at) %></a>
             </td>
             <td>
               <a href="<%= x.root_path %>queues/<%= entry.queue %>"><%= entry.queue %></a>

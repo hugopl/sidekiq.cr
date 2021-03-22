@@ -102,7 +102,7 @@ module Sidekiq
     end
 
     def job_params(job, score)
-      "#{score}-#{job["jid"]}"
+      "#{score}-#{job.jid}"
     end
 
     def parse_params(params)
@@ -156,19 +156,14 @@ module Sidekiq
       end
     end
 
-    RETRY_JOB_KEYS = Set.new(%w(
-      queue class args retry_count retried_at failed_at
-      jid error_message error_class backtrace
-      error_backtrace enqueued_at retry wrapped
-      created_at
-    ))
-
     def retry_extra_items(retry_job)
-      Hash(String, JSON::Any).new.tap do |extra|
-        retry_job.item.each do |key, value|
-          extra[key] = value unless RETRY_JOB_KEYS.includes?(key)
-        end
-      end
+      # FIXME: Return the extra fields from job.
+      # Hash(String, JSON::Any).new.tap do |extra|
+      #   retry_job.item.each do |key, value|
+      #     extra[key] = value unless RETRY_JOB_KEYS.includes?(key)
+      #   end
+      # end
+      Hash(String, JSON::Any).new
     end
 
     def number_with_delimiter(number)

@@ -1,4 +1,5 @@
 require "./spec_helper"
+require "../src/sidekiq/server/retry_jobs"
 
 describe "retry" do
   it "works" do
@@ -25,5 +26,6 @@ describe "retry" do
     hash["error_message"].should eq("boom")
     hash["error_class"].should eq("Exception")
     hash["failed_at"].should be_truthy
+    hash["retry_count"].should eq(1)
   end
 end
