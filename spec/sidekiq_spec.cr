@@ -74,7 +74,6 @@ describe Sidekiq do
         r.port.should eq(1234)
         r.password.should eq("xyzzy")
         r.db.should eq(14)
-        r.pool_size.should eq(5)
       ensure
         ENV["REDIS_PROVIDER"] = nil
       end

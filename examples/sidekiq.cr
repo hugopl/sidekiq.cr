@@ -42,7 +42,7 @@ server = cli.configure do |config|
   # The main thing you need to configure with Sidekiq.cr is how to connect to
   # Redis. The default is localhost:6379 and typically appropriate for local development.
   #
-  # Redis location should be configured via the REDIS_PROVIDER env variable.
+  # Redis location can be configured via the REDIS_PROVIDER env variable.
   # You set two variables:
   #   - REDIS_URL = "redis://:password@hostname:port/db"
   #   - REDIS_PROVIDER = "REDIS_URL"
@@ -53,9 +53,13 @@ server = cli.configure do |config|
   #
   #   heroku config:set REDIS_PROVIDER=REDISTOGO_URL
   #
+  # Redis location can also be set using the API
+  config.redis = Sidekiq::RedisConfig.new("localhost", 6379)
 end
 
+# Push some jobs
 CrystalWorker.async.perform(1_i64)
 CrystalWorker.async.perform(2_i64)
 
+# Run the server
 cli.run(server)

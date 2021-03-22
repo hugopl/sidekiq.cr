@@ -25,7 +25,7 @@ module Sidekiq
     DEFAULT_HOST = "localhost"
     DEFAULT_PORT = 6379
 
-    def initialize(@hostname = DEFAULT_HOST, @port = DEFAULT_PORT, @db = 0, @pool_size = 5, @pool_timeout = 5.0, @password = nil)
+    def initialize(@hostname = DEFAULT_HOST, @port = DEFAULT_PORT, @db = 0, @pool_size = 26, @pool_timeout = 5.0, @password = nil)
       env_var = ENV["REDIS_PROVIDER"]?
       initialize_from_env_var(env_var) if env_var
     end
