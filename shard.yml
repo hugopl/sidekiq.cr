@@ -34,3 +34,8 @@ dependencies:
   db:
     github: crystal-lang/crystal-db
     version: "~> 0.10.0"
+
+development_dependencies:
+  timecop:
+    github: crystal-community/timecop.cr
+    version: ~> 0.4.1
