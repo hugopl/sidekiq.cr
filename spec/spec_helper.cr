@@ -1,5 +1,8 @@
 require "spec"
+require "timecop"
 require "../src/sidekiq"
+
+Timecop.safe_mode = true
 
 # FIXME: spec/web_spec.cr and spec/scheduled_spec.cr are requiring 2 redis connections.
 POOL = Sidekiq::Pool.new(2)
