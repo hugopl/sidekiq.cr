@@ -1,5 +1,4 @@
 require "uri"
-require "db/pool"
 require "redis"
 
 module Sidekiq
@@ -53,7 +52,7 @@ module Sidekiq
   end
 
   class Pool
-    @pool : DB::Pool(Redis)
+    @pool : ConnectionPool(Redis)
 
     # Set up a pool of connections to Redis on localhost:6379:
     #
@@ -63,10 +62,13 @@ module Sidekiq
       initialize(RedisConfig.new(pool_size: size))
     end
 
-    def initialize(redis_cfg : RedisConfig)
-      @pool = DB::Pool.new(checkout_timeout: redis_cfg.pool_timeout, max_pool_size: redis_cfg.pool_size) do
-        redis_cfg.new_client
-      end
+    def initialize(cfg : RedisConfig)
+      @pool = Redis::PooledClient.new(host: cfg.hostname,
+                                      port: cfg.port,
+                                      password: cfg.password,
+                                      database: cfg.db,
+                                      pool_size: cfg.pool_size,
+                                      pool_timeout: cfg.pool_timeout).pool
     end
 
     # Execute one or more Redis operations:
@@ -86,9 +88,10 @@ module Sidekiq
     #     end
     #
     def redis
-      @pool.checkout do |conn|
-        yield conn
-      end
+      conn = @pool.checkout
+      yield conn
+    ensure
+      @pool.checkin(conn) if conn
     end
   end
 end

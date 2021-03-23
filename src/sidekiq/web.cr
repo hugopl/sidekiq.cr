@@ -4,7 +4,6 @@ require "./web_helpers"
 require "./web_fs"
 
 require "kemal"
-require "json_mapping" # Kemal-session shard still using this, but doen't require it.
 require "kemal-session"
 require "kemal-csrf"
 

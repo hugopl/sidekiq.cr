@@ -6,34 +6,26 @@ authors:
 
 license: LGPL-3.0
 
-crystal: 0.36.1
+crystal: ">= 1.0.0"
 
 dependencies:
   redis:
     github: stefanwille/crystal-redis
-    version: ~> 2.0
-  pool:
-    github: ysbaddaden/pool
-    version: ~> 0.2.3
+    version: ~> 2.6
   kemal:
     github: kemalcr/kemal
-    version: "~> 0.27.0"
+    version: "~> 1.0.0"
   kemal-session:
     github: kemalcr/kemal-session
-    version: "~> 0.12.0"
+    version: "~> 1.0.0"
   kemal-csrf:
     github: kemalcr/kemal-csrf
-    version: "~> 0.7.0"
+    # version: ~> 0.8.0
+    commit: abaee30f1e8e28d896ed6bf5267a530b5d6ca638
   baked_file_system:
     github: schovi/baked_file_system
     # version: ~> 0.9.8
     commit: 7183bfd
-  # This is only need because kemalcr/kemal-session wasn't been ported yet to JSON::Serializable.
-  json_mapping:
-    github: crystal-lang/json_mapping.cr
-  db:
-    github: crystal-lang/crystal-db
-    version: "~> 0.10.0"
 
 development_dependencies:
   timecop:
