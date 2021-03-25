@@ -113,8 +113,14 @@ describe Sidekiq::Worker do
       job.should_not be_nil
     end
 
-    it "can schedule a basic job" do
+    it "can schedule a basic job (perform_in)" do
       jid = MyWorker.async.perform_in(60.seconds, 1, 2, "3")
+      jid.should match /[a-f0-9]{24}/
+    end
+
+    it "can schedule a basic job (perform_at)" do
+      tomorrow = Time.local + 1.day
+      jid = MyWorker.async.perform_at(tomorrow, 1, 2, "3")
       jid.should match /[a-f0-9]{24}/
     end
 

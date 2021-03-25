@@ -88,8 +88,7 @@ module Sidekiq
       nil
     end
 
-    def _perform(args : String)
-      @args = args
+    def _perform(@args : String)
       client.push(self)
     end
 
@@ -98,16 +97,15 @@ module Sidekiq
     end
 
     # Run this job at or after the given instant in Time
-    def _perform_at(interval : Time, args : String)
-      perform_in(interval.to_unix_f, args)
+    def _perform_at(time : Time, @args : String)
+      @at = time if time > Time.local
+      client.push(self)
     end
 
     # Run this job +interval+ from now.
-    def _perform_in(interval : Time::Span, args : String)
+    def _perform_in(interval : Time::Span, @args : String)
       now = Time.local
       ts = now + interval
-
-      @args = args
       @at = ts if ts > now
 
       client.push(self)
