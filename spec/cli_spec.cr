@@ -30,6 +30,7 @@ describe "Sidekiq::CLI" do
     logger.level = :debug
 
     cli = Sidekiq::CLI.new
-    svr = cli.create(logger)
+    server = cli.create(logger)
+    server.queues.should eq(%w(default))
   end
 end

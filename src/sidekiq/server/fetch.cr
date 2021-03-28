@@ -50,7 +50,7 @@ module Sidekiq
     end
 
     def retrieve_work(ctx) : Sidekiq::UnitOfWork?
-      arr = ctx.pool.redis { |conn| conn.brpop(@queues, TIMEOUT) }.as(Array(Redis::RedisValue))
+      arr = ctx.pool.redis(&.brpop(@queues, TIMEOUT)).as(Array(Redis::RedisValue))
       if arr.size == 2
         UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)
       end
@@ -65,7 +65,7 @@ module Sidekiq
       if @strictly_ordered_queues
         @queues
       else
-        @queues.shuffle.uniq
+        @queues.shuffle.uniq!
       end
     end
 

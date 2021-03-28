@@ -78,11 +78,11 @@ module Sidekiq
     end
 
     def redis_location
-      Sidekiq.redis { |conn| conn.url }
+      Sidekiq.redis(&.url)
     end
 
     def redis_info
-      Sidekiq.redis { |c| c.info }
+      Sidekiq.redis(&.info)
     end
 
     def root_path
@@ -144,28 +144,6 @@ module Sidekiq
       "<input type='hidden' name='authenticity_token' value='#{session.string?("csrf")}'/>"
     end
 
-    def to_display(arg)
-      begin
-        arg.inspect
-      rescue
-        begin
-          arg.to_s
-        rescue ex
-          "Cannot display argument: [#{ex.class.name}] #{ex.message}"
-        end
-      end
-    end
-
-    def retry_extra_items(retry_job)
-      # FIXME: Return the extra fields from job.
-      # Hash(String, JSON::Any).new.tap do |extra|
-      #   retry_job.item.each do |key, value|
-      #     extra[key] = value unless RETRY_JOB_KEYS.includes?(key)
-      #   end
-      # end
-      Hash(String, JSON::Any).new
-    end
-
     def number_with_delimiter(number)
       number.to_s.gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
     end
@@ -196,12 +174,12 @@ module Sidekiq
 
     def list_page(key, pageidx = 1, page_size = 25)
       x, y, items = page(key, pageidx, page_size)
-      {x.as(Int), y.as(Int), items.as(Array).map { |x| x.as(String) }}
+      {x.as(Int), y.as(Int), items.as(Array).map(&.as(String))}
     end
 
     def zpage(key, pageidx = 1, page_size = 25, opts = nil)
       x, y, items = page(key, pageidx, page_size, opts)
-      results = items.as(Array).map { |x| x.as(String) }
+      results = items.as(Array).map(&.as(String))
       jobs = [] of Array(String)
       results.in_groups_of(2) do |(a, b)|
         jobs << [a.not_nil!, b.not_nil!]

@@ -12,7 +12,7 @@ module Sidekiq
     def start(svr)
       safe_routine(svr, "heartbeat") do
         json = server_json(svr)
-        while true
+        loop do
           ❤(svr, json)
           sleep 5
         end

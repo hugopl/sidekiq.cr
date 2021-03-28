@@ -6,6 +6,8 @@ install:
 services:
   - redis-server
 script:
+  - crystal tool format --check
+  - ./bin/ameba
   - crystal spec
   # Check if examples are compiling
   - crystal build examples/sidekiq.cr

@@ -202,7 +202,6 @@ describe "sidekiq web" do
 
     get "/queues/default"
     assert_equal 200, last_response.status_code
-    msg = params[0]
     assert_match(/#{params[1]}/, last_response.body)
   end
 
@@ -296,7 +295,7 @@ describe "sidekiq web" do
   end
 
   it "can retry all retries" do
-    msg, score = add_retry
+    _msg, score = add_retry
     add_retry
 
     post "/retries/all/retry", {"retry" => "Retry"}
@@ -317,7 +316,7 @@ describe "sidekiq web" do
 
   it "escape job args and error messages" do
     # on /retries page
-    params = add_xss_retry
+    add_xss_retry
     get "/retries"
     assert_equal 200, last_response.status_code
     assert_match(/FailWorker/, last_response.body)
@@ -578,7 +577,7 @@ class WebWorker
 end
 
 private def get(path, params = nil, headers = nil)
-  resource = "#{path}?#{params.try(&.map { |k, v| "#{URI.encode(k)}=#{URI.encode(v)}" }.join("&"))}"
+  resource = "#{path}?#{params.try(&.join("&") { |k, v| "#{URI.encode(k)}=#{URI.encode(v)}" })}"
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v
@@ -595,7 +594,7 @@ end
 
 private def post(path, params = nil, headers = nil)
   resource = path
-  body = params.try(&.map { |k, v| "#{URI.encode(string: k, space_to_plus: true)}=#{URI.encode(string: v, space_to_plus: true)}" }.join("&"))
+  body = params.try(&.join("&") { |k, v| "#{URI.encode(string: k, space_to_plus: true)}=#{URI.encode(string: v, space_to_plus: true)}" })
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v

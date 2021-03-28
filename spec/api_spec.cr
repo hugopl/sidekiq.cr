@@ -74,8 +74,6 @@ describe "api" do
           conn.sadd "queues", "bar"
         end
 
-        s = Sidekiq::Stats::Queues.new
-
         Sidekiq::Stats::Queues.new.lengths.should eq(Sidekiq::Stats.new.queues)
       end
     end
@@ -311,14 +309,14 @@ describe "api" do
 
       retries = Sidekiq::RetrySet.new
       retries.size.should eq(2)
-      retries.select { |r| r.score > (Time.local.to_unix_f + 9) }.size.should eq(0)
+      retries.count { |r| r.score > (Time.local.to_unix_f + 9) }.should eq(0)
 
       retries.each do |retri|
         retri.reschedule(Time.local.to_unix_f + 10) if retri.jid == "foo2"
       end
 
       retries.size.should eq(2)
-      retries.select { |r| r.score > (Time.local.to_unix_f + 9) }.size.should eq(1)
+      retries.count { |r| r.score > (Time.local.to_unix_f + 9) }.should eq(1)
     end
 
     it "prunes processes which have died" do

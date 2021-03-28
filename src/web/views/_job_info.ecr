@@ -40,7 +40,7 @@
         <th><%= x.t("Enqueued") %></th>
         <td><%= (enqueued_at = job.enqueued_at) ? x.relative_time(enqueued_at) : x.t("NotYetEnqueued") %></td>
       </tr>
-      <%  extras = x.retry_extra_items(job)
+      <%  extras = job.extra_params
           unless extras.empty? %>
         <tr>
           <th><%= x.t("Extras") %></th>
