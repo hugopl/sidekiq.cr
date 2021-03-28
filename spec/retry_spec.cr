@@ -23,8 +23,9 @@ describe "retry" do
     hash = JSON.parse(value.as(String))
     hash["error_message"].should eq("boom")
     hash["error_class"].should eq("Exception")
-    hash["failed_at"].should eq(time.to_unix_f)
-    hash["retried_at"].should eq(time.to_unix_f)
+    # Cut then to integer to avoid false positives on float comparisson.
+    hash["failed_at"].as_f.to_i.should eq(time.to_unix_f.to_i)
+    hash["retried_at"].as_f.to_i.should eq(time.to_unix_f.to_i)
     hash["retry_count"].should eq(1)
 
     # Crash it again and check retried_at/failed_at/retry_count
@@ -36,8 +37,8 @@ describe "retry" do
     end
     value, _score = POOL.redis { |c| c.zrange("retry", 1, -1, with_scores: true) }.as(Array)
     hash = JSON.parse(value.as(String))
-    hash["failed_at"].should eq(time.to_unix_f)
-    hash["retried_at"].should eq(future.to_unix_f)
+    hash["failed_at"].as_f.to_i.should eq(time.to_unix_f.to_i)
+    hash["retried_at"].as_f.to_i.should eq(future.to_unix_f.to_i)
     hash["retry_count"].should eq(2)
   end
 end
