@@ -63,7 +63,7 @@ describe Sidekiq::Worker do
       a = [p1, p2]
 
       ComplexWorker.async.perform(a, Circle.new(9, 17))
-      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[[{\"x\":1.0,\"y\":3.0},{\"x\":4.3,\"y\":12.5}],{\"radius\":9,\"diameter\":17}]")
       job.execute(MockContext.new)
@@ -71,7 +71,7 @@ describe Sidekiq::Worker do
 
     it "works without arguments" do
       NoArgumentsWorker.async.perform
-      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[]")
       job.execute(MockContext.new)
@@ -89,7 +89,8 @@ describe Sidekiq::Worker do
   describe "round-trip" do
     it "coerces types as necessary" do
       jid = MyWorker.async.perform(1, 2, "3")
-      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      jid.should match /[a-f0-9]{24}/
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.to_s)
       job.execute(MockContext.new)
     end
@@ -109,7 +110,7 @@ describe Sidekiq::Worker do
     it "can create a basic job" do
       jid = MyWorker.async { |j| j.queue = "foo" }.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
-      job = POOL.redis { |c| c.lpop("queue:foo") }
+      job = POOL.redis(&.lpop("queue:foo"))
       job.should_not be_nil
     end
 
@@ -128,14 +129,13 @@ describe Sidekiq::Worker do
       jid = MyWorker.async.perform(1, 2, "3")
       jid.should_not be_nil
 
-      str = POOL.redis { |c| c.lpop("queue:default") }
-      hash = JSON.parse(str.to_s)
+      str = POOL.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(str.to_s)
       job.execute(MockContext.new)
     end
 
     it "can create jobs in bulk" do
-      count = POOL.redis { |c| c.llen("queue:default") }
+      count = POOL.redis(&.llen("queue:default"))
       count.should eq(0)
       MyWorker.async.perform_bulk([
         {1, 2, "1"},
@@ -143,7 +143,7 @@ describe Sidekiq::Worker do
         {3, 6, "3"},
         {4, 8, "4"},
       ])
-      count = POOL.redis { |c| c.llen("queue:default") }
+      count = POOL.redis(&.llen("queue:default"))
       count.should eq(4)
     end
 
@@ -151,9 +151,7 @@ describe Sidekiq::Worker do
       job = MyWorker.async
       job.retry.should eq(5)
 
-      j2 = MyWorker.async do |job|
-        job.retry = 6
-      end
+      j2 = MyWorker.async(&.retry=(6))
       j2.retry.should eq(6)
     end
   end

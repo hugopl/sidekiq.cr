@@ -31,21 +31,16 @@ module Sidekiq
           end
         end
         parser.on("-t SEC", "Shutdown timeout") { |t| @timeout = t.to_i }
-        parser.on("-v", "Enable verbose logging") do |c|
-          @logger.level = :debug
-        end
-        parser.on("-V", "Print version and exit") { |c| puts "Sidekiq #{Sidekiq::VERSION}"; exit }
+        parser.on("-v", "Enable verbose logging") { @logger.level = :debug }
+        parser.on("-V", "Print version and exit") { puts "Sidekiq #{Sidekiq::VERSION}"; exit }
         parser.on("-h", "--help", "Show this help") { puts parser; exit }
       end
 
       @queues = ["default"] if @queues.empty?
     end
 
-    def create(logger = @logger)
-      Sidekiq::Server.new(concurrency: @concurrency,
-        queues: @queues,
-        environment: @environment,
-        logger: logger)
+    def create(logger = @logger) : Sidekiq::Server
+      Sidekiq::Server.new(concurrency: @concurrency, queues: @queues, logger: logger)
     end
 
     def configure(logger = @logger)
@@ -56,11 +51,10 @@ module Sidekiq
     end
 
     def run(svr)
+      print_banner
       logger.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
       logger.info { Sidekiq::LICENSE }
       logger.info { "Starting processing with #{@concurrency} workers" }
-
-      logger.debug { self.inspect }
 
       svr.start
       shutdown_started_at = nil
@@ -117,7 +111,7 @@ module Sidekiq
 
     def print_banner
       if STDOUT.tty? && @environment == "development"
-        puts "\e[#{31}m"
+        puts "\e[31m"
         puts banner
         puts "\e[0m"
       end

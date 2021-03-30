@@ -57,7 +57,7 @@ describe Sidekiq do
         ENV["FOO_URL"] = "redis://localhost:6379/dev"
 
         expect_raises ArgumentError, /Invalid Redis/ do
-          r = Sidekiq::Pool.new(1)
+          Sidekiq::Pool.new(1)
         end
       ensure
         ENV["REDIS_PROVIDER"] = nil

@@ -42,14 +42,12 @@ module Sidekiq
     end
 
     private def run
-      begin
-        until @mgr.stopping?
-          process_one
-        end
-        @mgr.processor_stopped(self)
-      rescue ex : Exception
-        @mgr.processor_died(self, ex)
+      until @mgr.stopping?
+        process_one
       end
+      @mgr.processor_stopped(self)
+    rescue ex : Exception
+      @mgr.processor_died(self, ex)
     end
 
     def process_one
@@ -63,16 +61,14 @@ module Sidekiq
     end
 
     private def get_one
-      begin
-        work = @mgr.fetcher.retrieve_work(@mgr)
-        if @down
-          @mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }
-          @down = nil
-        end
-        work
-      rescue ex
-        handle_fetch_exception(ex)
+      work = @mgr.fetcher.retrieve_work(@mgr)
+      if @down
+        @mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }
+        @down = nil
       end
+      work
+    rescue ex
+      handle_fetch_exception(ex)
     end
 
     private def fetch
@@ -114,6 +110,8 @@ module Sidekiq
       # within the timeout.  Don't acknowledge the work since
       # we didn't properly finish it.
       # ack = false
+
+
     rescue ex : Exception
       handle_exception(@mgr, ex, {"job" => JSON::Any.new(jobstr)})
       raise ex

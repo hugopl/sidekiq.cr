@@ -64,11 +64,11 @@ module Sidekiq
 
     def initialize(cfg : RedisConfig)
       @pool = Redis::PooledClient.new(host: cfg.hostname,
-                                      port: cfg.port,
-                                      password: cfg.password,
-                                      database: cfg.db,
-                                      pool_size: cfg.pool_size,
-                                      pool_timeout: cfg.pool_timeout).pool
+        port: cfg.port,
+        password: cfg.password,
+        database: cfg.db,
+        pool_size: cfg.pool_size,
+        pool_timeout: cfg.pool_timeout).pool
     end
 
     # Execute one or more Redis operations:

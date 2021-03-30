@@ -105,12 +105,10 @@ module Sidekiq
       stats = stat.nil? ? all : all & [stat]
 
       mset_args = Hash(String, Int32).new
-      stats.each do |stat|
-        mset_args["stat:#{stat}"] = 0
+      stats.each do |st|
+        mset_args["stat:#{st}"] = 0
       end
-      Sidekiq.redis do |conn|
-        conn.mset(mset_args)
-      end unless mset_args.empty?
+      Sidekiq.redis(&.mset(mset_args)) unless mset_args.empty?
     end
 
     private def stat(s)
@@ -211,6 +209,7 @@ module Sidekiq
     delegate retried_at, to: @job
     delegate retry_count, to: @job
     delegate to_json, to: @job
+    delegate extra_params, to: @job
 
     def display_class
       # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
@@ -255,7 +254,9 @@ module Sidekiq
     # Return all known queues within Redis.
     #
     def self.all
-      Sidekiq.redis { |c| c.smembers("queues") }.as(Array).map { |x| x.as(String) }.sort.map { |q| Sidekiq::Queue.new(q) }
+      Sidekiq.redis(&.smembers("queues")).compact_map do |name|
+        Sidekiq::Queue.new(name) if name.is_a?(String)
+      end.sort_by!(&.name)
     end
 
     getter name : String
@@ -266,7 +267,7 @@ module Sidekiq
     end
 
     def size
-      Sidekiq.redis { |con| con.llen(@rname) }
+      Sidekiq.redis(&.llen(@rname))
     end
 
     # Sidekiq Pro overrides this
@@ -443,13 +444,12 @@ module Sidekiq
     getter name : String
     @_size : Int32
 
-    def initialize(name)
-      @name = name
-      @_size = Sidekiq.redis { |c| c.zcard(name) }.to_i32
+    def initialize(@name)
+      @_size = Sidekiq.redis(&.zcard(@name)).to_i32
     end
 
     def size
-      Sidekiq.redis { |c| c.zcard(name) }
+      Sidekiq.redis(&.zcard(@name))
     end
 
     def clear
@@ -496,15 +496,9 @@ module Sidekiq
         conn.zrangebyscore(name, score, score)
       end.as(Array(Redis::RedisValue))
 
-      result = [] of SortedEntry
-      elements.reduce(result) do |result, element|
+      elements.compact_map do |element|
         entry = SortedEntry.new(self, score, element.as(String))
-        if jid
-          result << entry if entry.jid == jid
-        else
-          result << entry
-        end
-        result
+        entry if jid.nil? || entry.jid == jid
       end
     end
 
@@ -641,11 +635,11 @@ module Sidekiq
 
     def labels
       x = @attribs["labels"]?
-      x ? x.as_a.map { |x| x.as_s } : [] of String
+      x ? x.as_a.map(&.as_s) : [] of String
     end
 
     def queues
-      self["queues"].as_a.map { |x| x.as_s }
+      self["queues"].as_a.map(&.as_s)
     end
 
     def [](key)
@@ -766,7 +760,7 @@ module Sidekiq
     # contains Sidekiq processes which have sent a heartbeat within the last
     # 60 seconds.
     def size
-      Sidekiq.redis { |conn| conn.scard("processes") }
+      Sidekiq.redis(&.scard("processes"))
     end
   end
 
@@ -856,8 +850,7 @@ module Sidekiq
               ppp.hget(key.to_s, "busy")
             end
           end
-          arr = res.as(Array(Redis::RedisValue))
-          res.compact.each { |x| count += x.as(String).to_i }
+          count = res.sum { |x| x.nil? ? 0 : x.as(String).to_i }
         end
       end
       count

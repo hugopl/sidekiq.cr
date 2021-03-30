@@ -26,7 +26,7 @@ describe Sidekiq::Job do
         hash = JSON.parse(str).as_h
         hash.size.should eq(11)
 
-        job = Sidekiq::Job.from_json(str)
+        Sidekiq::Job.from_json(str)
       end
     end
   end
