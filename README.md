@@ -27,8 +27,8 @@ started using Sidekiq.cr in your own app.
 
 ## Support
 
-Sidekiq.cr is community-supported. General maintenance and bug fixes are
-always welcomed.
+Sidekiq.cr is community-supported and **not** commercially supported by @mperham and Contributed Systems.
+General maintenance and bug fixes are always welcomed.
 
 ## Help wanted
 
