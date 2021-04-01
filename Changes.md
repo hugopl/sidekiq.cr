@@ -1,5 +1,10 @@
 # Sidekiq.cr Changelog
 
+0.7.0
+----------
+
+- Works with Crystal 1.0
+
 0.6.1
 ----------
 
