@@ -1,6 +1,6 @@
 # Sidekiq.cr
 
-[![Build Status](https://travis-ci.org/mperham/sidekiq.cr.svg)](https://travis-ci.org/mperham/sidekiq.cr)
+[![Build Status](https://github.com/mperham/sidekiq.cr/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/mperham/sidekiq.cr/actions/workflows/build.yml)
 
 Sidekiq is a well-regarded background job framework for Ruby.  Now we're
 bringing the awesomeness to Crystal, a Ruby-like language.  Why?  To
