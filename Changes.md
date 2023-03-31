@@ -1,5 +1,9 @@
 # Sidekiq.cr Changelog
 
+0.7.1
+----------
+- Update kemal dependency [#112]
+
 0.7.0
 ----------
 
