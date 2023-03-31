@@ -44,6 +44,10 @@ Both versions should be able to create and process jobs from each other.
 Their APIs **are not** and should not be identical but rather idiomatic to
 their respective languages.
 
-## Author
+## Naming
 
-Mike Perham, http://www.mikeperham.com, [@getajobmike](https://twitter.com/getajobmike) / [@sidekiq](https://twitter.com/sidekiq)
+Sidekiq is a registered trademark of [Contributed Systems](https://sidekiq.org) who has granted use of the name to this project.
+
+## Thanks
+
+Originally developed by Mike Perham, http://www.mikeperham.com. Maintained by Hugo Parente Lima.
