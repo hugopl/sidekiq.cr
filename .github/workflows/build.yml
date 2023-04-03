@@ -24,7 +24,7 @@ jobs:
       - name: Setup Crystal
         uses: MeilCli/setup-crystal-action@master
         with:
-          crystal_version: 1.0.0
+          crystal_version: latest
           shards_version: latest
 
       - name: Install dependencies
