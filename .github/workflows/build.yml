@@ -21,6 +21,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@master
 
+      - name: Crystal Ameba Linter
+        uses: crystal-ameba/github-action@v0.7.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Crystal
         uses: MeilCli/setup-crystal-action@master
         with:
@@ -32,9 +37,6 @@ jobs:
 
       - name: Check Formatting
         run: crystal tool format --check
-
-      - name: Run Ameba
-        run: ./bin/ameba
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
