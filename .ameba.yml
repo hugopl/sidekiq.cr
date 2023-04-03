@@ -41,6 +41,12 @@ Lint/LiteralInCondition:
   Enabled: true
   Severity: Warning
 
+Lint/MissingBlockArgument:
+  Enabled: false
+
+Lint/NotNil:
+  Enabled: false
+
 # Problems found: 18
 # Run `ameba --only Lint/UselessAssign` for details
 Lint/UselessAssign:
