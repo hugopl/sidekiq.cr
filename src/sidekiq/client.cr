@@ -51,7 +51,7 @@ module Sidekiq
     #     chain.use MyClientMiddleware
     #   end
     #
-    def middleware(&block)
+    def middleware
       yield @chain
       @chain
     end

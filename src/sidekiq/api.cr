@@ -79,7 +79,8 @@ module Sidekiq
       workers_size = sizes[0...s].sum
       enqueued = sizes[s..-1].sum
 
-      default_queue_latency = if (entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?)
+      entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?
+      default_queue_latency = if entry
                                 hash = JSON.parse(entry.as(String))
                                 was = hash["enqueued_at"].as_f
                                 Time.local.to_unix_f - was
