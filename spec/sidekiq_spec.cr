@@ -1,9 +1,10 @@
 require "./spec_helper"
+require "semantic_version"
 
 describe Sidekiq do
   describe "basics" do
     it "has a version" do
-      Sidekiq::VERSION.should_not be_nil
+      SemanticVersion.parse(Sidekiq::VERSION)
     end
   end
 
