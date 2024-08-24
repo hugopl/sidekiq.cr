@@ -51,16 +51,16 @@ module Sidekiq
       end
 
       def insert_before(oldklass, newklass)
-        i = entries.index { |entry| entry.klass == newklass }
+        i = entries.index { |entry| entry.class == newklass }
         new_entry = i.nil? ? newklass : entries.delete_at(i)
-        i = entries.index { |entry| entry.klass == oldklass } || 0
+        i = entries.index { |entry| entry.class == oldklass } || 0
         entries.insert(i, new_entry)
       end
 
       def insert_after(oldklass, newklass)
-        i = entries.index { |entry| entry.klass == newklass }
+        i = entries.index { |entry| entry.class == newklass }
         new_entry = i.nil? ? newklass : entries.delete_at(i)
-        i = entries.index { |entry| entry.klass == oldklass } || entries.count - 1
+        i = entries.index { |entry| entry.class == oldklass } || entries.size - 1
         entries.insert(i + 1, new_entry)
       end
 
