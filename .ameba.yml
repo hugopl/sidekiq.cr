@@ -31,6 +31,8 @@ Style/VerboseBlock:
   Enabled: true
   Severity: Convention
 
+Documentation/DocumentationAdmonition:
+  Enabled: false
 # Problems found: 1
 # Run `ameba --only Lint/LiteralInCondition` for details
 Lint/LiteralInCondition:
@@ -55,3 +57,11 @@ Lint/UselessAssign:
   - src/sidekiq/web.cr
   Enabled: true
   Severity: Warning
+Naming/AccessorMethodName:
+  Excluded:
+  - src/sidekiq/web_helpers.cr
+Naming/BlockParameterName:
+  Enabled: false
+Naming/AsciiIdentifiers:
+  Excluded:
+  - src/sidekiq/server/heartbeat.cr

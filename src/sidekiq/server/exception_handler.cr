@@ -19,8 +19,8 @@ module Sidekiq
       ctx.error_handlers.each do |handler|
         begin
           handler.call(ex, ctx_hash)
-        rescue ex2
-          ctx.logger.error(exception: ex2) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
+        rescue e
+          ctx.logger.error(exception: e) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
         end
       end
     end
