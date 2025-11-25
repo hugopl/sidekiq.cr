@@ -21,7 +21,7 @@ module Sidekiq
     getter identity : String
     getter hostname : String
     @metrics_enabled : Bool = false
-    property metrics_retention : Int32 = 259200  # 72 hours in seconds
+    property metrics_retention : Int32 = 259200 # 72 hours in seconds
 
     def initialize(@queues = ["default"],
                    @concurrency = 25, @logger = Sidekiq::Logger.build)

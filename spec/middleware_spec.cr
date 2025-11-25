@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 class SomeMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     ctx.logger.info { "start" }
     yield
     ctx.logger.info { "done" }
@@ -10,7 +10,7 @@ class SomeMiddleware < Sidekiq::Middleware::ClientEntry
 end
 
 class StopperMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     if false
       yield
     else
@@ -25,7 +25,7 @@ class ExtraParamsClientMiddleware < Sidekiq::Middleware::ClientEntry
   def initialize(@extra_params)
   end
 
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     job.extra_params = @extra_params
     yield
     true
@@ -35,7 +35,7 @@ end
 class ExtraParamsServerMiddleware < Sidekiq::Middleware::ServerEntry
   getter extra_params = Hash(String, JSON::Any).new
 
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     @extra_params = job.extra_params
     yield
     true

@@ -1,0 +1,194 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<div class="metrics-job clearfix">
+  <h3>
+    <a href="<%= root_path %>metrics?period=<%= period %>">&laquo; <%= x.t("Metrics") %></a>
+    / <%= job_class %>
+  </h3>
+
+  <div class="period-selector" style="margin-bottom: 20px;">
+    <span style="margin-right: 10px;">Period:</span>
+    <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
+      <a href="<%= root_path %>metrics/<%= job_class %>?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-right: 5px;">
+        <%= p %>h
+      </a>
+    <% end %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-sm-12">
+    <div class="stats-container">
+      <div class="stat">
+        <h3 class="text-success"><%= x.number_with_delimiter(totals[:success]) %></h3>
+        <p>Success</p>
+      </div>
+      <div class="stat">
+        <h3 class="text-danger"><%= x.number_with_delimiter(totals[:failure]) %></h3>
+        <p>Failure</p>
+      </div>
+      <div class="stat">
+        <h3><%= x.number_with_delimiter(totals[:success] + totals[:failure]) %></h3>
+        <p>Total</p>
+      </div>
+      <div class="stat">
+        <% avg_ms = totals[:success] > 0 ? totals[:total_ms] / totals[:success] : 0.0 %>
+        <h3>
+          <% if avg_ms < 1000 %>
+            <%= "%.1f" % avg_ms %> ms
+          <% else %>
+            <%= "%.2f" % (avg_ms / 1000) %> s
+          <% end %>
+        </h3>
+        <p>Avg Time</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="margin-top: 30px;">
+  <div class="col-sm-12">
+    <h4>Execution Time Distribution</h4>
+    <canvas id="histogramChart" height="80"></canvas>
+  </div>
+</div>
+
+<div class="row" style="margin-top: 30px;">
+  <div class="col-sm-12">
+    <h4>Execution Timeline</h4>
+    <canvas id="timelineChart" height="100"></canvas>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Histogram data
+    var histogramData = <%= histogram.to_json %>;
+
+    // Bucket labels based on boundaries
+    var bucketLabels = [
+      '<20ms',
+      '20-30ms',
+      '30-45ms',
+      '45-68ms',
+      '68-101ms',
+      '101-152ms',
+      '152-228ms',
+      '228-341ms',
+      '341-512ms',
+      '512-768ms',
+      '768ms-1.2s',
+      '1.2-1.7s',
+      '1.7-2.6s',
+      '2.6-3.9s',
+      '3.9-5.8s',
+      '5.8-8.8s',
+      '8.8-13.1s',
+      '>13.1s'
+    ];
+
+    // Histogram chart
+    var histCtx = document.getElementById('histogramChart').getContext('2d');
+    new Chart(histCtx, {
+      type: 'bar',
+      data: {
+        labels: bucketLabels,
+        datasets: [{
+          label: 'Jobs',
+          data: histogramData,
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: 'Job Execution Time Distribution'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          },
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        }
+      }
+    });
+
+    // Fetch time series data for the timeline chart
+    fetch('<%= root_path %>metrics/data?period=<%= period %>&job_class=<%= job_class %>')
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        var timelineCtx = document.getElementById('timelineChart').getContext('2d');
+
+        var labels = data.series.map(function(d) {
+          var date = new Date(d.time);
+          return date.toLocaleTimeString();
+        });
+        var successData = data.series.map(function(d) { return d.s; });
+        var failureData = data.series.map(function(d) { return d.f; });
+
+        new Chart(timelineCtx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Success',
+                data: successData,
+                borderColor: 'rgba(75, 192, 92, 1)',
+                backgroundColor: 'rgba(75, 192, 92, 0.2)',
+                fill: true,
+                tension: 0.1
+              },
+              {
+                label: 'Failure',
+                data: failureData,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                fill: true,
+                tension: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top'
+              },
+              title: {
+                display: true,
+                text: 'Jobs Over Time (per minute)'
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        });
+      })
+      .catch(function(err) {
+        console.error('Failed to load timeline data:', err);
+      });
+  })();
+</script>

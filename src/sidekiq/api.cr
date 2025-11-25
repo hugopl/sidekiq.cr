@@ -293,7 +293,7 @@ module Sidekiq
       Time.local.to_unix_f - was
     end
 
-    def each
+    def each(&)
       initial_size = size
       deleted_size = 0
       page = 0
@@ -394,7 +394,7 @@ module Sidekiq
       end
     end
 
-    private def remove_job
+    private def remove_job(&)
       p = @parent.not_nil!
       arr = [] of String
 
@@ -469,7 +469,7 @@ module Sidekiq
       end
     end
 
-    def each
+    def each(&)
       initial_size = @_size
       offset_size = 0
       page = -1
@@ -722,7 +722,7 @@ module Sidekiq
       count
     end
 
-    def each
+    def each(&)
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
@@ -805,7 +805,7 @@ module Sidekiq
   class Workers
     include Enumerable(WorkerEntry)
 
-    def each
+    def each(&)
       workers_set = [] of Array(String)
       keys = [] of String
       Sidekiq.redis do |conn|

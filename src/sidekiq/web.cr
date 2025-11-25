@@ -2,6 +2,7 @@ require "../sidekiq"
 require "./api"
 require "./web_helpers"
 require "./web_fs"
+require "./metrics"
 
 require "kemal"
 require "kemal-session"
@@ -18,6 +19,7 @@ module Sidekiq
       "Retries"   => "retries",
       "Scheduled" => "scheduled",
       "Dead"      => "morgue",
+      "Metrics"   => "metrics",
     }
 
     def self.default_tabs
@@ -256,6 +258,122 @@ post "/scheduled/:key" do |x|
   job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
   delete_or_add_queue job, x.params.body if job
   x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
+end
+
+# Metrics routes
+get "/metrics" do |x|
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  job_classes = Sidekiq::Metrics::Query.job_classes
+  metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
+
+  job_classes.each do |job_class|
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+    metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
+  end
+
+  ecr("metrics")
+end
+
+get "/metrics/data" do |x|
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  job_class = x.params.query["job_class"]?
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  x.response.content_type = "application/json"
+
+  if job_class
+    # Fetch data for a specific job class
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Build series data for chart
+    series = [] of NamedTuple(time: String, s: Int64, f: Int64, ms: Float64)
+    data.keys.sort.each do |ts|
+      metrics = data[ts]
+      series << {
+        time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"),
+        s:    metrics["s"]?.try(&.to_i64) || 0_i64,
+        f:    metrics["f"]?.try(&.to_i64) || 0_i64,
+        ms:   metrics["ms"]?.try(&.to_f64) || 0.0,
+      }
+    end
+
+    totals = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build histogram data
+    histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
+    data.each_value do |metrics|
+      (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
+        bucket_val = metrics["h#{i}"]?.try(&.to_i64) || 0_i64
+        histogram[i] += bucket_val
+      end
+    end
+
+    {
+      job_class: job_class,
+      period:    period,
+      series:    series,
+      totals:    totals,
+      histogram: histogram,
+    }.to_json
+  else
+    # Fetch aggregate data for all job classes
+    job_classes = Sidekiq::Metrics::Query.job_classes
+    summary = [] of NamedTuple(job_class: String, success: Int64, failure: Int64, total_ms: Float64, avg_ms: Float64)
+
+    job_classes.each do |jc|
+      data = Sidekiq::Metrics::Query.fetch(jc, start_time, end_time)
+      totals = Sidekiq::Metrics::Query.aggregate(data)
+      total_jobs = totals[:success] + totals[:failure]
+      avg_ms = total_jobs > 0 ? totals[:total_ms] / totals[:success] : 0.0
+
+      summary << {
+        job_class: jc,
+        success:   totals[:success],
+        failure:   totals[:failure],
+        total_ms:  totals[:total_ms],
+        avg_ms:    avg_ms,
+      }
+    end
+
+    {
+      period:  period,
+      summary: summary,
+    }.to_json
+  end
+end
+
+get "/metrics/:job_class" do |x|
+  job_class = x.params.url["job_class"]
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+  totals = Sidekiq::Metrics::Query.aggregate(data)
+
+  # Build histogram data
+  histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
+  data.each_value do |metrics|
+    (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
+      bucket_val = metrics["h#{i}"]?.try(&.to_i64) || 0_i64
+      histogram[i] += bucket_val
+    end
+  end
+
+  ecr("metrics_job")
 end
 
 Sidekiq::Filesystem.files.each do |file|

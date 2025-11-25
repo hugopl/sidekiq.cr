@@ -9,7 +9,7 @@ module Sidekiq
 
     EXPIRY = 60 * 60 * 24
 
-    def watchdog(ctx, last_words)
+    def watchdog(ctx, last_words, &)
       yield
     rescue ex : Exception
       handle_exception(ctx, ex, {"context" => JSON::Any.new(last_words)})

@@ -1,0 +1,128 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<div class="metrics clearfix">
+  <h3><%= x.t("Metrics") %></h3>
+
+  <div class="period-selector" style="margin-bottom: 20px;">
+    <span style="margin-right: 10px;">Period:</span>
+    <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
+      <a href="<%= root_path %>metrics?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-right: 5px;">
+        <%= p %>h
+      </a>
+    <% end %>
+  </div>
+</div>
+
+<% if job_classes.empty? %>
+  <div class="alert alert-info">
+    <strong>No metrics data yet.</strong>
+    <p>Metrics will appear here once jobs have been processed with metrics enabled.</p>
+    <p>To enable metrics, set <code>server.metrics_enabled = true</code> in your Sidekiq configuration.</p>
+  </div>
+<% else %>
+  <div class="row">
+    <div class="col-sm-12">
+      <h4>Job Classes (last <%= period %> hour<%= period == 1 ? "" : "s" %>)</h4>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Job Class</th>
+            <th class="text-right">Success</th>
+            <th class="text-right">Failure</th>
+            <th class="text-right">Total</th>
+            <th class="text-right">Avg Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% metrics_data.each do |job_class, data| %>
+            <% total = data[:success] + data[:failure] %>
+            <% avg_ms = data[:success] > 0 ? data[:total_ms] / data[:success] : 0.0 %>
+            <tr>
+              <td>
+                <a href="<%= root_path %>metrics/<%= job_class %>?period=<%= period %>"><%= job_class %></a>
+              </td>
+              <td class="text-right text-success"><%= x.number_with_delimiter(data[:success]) %></td>
+              <td class="text-right text-danger"><%= x.number_with_delimiter(data[:failure]) %></td>
+              <td class="text-right"><%= x.number_with_delimiter(total) %></td>
+              <td class="text-right">
+                <% if avg_ms < 1000 %>
+                  <%= "%.1f" % avg_ms %> ms
+                <% else %>
+                  <%= "%.2f" % (avg_ms / 1000) %> s
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top: 30px;">
+    <div class="col-sm-12">
+      <h4>Overview Chart</h4>
+      <canvas id="metricsChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var ctx = document.getElementById('metricsChart').getContext('2d');
+      var jobClasses = <%= job_classes.to_json %>;
+      var metricsData = {};
+      <% metrics_data.each do |job_class, data| %>
+        metricsData['<%= job_class %>'] = {
+          success: <%= data[:success] %>,
+          failure: <%= data[:failure] %>
+        };
+      <% end %>
+
+      var labels = jobClasses;
+      var successData = jobClasses.map(function(jc) { return metricsData[jc].success; });
+      var failureData = jobClasses.map(function(jc) { return metricsData[jc].failure; });
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Success',
+              data: successData,
+              backgroundColor: 'rgba(75, 192, 92, 0.6)',
+              borderColor: 'rgba(75, 192, 92, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Failure',
+              data: failureData,
+              backgroundColor: 'rgba(255, 99, 132, 0.6)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: 'Jobs by Class (last <%= period %> hour<%= period == 1 ? "" : "s" %>)'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+<% end %>
