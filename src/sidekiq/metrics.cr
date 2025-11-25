@@ -1,4 +1,5 @@
 require "./metrics/histogram"
+require "./metrics/query"
 
 module Sidekiq
   module Metrics
