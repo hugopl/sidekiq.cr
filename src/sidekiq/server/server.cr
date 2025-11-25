@@ -3,6 +3,7 @@ require "./processor"
 require "./scheduled"
 require "./middleware"
 require "./heartbeat"
+require "../metrics"
 
 module Sidekiq
   class Server < Sidekiq::Context
@@ -19,6 +20,8 @@ module Sidekiq
     getter tag : String
     getter identity : String
     getter hostname : String
+    @metrics_enabled : Bool = false
+    property metrics_retention : Int32 = 259200  # 72 hours in seconds
 
     def initialize(@queues = ["default"],
                    @concurrency = 25, @logger = Sidekiq::Logger.build)
@@ -41,6 +44,24 @@ module Sidekiq
       @scheduler = Sidekiq::Scheduled::Poller.new
       @fetcher = Sidekiq::BasicFetch.new(@queues)
       @heartbeat = Sidekiq::Heartbeat.new
+    end
+
+    def metrics_enabled : Bool
+      @metrics_enabled
+    end
+
+    def metrics_enabled=(value : Bool)
+      return if @metrics_enabled == value
+
+      @metrics_enabled = value
+
+      if value
+        # Add metrics middleware as first in chain (prepend)
+        @server_middleware.prepend(Sidekiq::Middleware::Metrics.new)
+      else
+        # Remove metrics middleware if present
+        @server_middleware.remove(Sidekiq::Middleware::Metrics)
+      end
     end
 
     def client_middleware

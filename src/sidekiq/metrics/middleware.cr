@@ -5,7 +5,7 @@ require "../metrics"
 module Sidekiq
   module Middleware
     class Metrics < ServerEntry
-      def call(job : Sidekiq::Job, ctx : Context) : Bool
+      def call(job : Sidekiq::Job, ctx : Context, &) : Bool
         # Capture execution time
         duration_seconds = Benchmark.realtime do
           begin

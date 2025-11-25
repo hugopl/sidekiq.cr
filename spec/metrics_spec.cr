@@ -62,8 +62,8 @@ describe Sidekiq::Metrics::Histogram do
       boundaries = Sidekiq::Metrics::Histogram::BUCKET_BOUNDARIES
       # Check first few boundaries follow 1.5x pattern
       boundaries[0].should eq(20.0)
-      boundaries[1].should eq(30.0)  # 20 * 1.5
-      boundaries[2].should eq(45.0)  # 30 * 1.5
+      boundaries[1].should eq(30.0) # 20 * 1.5
+      boundaries[2].should eq(45.0) # 30 * 1.5
     end
   end
 
