@@ -14,6 +14,14 @@
       </select>
     </span>
     <span style="float: right; font-size: 14px; font-weight: normal;">
+      <% unless job_classes.empty? %>
+        <a href="<%= root_path %>metrics/export.csv?period=<%= period %>" class="btn btn-sm btn-success" style="margin-right: 10px;" title="Export as CSV">
+          Export CSV
+        </a>
+        <a href="<%= root_path %>metrics/export.json?period=<%= period %>" class="btn btn-sm btn-info" style="margin-right: 10px;" title="Export as JSON">
+          Export JSON
+        </a>
+      <% end %>
       <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
         <a href="<%= root_path %>metrics?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-left: 3px;">
           <%= p %>h

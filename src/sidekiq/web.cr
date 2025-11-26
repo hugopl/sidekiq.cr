@@ -367,6 +367,102 @@ get "/metrics/data" do |x|
   end
 end
 
+get "/metrics/export.:format" do |x|
+  format = x.params.url["format"]
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  job_classes = Sidekiq::Metrics::Query.job_classes
+  metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
+  series_data = Hash(String, Array(NamedTuple(time: Int64, count: Int64))).new
+
+  # Fetch data once and build both metrics_data and series_data
+  job_classes.each do |job_class|
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Aggregate for table display
+    metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build time series for chart
+    series = Array(NamedTuple(time: Int64, count: Int64)).new
+    data.each do |ts, metrics|
+      count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+      series << {time: ts, count: count}
+    end
+    series_data[job_class] = series
+  end
+
+  case format
+  when "csv"
+    # Generate CSV export
+    x.response.content_type = "text/csv"
+    x.response.headers["Content-Disposition"] = "attachment; filename=\"sidekiq-metrics-#{period}h-#{Time.utc.to_unix}.csv\""
+
+    csv_content = String.build do |str|
+      # Header row
+      str << "Job Class,Success Count,Failure Count,Total Execution Time (s),Average Execution Time (s)\n"
+
+      # Data rows
+      metrics_data.each do |job_class, data|
+        total_seconds = data[:total_ms] / 1000.0
+        avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0
+
+        str << "\"#{job_class}\","
+        str << "#{data[:success]},"
+        str << "#{data[:failure]},"
+        str << "#{total_seconds.round(2)},"
+        str << "#{avg_seconds.round(2)}\n"
+      end
+    end
+
+    csv_content
+  when "json"
+    # Generate JSON export
+    x.response.content_type = "application/json"
+    x.response.headers["Content-Disposition"] = "attachment; filename=\"sidekiq-metrics-#{period}h-#{Time.utc.to_unix}.json\""
+
+    export_data = {
+      exported_at: Time.utc.to_rfc3339,
+      period_hours: period,
+      start_time: start_time.to_rfc3339,
+      end_time: end_time.to_rfc3339,
+      summary: metrics_data.map do |job_class, data|
+        total_seconds = data[:total_ms] / 1000.0
+        avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0
+
+        {
+          job_class: job_class,
+          success: data[:success],
+          failure: data[:failure],
+          total_execution_time_seconds: total_seconds.round(2),
+          average_execution_time_seconds: avg_seconds.round(2),
+        }
+      end,
+      time_series: series_data.map do |job_class, series|
+        {
+          job_class: job_class,
+          data_points: series.map do |point|
+            {
+              timestamp: Time.unix(point[:time]).to_rfc3339,
+              count: point[:count],
+            }
+          end,
+        }
+      end,
+    }
+
+    export_data.to_json
+  else
+    x.response.status_code = 400
+    x.response.content_type = "text/plain"
+    "Invalid export format. Use 'csv' or 'json'"
+  end
+end
+
 get "/metrics/:job_class" do |x|
   job_class = x.params.url["job_class"]
   period = x.params.query.fetch("period", "1").to_i
