@@ -3,6 +3,10 @@ require "../metrics"
 module Sidekiq
   module Metrics
     module Query
+      # Simple cache for metrics data to reduce Redis load
+      # Cache entries expire after 60 seconds
+      @@cache = Hash(String, NamedTuple(data: Hash(Int64, Hash(String, String)), expires_at: Time)).new
+      @@cache_mutex = Mutex.new
       # Record job execution metrics to Redis
       # - job_class: The worker class name (e.g., "HardWorker")
       # - duration_ms: Execution time in milliseconds
@@ -45,7 +49,22 @@ module Sidekiq
 
       # Fetch metrics for a specific job class within a time range
       # Returns a hash of timestamp => metrics data
+      # Results are cached for 60 seconds to reduce Redis load
       def self.fetch(job_class : String, start_time : Time, end_time : Time) : Hash(Int64, Hash(String, String))
+        # Create cache key from query parameters
+        cache_key = "#{job_class}:#{start_time.to_unix}:#{end_time.to_unix}"
+
+        # Check cache first
+        @@cache_mutex.synchronize do
+          if cached = @@cache[cache_key]?
+            # Return cached data if not expired
+            return cached[:data] if cached[:expires_at] > Time.utc
+            # Remove expired entry
+            @@cache.delete(cache_key)
+          end
+        end
+
+        # Cache miss - fetch from Redis
         result = Hash(Int64, Hash(String, String)).new
 
         # Generate all minute timestamps in the range
@@ -74,6 +93,17 @@ module Sidekiq
             end
 
             result[ts] = data unless data.empty?
+          end
+        end
+
+        # Store in cache with 60 second expiration
+        @@cache_mutex.synchronize do
+          @@cache[cache_key] = {data: result, expires_at: Time.utc + 60.seconds}
+
+          # Limit cache size to prevent memory bloat (keep last 100 entries)
+          if @@cache.size > 100
+            # Remove oldest entries (simplistic eviction)
+            @@cache = @@cache.to_a.last(100).to_h
           end
         end
 

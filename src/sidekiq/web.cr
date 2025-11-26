@@ -271,10 +271,23 @@ get "/metrics" do |x|
 
   job_classes = Sidekiq::Metrics::Query.job_classes
   metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
+  series_data = Hash(String, Array(NamedTuple(time: String, count: Int64))).new
 
+  # Fetch data once and build both metrics_data and series_data
   job_classes.each do |job_class|
     data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Aggregate for table display
     metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build time series for chart
+    series = Array(NamedTuple(time: String, count: Int64)).new
+    data.keys.sort.each do |ts|
+      metrics = data[ts]
+      count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+      series << {time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"), count: count}
+    end
+    series_data[job_class] = series
   end
 
   ecr("metrics")

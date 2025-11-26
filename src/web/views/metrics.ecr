@@ -32,23 +32,6 @@
 <% else %>
   <div class="row" style="margin-bottom: 30px;">
     <div class="col-sm-12">
-      <%
-        # Build time series data for all job classes
-        end_time = Time.utc
-        start_time = end_time - period.hours
-
-        series_data = {} of String => Array(NamedTuple(time: String, count: Int64))
-        job_classes.each do |jc|
-          data = Sidekiq::Metrics::Query.fetch(jc, start_time, end_time)
-          series = [] of NamedTuple(time: String, count: Int64)
-          data.keys.sort.each do |ts|
-            metrics = data[ts]
-            count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
-            series << {time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"), count: count}
-          end
-          series_data[jc] = series
-        end
-      %>
       <div id="timeSeriesData"
            data-job-classes="<%= x.h job_classes.to_json %>"
            data-series="<%= x.h series_data.to_json %>">
