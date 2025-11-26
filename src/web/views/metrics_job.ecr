@@ -3,16 +3,18 @@
 
 <div class="metrics-job clearfix">
   <h3>
-    <a href="<%= root_path %>metrics?period=<%= period %>"><%= x.t("Metrics") %></a>
+    <a href="<%= root_path %>metrics?period=<%= period %>">&laquo; <%= x.t("Metrics") %></a>
     / <%= job_class %>
-    <span style="float: right; font-size: 14px; font-weight: normal;">
-      <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
-        <a href="<%= root_path %>metrics/<%= job_class %>?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-left: 3px;">
-          <%= p %>h
-        </a>
-      <% end %>
-    </span>
   </h3>
+
+  <div class="period-selector" style="margin-bottom: 20px;">
+    <span style="margin-right: 10px;">Period:</span>
+    <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
+      <a href="<%= root_path %>metrics/<%= job_class %>?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-right: 5px;">
+        <%= p %>h
+      </a>
+    <% end %>
+  </div>
 </div>
 
 <div class="row">
@@ -45,16 +47,18 @@
   </div>
 </div>
 
-<div class="row" style="margin-top: 20px; margin-bottom: 30px;">
+<div class="row" style="margin-top: 30px;">
   <div class="col-sm-12">
+    <h4>Execution Time Distribution</h4>
     <div id="histogramData" data-histogram="<%= x.h histogram.to_json %>"></div>
-    <canvas id="histogramChart" height="60"></canvas>
+    <canvas id="histogramChart" height="80"></canvas>
   </div>
 </div>
 
-<div class="row">
+<div class="row" style="margin-top: 30px;">
   <div class="col-sm-12">
+    <h4>Execution Timeline</h4>
     <div id="timelineData" data-url="<%= root_path %>metrics/data?period=<%= period %>&amp;job_class=<%= job_class %>"></div>
-    <canvas id="timelineChart" height="80"></canvas>
+    <canvas id="timelineChart" height="100"></canvas>
   </div>
 </div>
