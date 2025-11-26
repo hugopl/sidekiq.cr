@@ -242,17 +242,30 @@
           },
           title: {
             display: true,
-            text: 'Job Execution Time Distribution'
+            text: 'Execution Time',
+            align: 'center',
+            font: {
+              size: 14,
+              weight: 'normal'
+            },
+            color: '#666'
           }
         },
         scales: {
           y: {
             beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Jobs'
+            },
             ticks: {
               stepSize: 1
             }
           },
           x: {
+            title: {
+              display: false
+            },
             ticks: {
               maxRotation: 45,
               minRotation: 45
@@ -312,18 +325,37 @@
             responsive: true,
             plugins: {
               legend: {
-                position: 'top'
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  boxWidth: 6
+                }
               },
               title: {
                 display: true,
-                text: 'Jobs Over Time (per minute)'
+                text: 'Execution Time',
+                align: 'center',
+                font: {
+                  size: 14,
+                  weight: 'normal'
+                },
+                color: '#666'
               }
             },
             scales: {
               y: {
                 beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Jobs'
+                },
                 ticks: {
                   stepSize: 1
+                }
+              },
+              x: {
+                title: {
+                  display: false
                 }
               }
             }
