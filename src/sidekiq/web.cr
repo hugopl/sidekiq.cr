@@ -281,9 +281,9 @@ get "/metrics" do |x|
     metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
 
     # Build time series for chart
+    # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
     series = Array(NamedTuple(time: String, count: Int64)).new
-    data.keys.sort.each do |ts|
-      metrics = data[ts]
+    data.each do |ts, metrics|
       count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
       series << {time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"), count: count}
     end
@@ -309,9 +309,9 @@ get "/metrics/data" do |x|
     data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
 
     # Build series data for chart
+    # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
     series = [] of NamedTuple(time: String, s: Int64, f: Int64, ms: Float64)
-    data.keys.sort.each do |ts|
-      metrics = data[ts]
+    data.each do |ts, metrics|
       series << {
         time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"),
         s:    metrics["s"]?.try(&.to_i64) || 0_i64,
@@ -326,7 +326,7 @@ get "/metrics/data" do |x|
     histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
     data.each_value do |metrics|
       (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
-        bucket_val = metrics["h#{i}"]?.try(&.to_i64) || 0_i64
+        bucket_val = metrics[Sidekiq::Metrics::Histogram::BUCKET_FIELDS[i]]?.try(&.to_i64) || 0_i64
         histogram[i] += bucket_val
       end
     end
@@ -381,7 +381,7 @@ get "/metrics/:job_class" do |x|
   histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
   data.each_value do |metrics|
     (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
-      bucket_val = metrics["h#{i}"]?.try(&.to_i64) || 0_i64
+      bucket_val = metrics[Sidekiq::Metrics::Histogram::BUCKET_FIELDS[i]]?.try(&.to_i64) || 0_i64
       histogram[i] += bucket_val
     end
   end

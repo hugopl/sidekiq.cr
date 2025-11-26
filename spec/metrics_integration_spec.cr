@@ -58,7 +58,7 @@ describe "Metrics Integration" do
         # Should have a histogram bucket incremented
         has_histogram = false
         (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
-          if conn.hget(key, "h#{i}")
+          if conn.hget(key, Sidekiq::Metrics::Histogram::BUCKET_FIELDS[i])
             has_histogram = true
             break
           end
