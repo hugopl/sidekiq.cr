@@ -271,7 +271,7 @@ get "/metrics" do |x|
 
   job_classes = Sidekiq::Metrics::Query.job_classes
   metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
-  series_data = Hash(String, Array(NamedTuple(time: String, count: Int64))).new
+  series_data = Hash(String, Array(NamedTuple(time: Int64, count: Int64))).new
 
   # Fetch data once and build both metrics_data and series_data
   job_classes.each do |job_class|
@@ -282,10 +282,11 @@ get "/metrics" do |x|
 
     # Build time series for chart
     # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
-    series = Array(NamedTuple(time: String, count: Int64)).new
+    # Send Unix timestamps to client for formatting (reduces JSON size and server CPU)
+    series = Array(NamedTuple(time: Int64, count: Int64)).new
     data.each do |ts, metrics|
       count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
-      series << {time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"), count: count}
+      series << {time: ts, count: count}
     end
     series_data[job_class] = series
   end
@@ -310,10 +311,11 @@ get "/metrics/data" do |x|
 
     # Build series data for chart
     # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
-    series = [] of NamedTuple(time: String, s: Int64, f: Int64, ms: Float64)
+    # Send Unix timestamps to client for formatting (reduces JSON size and server CPU)
+    series = [] of NamedTuple(time: Int64, s: Int64, f: Int64, ms: Float64)
     data.each do |ts, metrics|
       series << {
-        time: Time.unix(ts).to_s("%Y-%m-%dT%H:%M:%SZ"),
+        time: ts,
         s:    metrics["s"]?.try(&.to_i64) || 0_i64,
         f:    metrics["f"]?.try(&.to_i64) || 0_i64,
         ms:   metrics["ms"]?.try(&.to_f64) || 0.0,

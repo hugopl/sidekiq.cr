@@ -60,11 +60,12 @@
     });
 
     // Extract time labels from first job class
+    // Server sends Unix timestamps (seconds), convert to milliseconds for JS Date
     var labels = [];
     var firstJobClass = jobClasses[0];
     if (firstJobClass && seriesData[firstJobClass]) {
       labels = seriesData[firstJobClass].map(function(point) {
-        var date = new Date(point.time);
+        var date = new Date(point.time * 1000);
         return date.toLocaleTimeString();
       });
     }
@@ -275,7 +276,7 @@
         var ctx = container.getContext('2d');
 
         var labels = data.series.map(function(d) {
-          var date = new Date(d.time);
+          var date = new Date(d.time * 1000);
           return date.toLocaleTimeString();
         });
         var successData = data.series.map(function(d) { return d.s; });
