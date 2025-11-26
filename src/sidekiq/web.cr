@@ -343,7 +343,7 @@ get "/metrics/data" do |x|
   else
     # Fetch aggregate data for all job classes
     job_classes = Sidekiq::Metrics::Query.job_classes
-    summary = [] of NamedTuple(job_class: String, success: Int64, failure: Int64, total_ms: Float64, avg_ms: Float64)
+    summary = [] of NamedTuple(job_class: String, success: Int64, failure: Int64, total_ms: Float64, avg_ms: Float64, series: Array(NamedTuple(time: Int64, count: Int64)))
 
     job_classes.each do |jc|
       data = Sidekiq::Metrics::Query.fetch(jc, start_time, end_time)
@@ -351,12 +351,20 @@ get "/metrics/data" do |x|
       total_jobs = totals[:success] + totals[:failure]
       avg_ms = total_jobs > 0 ? totals[:total_ms] / totals[:success] : 0.0
 
+      # Build time series for this job class
+      series = Array(NamedTuple(time: Int64, count: Int64)).new
+      data.each do |ts, metrics|
+        count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+        series << {time: ts, count: count}
+      end
+
       summary << {
         job_class: jc,
         success:   totals[:success],
         failure:   totals[:failure],
         total_ms:  totals[:total_ms],
         avg_ms:    avg_ms,
+        series:    series,
       }
     end
 

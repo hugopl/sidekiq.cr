@@ -6,11 +6,14 @@
 
   var timeSeriesChartInstance = null;
   var currentVisibleClasses = new Set();
+  var pollingInterval = null;
+  var currentPeriod = 1;
 
   // Wait for DOM and Chart.js to be ready
   document.addEventListener('DOMContentLoaded', function() {
     initMetricsOverview();
     initMetricsJob();
+    initLivePolling();
   });
 
   // Initialize the metrics overview page with time series chart
@@ -330,5 +333,109 @@
       .catch(function(err) {
         console.error('Failed to load timeline data:', err);
       });
+  }
+
+  // Initialize live polling for metrics page
+  function initLivePolling() {
+    // Only run on metrics overview page, not job detail page
+    if (!document.getElementById('timeSeriesChart')) return;
+
+    // Check if polling is enabled via URL parameter
+    var urlParams = new URLSearchParams(window.location.search);
+    var pollEnabled = urlParams.get('poll') === 'true';
+
+    // Get current period from URL
+    currentPeriod = parseInt(urlParams.get('period') || '1');
+
+    if (pollEnabled) {
+      startPolling();
+    }
+  }
+
+  function startPolling() {
+    // Poll every 5 seconds
+    pollingInterval = setInterval(function() {
+      refreshMetricsData();
+    }, 5000);
+  }
+
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  }
+
+  function refreshMetricsData() {
+    // Fetch fresh data from the metrics/data endpoint
+    var dataUrl = window.location.pathname.replace(/\/+$/, '') + '/data?period=' + currentPeriod;
+
+    fetch(dataUrl)
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        updateMetricsTable(data.summary);
+        updateTimeSeriesChart(data.summary);
+      })
+      .catch(function(err) {
+        console.error('Failed to refresh metrics data:', err);
+        // Don't stop polling on error, just log it
+      });
+  }
+
+  function updateMetricsTable(summary) {
+    // Update the table rows with fresh data
+    summary.forEach(function(item) {
+      var row = document.querySelector('tr.metrics-row[data-job-class="' + item.job_class + '"]');
+      if (row) {
+        var cells = row.querySelectorAll('td');
+        if (cells.length >= 6) {
+          // Update success count
+          cells[2].textContent = numberWithDelimiter(item.success);
+          // Update failure count
+          cells[3].textContent = numberWithDelimiter(item.failure);
+          // Update total execution time
+          var totalSeconds = item.total_ms / 1000.0;
+          cells[4].textContent = totalSeconds.toFixed(2);
+          // Update average execution time
+          var avgSeconds = item.success > 0 ? (item.total_ms / item.success) / 1000.0 : 0.0;
+          cells[5].textContent = avgSeconds.toFixed(2);
+        }
+      }
+    });
+  }
+
+  function updateTimeSeriesChart(summary) {
+    if (!timeSeriesChartInstance) return;
+
+    // Build series data from summary
+    var seriesData = {};
+    summary.forEach(function(item) {
+      seriesData[item.job_class] = item.series || [];
+    });
+
+    // Update each dataset with new data
+    timeSeriesChartInstance.data.datasets.forEach(function(dataset) {
+      var jobClass = dataset.label;
+      var series = seriesData[jobClass] || [];
+
+      // Update the data points
+      dataset.data = series.map(function(point) { return point.count; });
+    });
+
+    // Update labels from first dataset
+    if (summary.length > 0 && summary[0].series) {
+      var labels = summary[0].series.map(function(point) {
+        var date = new Date(point.time * 1000);
+        return date.toLocaleTimeString();
+      });
+      timeSeriesChartInstance.data.labels = labels;
+    }
+
+    // Refresh the chart
+    timeSeriesChartInstance.update('none'); // 'none' mode for no animation during updates
+  }
+
+  function numberWithDelimiter(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 })();
