@@ -202,24 +202,24 @@
     var histogramData = JSON.parse(dataEl.dataset.histogram || '[]');
 
     var bucketLabels = [
-      '<20ms',
-      '20-30ms',
-      '30-45ms',
-      '45-68ms',
-      '68-101ms',
-      '101-152ms',
-      '152-228ms',
-      '228-341ms',
-      '341-512ms',
-      '512-768ms',
-      '768ms-1.2s',
-      '1.2-1.7s',
-      '1.7-2.6s',
-      '2.6-3.9s',
-      '3.9-5.8s',
-      '5.8-8.8s',
-      '8.8-13.1s',
-      '>13.1s'
+      '20ms',
+      '30ms',
+      '45ms',
+      '65ms',
+      '100ms',
+      '150ms',
+      '225ms',
+      '335ms',
+      '500ms',
+      '750ms',
+      '1.1s',
+      '1.7s',
+      '2.5s',
+      '3.8s',
+      '5.7s',
+      '8.5s',
+      '13s',
+      '20s'
     ];
 
     new Chart(ctx, {
@@ -241,8 +241,7 @@
             display: false
           },
           title: {
-            display: true,
-            text: 'Job Execution Time Distribution'
+            display: false
           }
         },
         scales: {
@@ -278,52 +277,61 @@
       .then(function(data) {
         var ctx = container.getContext('2d');
 
-        var labels = data.series.map(function(d) {
+        // Build scatter plot data points with execution time (y-axis)
+        var scatterData = [];
+        var labels = [];
+
+        data.series.forEach(function(d) {
           var date = new Date(d.time * 1000);
-          return date.toLocaleTimeString();
+          labels.push(date.toLocaleTimeString());
+
+          // Add execution time in seconds for y-axis
+          var execTimeSeconds = (d.ms || 0) / 1000;
+          scatterData.push(execTimeSeconds);
         });
-        var successData = data.series.map(function(d) { return d.s; });
-        var failureData = data.series.map(function(d) { return d.f; });
 
         new Chart(ctx, {
-          type: 'line',
+          type: 'scatter',
           data: {
             labels: labels,
-            datasets: [
-              {
-                label: 'Success',
-                data: successData,
-                borderColor: 'rgba(75, 192, 92, 1)',
-                backgroundColor: 'rgba(75, 192, 92, 0.2)',
-                fill: true,
-                tension: 0.1
-              },
-              {
-                label: 'Failure',
-                data: failureData,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                fill: true,
-                tension: 0.1
-              }
-            ]
+            datasets: [{
+              label: 'Execution Time',
+              data: scatterData.map(function(y, i) {
+                return { x: i, y: y };
+              }),
+              backgroundColor: 'rgba(93, 140, 255, 0.6)',
+              borderColor: 'rgba(93, 140, 255, 1)',
+              pointRadius: 3,
+              pointHoverRadius: 5
+            }]
           },
           options: {
             responsive: true,
             plugins: {
               legend: {
-                position: 'top'
+                display: false
               },
               title: {
-                display: true,
-                text: 'Jobs Over Time (per minute)'
+                display: false
               }
             },
             scales: {
+              x: {
+                type: 'linear',
+                title: {
+                  display: false
+                },
+                ticks: {
+                  callback: function(value, index) {
+                    return labels[index] || '';
+                  }
+                }
+              },
               y: {
                 beginAtZero: true,
-                ticks: {
-                  stepSize: 1
+                title: {
+                  display: true,
+                  text: 'Execution Time (s)'
                 }
               }
             }
@@ -359,12 +367,6 @@
     }, 5000);
   }
 
-  function stopPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
-  }
 
   function refreshMetricsData() {
     // Fetch fresh data from the metrics/data endpoint
