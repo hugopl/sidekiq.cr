@@ -229,9 +229,9 @@
         datasets: [{
           label: 'Jobs',
           data: histogramData,
-          backgroundColor: 'rgba(93, 140, 255, 0.8)',
-          borderColor: 'rgba(93, 140, 255, 1)',
-          borderWidth: 0
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
         }]
       },
       options: {
@@ -247,21 +247,14 @@
         scales: {
           y: {
             beginAtZero: true,
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            },
             ticks: {
-              color: 'rgba(255, 255, 255, 0.7)'
+              stepSize: 1
             }
           },
           x: {
-            grid: {
-              display: false
-            },
             ticks: {
-              color: 'rgba(255, 255, 255, 0.7)',
-              maxRotation: 0,
-              minRotation: 0
+              maxRotation: 45,
+              minRotation: 45
             }
           }
         }
@@ -286,24 +279,26 @@
 
         // Build scatter plot data points with execution time (y-axis)
         var scatterData = [];
+        var labels = [];
+
         data.series.forEach(function(d) {
-          var timestamp = d.time * 1000;
-          // Add data points for execution time (converting to seconds for y-axis)
-          // Using the success count as a proxy for point size/density
-          if (d.s > 0 || d.f > 0) {
-            scatterData.push({
-              x: timestamp,
-              y: d.ms || 0
-            });
-          }
+          var date = new Date(d.time * 1000);
+          labels.push(date.toLocaleTimeString());
+
+          // Add execution time in seconds for y-axis
+          var execTimeSeconds = (d.ms || 0) / 1000;
+          scatterData.push(execTimeSeconds);
         });
 
         new Chart(ctx, {
           type: 'scatter',
           data: {
+            labels: labels,
             datasets: [{
               label: 'Execution Time',
-              data: scatterData,
+              data: scatterData.map(function(y, i) {
+                return { x: i, y: y };
+              }),
               backgroundColor: 'rgba(93, 140, 255, 0.6)',
               borderColor: 'rgba(93, 140, 255, 1)',
               pointRadius: 3,
@@ -322,35 +317,21 @@
             },
             scales: {
               x: {
-                type: 'time',
-                time: {
-                  unit: 'minute',
-                  displayFormats: {
-                    minute: 'HH:mm'
-                  }
-                },
+                type: 'linear',
                 title: {
                   display: false
                 },
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
                 ticks: {
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  callback: function(value, index) {
+                    return labels[index] || '';
+                  }
                 }
               },
               y: {
                 beginAtZero: true,
                 title: {
                   display: true,
-                  text: 'Execution Time',
-                  color: 'rgba(255, 255, 255, 0.7)'
-                },
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  text: 'Execution Time (s)'
                 }
               }
             }
