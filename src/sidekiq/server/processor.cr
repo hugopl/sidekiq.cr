@@ -138,7 +138,7 @@ module Sidekiq
       @@failure += f
     end
 
-    def stats(job)
+    def stats(job, &)
       @@worker_state[@identity] = {"queue" => job.queue, "payload" => job, "run_at" => Time.local.to_unix}
 
       yield

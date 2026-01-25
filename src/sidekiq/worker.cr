@@ -118,7 +118,7 @@ module Sidekiq
       end
 
       # if passed a block, yields the job
-      def async
+      def async(&)
         {% begin %}
         job = ::{{@type.id}}::PerformProxy.new
         job.klass = self.name

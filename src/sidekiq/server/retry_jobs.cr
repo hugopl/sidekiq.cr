@@ -59,7 +59,7 @@ module Sidekiq
         @max_retries = DEFAULT_MAX_RETRY_ATTEMPTS
       end
 
-      def call(job, ctx) : Bool
+      def call(job, ctx, &) : Bool
         yield
         true
       rescue e : Exception
