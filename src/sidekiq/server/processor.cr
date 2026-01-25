@@ -86,7 +86,7 @@ module Sidekiq
         @down = Time.local
         @mgr.logger.error(exception: ex) { "Error fetching job: #{ex}" }
       end
-      sleep(1)
+      sleep(1.second)
     end
 
     private def process(work)
@@ -138,7 +138,7 @@ module Sidekiq
       @@failure += f
     end
 
-    def stats(job)
+    def stats(job, &)
       @@worker_state[@identity] = {"queue" => job.queue, "payload" => job, "run_at" => Time.local.to_unix}
 
       yield

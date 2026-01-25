@@ -43,16 +43,16 @@ module Sidekiq
     end
 
     def new_client
-      Redis.new(host: hostname, port: port, password: password, database: db)
-    end
-
-    def new_pool
-      Pool.new(self)
+      # Redis.new(host: hostname, port: port, password: password, database: db)
+      auth = "default:#{password}" if password
+      host_with_port = [hostname, port].compact.join(':')
+      auth_and_domain = [auth, host_with_port].compact.join('@')
+      Redis::Client.new(URI.parse("redis://#{auth_and_domain}/#{db}?max_pool_size=#{pool_size}&checkout_timeout=#{pool_timeout}"))
     end
   end
 
   class Pool
-    @pool : ConnectionPool(Redis)
+    @redis : Redis::Client
 
     # Set up a pool of connections to Redis on localhost:6379:
     #
@@ -63,12 +63,7 @@ module Sidekiq
     end
 
     def initialize(cfg : RedisConfig)
-      @pool = Redis::PooledClient.new(host: cfg.hostname,
-        port: cfg.port,
-        password: cfg.password,
-        database: cfg.db,
-        pool_size: cfg.pool_size,
-        pool_timeout: cfg.pool_timeout).pool
+      @redis = cfg.new_client
     end
 
     # Execute one or more Redis operations:
@@ -87,11 +82,8 @@ module Sidekiq
     #       end => ["OK", "mike"]
     #     end
     #
-    def redis
-      conn = @pool.checkout
-      yield conn
-    ensure
-      @pool.checkin(conn) if conn
+    def redis(&)
+      yield @redis
     end
   end
 end

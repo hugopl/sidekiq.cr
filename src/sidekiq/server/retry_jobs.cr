@@ -59,7 +59,7 @@ module Sidekiq
         @max_retries = DEFAULT_MAX_RETRY_ATTEMPTS
       end
 
-      def call(job, ctx) : Bool
+      def call(job, ctx, &) : Bool
         yield
         true
       rescue e : Exception
@@ -131,7 +131,7 @@ module Sidekiq
         ctx.pool.redis do |conn|
           conn.multi do
             conn.zadd("dead", now.to_unix_f.to_s, payload)
-            conn.zremrangebyscore("dead", "-inf", now - 6.months)
+            conn.zremrangebyscore("dead", "-inf", (now - 6.months).to_unix_f)
             conn.zremrangebyrank("dead", 0, -10_000)
           end
         end

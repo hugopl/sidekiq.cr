@@ -50,7 +50,7 @@ module Sidekiq
     end
 
     def retrieve_work(ctx) : Sidekiq::UnitOfWork?
-      arr = ctx.pool.redis(&.brpop(@queues, TIMEOUT)).as(Array(Redis::RedisValue))
+      arr = ctx.pool.redis(&.brpop(@queues, TIMEOUT)).as(Array)
       if arr.size == 2
         UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)
       end
@@ -80,7 +80,7 @@ module Sidekiq
 
       count = 0
       ctx.pool.redis do |conn|
-        conn.pipelined do |pipeline|
+        conn.pipeline do |pipeline|
           jobs_to_requeue.each do |queue, jobs|
             jobs.each do |job|
               # Crystal-Redis sends array as one value, we are unable to do rpush("queue", jobs)

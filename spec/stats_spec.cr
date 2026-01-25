@@ -18,8 +18,8 @@ describe Sidekiq::Stats do
       today = Time.utc.at_beginning_of_day.to_s("%Y-%m-%d")
 
       Sidekiq.redis do |redis|
-        redis.set("stat:failed:#{yesterday}", 42)
-        redis.set("stat:processed:#{yesterday}", 120)
+        redis.set("stat:failed:#{yesterday}", "42")
+        redis.set("stat:processed:#{yesterday}", "120")
       end
 
       stats_history = Sidekiq::Stats::History.new(2)

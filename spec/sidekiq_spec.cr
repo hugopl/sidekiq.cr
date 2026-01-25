@@ -18,20 +18,6 @@ describe Sidekiq do
     end
   end
 
-  describe "pool" do
-    it "works" do
-      t = Time.local
-      pool = ConnectionPool.new { Redis.new }
-      pool.connection do |conn|
-        conn.set("foo", t)
-      end
-      result = pool.connection do |conn|
-        conn.get("foo")
-      end
-      result.should eq(t.to_s)
-    end
-  end
-
   describe "redis pooling" do
     it "works" do
       r = Sidekiq::Pool.new(1)

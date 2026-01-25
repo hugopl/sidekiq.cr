@@ -51,7 +51,7 @@ module Sidekiq
     #     chain.use MyClientMiddleware
     #   end
     #
-    def middleware
+    def middleware(&)
       yield @chain
       @chain
     end
@@ -151,7 +151,7 @@ module Sidekiq
 
     def atomic_push(conn, payloads)
       if payloads.first.at
-        all = [] of Redis::RedisValue
+        all = [] of String
         payloads.each do |hash|
           at, hash.at = hash.at, nil
           all << at.not_nil!.to_unix_f.to_s

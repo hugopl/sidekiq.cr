@@ -37,9 +37,9 @@ def requires_redis(op, ver, &block)
   redis_version = POOL.redis { |c| c.info["redis_version"] }.as(String)
 
   proc = if op == :<
-           ->{ redis_version < ver }
+           -> { redis_version < ver }
          elsif op == :>=
-           ->{ redis_version >= ver }
+           -> { redis_version >= ver }
          else
            raise "No such op: #{op}"
          end
