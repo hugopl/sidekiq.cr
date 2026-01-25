@@ -10,8 +10,8 @@ crystal: ">= 1.6.0"
 
 dependencies:
   redis:
-    github: stefanwille/crystal-redis
-    version: ">= 2.6"
+    github: jgaskins/redis
+    branch: master
   kemal:
     github: kemalcr/kemal
     version: ">= 1.3.0"

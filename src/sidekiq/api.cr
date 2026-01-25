@@ -50,28 +50,28 @@ module Sidekiq
 
     def fetch_stats!
       pipe1_res = Sidekiq.redis do |conn|
-        conn.pipelined do |ppp|
+        conn.pipeline do |ppp|
           ppp.get("stat:processed")
           ppp.get("stat:failed")
           ppp.zcard("schedule")
           ppp.zcard("retry")
           ppp.zcard("dead")
           ppp.scard("processes")
-          ppp.lrange("queue:default", -1, -1)
+          ppp.lrange("queue:default", "-1", "-1")
           ppp.smembers("processes")
           ppp.smembers("queues")
         end
-      end.as(Array(Redis::RedisValue))
+      end
 
-      procs = pipe1_res[7].as(Array(Redis::RedisValue))
-      qs = pipe1_res[8].as(Array(Redis::RedisValue))
+      procs = pipe1_res[7].as(Array(Redis::Value))
+      qs = pipe1_res[8].as(Array(Redis::Value))
 
       pipe2_res = Sidekiq.redis do |conn|
-        conn.pipelined do |ppp|
+        conn.pipeline do |ppp|
           procs.each { |key| ppp.hget(key.to_s, "busy") }
           qs.each { |queue| ppp.llen("queue:#{queue}") }
         end
-      end.as(Array(Redis::RedisValue))
+      end
 
       sizes = pipe2_res.map { |x| x ? x.to_s.to_i : 0 }
 
@@ -79,7 +79,7 @@ module Sidekiq
       workers_size = sizes[0...s].sum
       enqueued = sizes[s..-1].sum
 
-      entry = pipe1_res[6].as(Array(Redis::RedisValue)).first?
+      entry = pipe1_res[6].as(Array(Redis::Value)).first?
       default_queue_latency = if entry
                                 hash = JSON.parse(entry.as(String))
                                 was = hash["enqueued_at"].as_f
@@ -105,9 +105,9 @@ module Sidekiq
       all = %w(failed processed)
       stats = stat.nil? ? all : all & [stat]
 
-      mset_args = Hash(String, Int32).new
+      mset_args = Hash(String, String).new
       stats.each do |st|
-        mset_args["stat:#{st}"] = 0
+        mset_args["stat:#{st}"] = "0"
       end
       Sidekiq.redis(&.mset(mset_args)) unless mset_args.empty?
     end
@@ -121,13 +121,13 @@ module Sidekiq
         result = Hash(String, Int64).new(0_i64)
 
         Sidekiq.redis do |conn|
-          queues = conn.smembers("queues").as(Array(Redis::RedisValue))
+          queues = conn.smembers("queues").as(Array(Redis::Value))
 
-          lengths = conn.pipelined do |ppp|
+          lengths = conn.pipeline do |ppp|
             queues.each do |queue|
               ppp.llen("queue:#{queue}")
             end
-          end.as(Array(Redis::RedisValue))
+          end
 
           queues.each_with_index do |name, index|
             result[name.as(String)] = lengths[index].as(Int64)
@@ -284,7 +284,7 @@ module Sidekiq
     def latency
       entries = Sidekiq.redis do |conn|
         conn.lrange(@rname, -1, -1)
-      end.as(Array(Redis::RedisValue))
+      end.as(Array(Redis::Value))
       return 0 unless entries.size == 1
       msg = entries[0].as(String)
 
@@ -293,7 +293,7 @@ module Sidekiq
       Time.local.to_unix_f - was
     end
 
-    def each
+    def each(&)
       initial_size = size
       deleted_size = 0
       page = 0
@@ -304,7 +304,7 @@ module Sidekiq
         range_end = range_start + page_size - 1
         entries = Sidekiq.redis do |conn|
           conn.lrange @rname, range_start, range_end
-        end.as(Array(Redis::RedisValue))
+        end.as(Array(Redis::Value))
         break if entries.empty?
         page += 1
         entries.each do |entry|
@@ -394,7 +394,7 @@ module Sidekiq
       end
     end
 
-    private def remove_job
+    private def remove_job(&)
       p = @parent.not_nil!
       arr = [] of String
 
@@ -402,9 +402,9 @@ module Sidekiq
         results = conn.multi do |m|
           m.zrangebyscore(p.name, score, score)
           m.zremrangebyscore(p.name, score, score)
-        end.as(Array(Redis::RedisValue)).first
+        end.as(Array(Redis::Value)).first
 
-        r = results.as(Array(Redis::RedisValue))
+        r = results.as(Array(Redis::Value))
         r.each do |msg|
           arr << msg.as(String)
         end
@@ -469,7 +469,7 @@ module Sidekiq
       end
     end
 
-    def each
+    def each(&)
       initial_size = @_size
       offset_size = 0
       page = -1
@@ -480,7 +480,7 @@ module Sidekiq
         range_end = range_start + page_size - 1
         elements = Sidekiq.redis do |conn|
           conn.zrange name, range_start, range_end, with_scores: true
-        end.as(Array(Redis::RedisValue))
+        end.as(Array(Redis::Value))
         break if elements.empty?
         page -= 1
         elements.in_groups_of(2).each do |(element, score)|
@@ -495,7 +495,7 @@ module Sidekiq
     def fetch(score, jid = nil)
       elements = Sidekiq.redis do |conn|
         conn.zrangebyscore(name, score, score)
-      end.as(Array(Redis::RedisValue))
+      end.as(Array(Redis::Value))
 
       elements.compact_map do |element|
         entry = SortedEntry.new(self, score, element.as(String))
@@ -523,9 +523,10 @@ module Sidekiq
     def delete_by_jid(score, jid)
       removed = false
       Sidekiq.redis do |conn|
-        elements = conn.zrangebyscore(name, score, score).as(Array(Redis::RedisValue))
+        elements = conn.zrangebyscore(name, score, score).as(Array(Redis::Value))
         elements.each do |element|
-          message = JSON.parse(element.as(String)).as_h
+          element = element.as(String)
+          message = JSON.parse(element).as_h
           if message["jid"] == jid
             ret = conn.zrem(name, element)
             if ret
@@ -701,11 +702,11 @@ module Sidekiq
         procs = [] of String
         prcs.each { |x| procs << x.as(String) }
 
-        heartbeats = conn.pipelined do |ppp|
+        heartbeats = conn.pipeline do |ppp|
           procs.each do |key|
             ppp.hget(key, "info")
           end
-        end.as(Array(Redis::RedisValue))
+        end
         beats = [] of String?
         heartbeats.each { |x| beats << (x ? x.as(String) : nil) }
 
@@ -722,7 +723,7 @@ module Sidekiq
       count
     end
 
-    def each
+    def each(&)
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
@@ -732,14 +733,14 @@ module Sidekiq
         # We're making a tradeoff here between consuming more memory instead of
         # making more roundtrips to Redis, but if you have hundreds or thousands of workers,
         # you'll be happier this way
-        results = conn.pipelined do |ppp|
+        results = conn.pipeline do |ppp|
           procs.each do |key|
             ppp.hmget(key, "info", "busy", "beat", "quiet")
           end
-        end.as(Array(Redis::RedisValue))
+        end
 
         results.each do |x|
-          packet = x.as(Array(Redis::RedisValue))
+          packet = x.as(Array(Redis::Value))
           info = packet[0].as(String)
           busy = packet[1].as(String).to_i64
           beat = packet[2].as(String).to_f64
@@ -805,7 +806,7 @@ module Sidekiq
   class Workers
     include Enumerable(WorkerEntry)
 
-    def each
+    def each(&)
       workers_set = [] of Array(String)
       keys = [] of String
       Sidekiq.redis do |conn|
@@ -815,14 +816,14 @@ module Sidekiq
         procs.sort!
 
         procs.each do |key|
-          valid, workers = conn.pipelined do |ppp|
+          valid, workers = conn.pipeline do |ppp|
             ppp.exists(key)
             ppp.hgetall("#{key}:workers")
           end
           next unless valid == 1
           keys << key
 
-          w = workers.as(Array(Redis::RedisValue))
+          w = workers.as(Array(Redis::Value))
           comrades = w.map { |y| y.as(String) }
           workers_set << comrades
         end
@@ -846,7 +847,7 @@ module Sidekiq
       Sidekiq.redis do |conn|
         procs = conn.smembers("processes")
         unless procs.empty?
-          res = conn.pipelined do |ppp|
+          res = conn.pipeline do |ppp|
             procs.each do |key|
               ppp.hget(key.to_s, "busy")
             end

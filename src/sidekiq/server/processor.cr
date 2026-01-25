@@ -86,7 +86,7 @@ module Sidekiq
         @down = Time.local
         @mgr.logger.error(exception: ex) { "Error fetching job: #{ex}" }
       end
-      sleep(1)
+      sleep(1.second)
     end
 
     private def process(work)

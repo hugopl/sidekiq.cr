@@ -78,7 +78,7 @@ module Sidekiq
     end
 
     def redis_location
-      Sidekiq.redis(&.url)
+      Sidekiq.redis(&.uri)
     end
 
     def redis_info
@@ -204,9 +204,9 @@ module Sidekiq
           total_size, items = conn.multi do |m|
             m.zcard(key)
             if rev
-              m.zrevrange(key, starting, ending, {"with_scores": true})
+              m.zrevrange(key, starting.to_s, ending.to_s, with_scores: true)
             else
-              m.zrange(key, starting, ending, {"with_scores": true})
+              m.zrange(key, starting, ending, with_scores: true)
             end
           end
           [current_page, total_size, items]

@@ -17,7 +17,7 @@ module Sidekiq
             # going wrong between the time jobs are popped from the scheduled queue and when
             # they are pushed onto a work queue and losing the jobs.
             loop do
-              results = conn.zrangebyscore(sorted_set, "-inf", nowstr, limit: [0, 1]).as(Array)
+              results = conn.zrangebyscore(sorted_set, "-inf", nowstr, limit: {"0", "1"}).as(Array)
               break if results.empty?
               jobstr = results[0].as(String)
               job = Sidekiq::Job.from_json(jobstr)

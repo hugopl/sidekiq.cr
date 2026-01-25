@@ -331,10 +331,22 @@ describe "sidekiq web" do
     Sidekiq.redis do |conn|
       pro = "foo:1234"
       conn.sadd("processes", pro)
-      conn.hmset(pro, {"info" => {"identity" => pro, "hostname" => "foo", "pid" => 1234, "concurrency" => 25, "started_at" => Time.local.to_unix_f, "labels" => ["frumduz"], "queues" => ["default"]}.to_json, "busy" => 1, "beat" => Time.local.to_unix_f})
+      conn.hset(pro, {
+        "info" => {
+          "identity"    => pro,
+          "hostname"    => "foo",
+          "pid"         => 1234,
+          "concurrency" => 25,
+          "started_at"  => Time.local.to_unix_f,
+          "labels"      => ["frumduz"],
+          "queues"      => ["default"],
+        }.to_json,
+        "busy" => "1",
+        "beat" => Time.local.to_unix_f.to_s,
+      })
       identity = "#{pro}:workers"
       hash = {:queue => "critical", :payload => {"queue" => "foo", "jid" => "12355", "class" => "FailWorker", "args" => ["<a>hello</a>"], "created_at" => Time.local.to_unix_f}, :run_at => Time.local.to_unix}
-      conn.hmset(identity, {"100001" => hash.to_json})
+      conn.hset(identity, {"100001" => hash.to_json})
       conn.incr("busy")
     end
 
@@ -378,8 +390,8 @@ describe "sidekiq web" do
   describe "stats" do
     it "renders stats" do
       Sidekiq.redis do |conn|
-        conn.set("stat:processed", 5)
-        conn.set("stat:failed", 2)
+        conn.set("stat:processed", "5")
+        conn.set("stat:failed", "2")
         conn.sadd("queues", "default")
       end
       2.times { add_retry }
@@ -540,8 +552,19 @@ private def add_worker
   Sidekiq.redis do |conn|
     conn.multi do |m|
       m.sadd("processes", key)
-      m.hmset(key, {"info" => {"concurrency" => 25, "identity" => key, "pid" => Process.pid, "hostname" => "foo", "started_at" => Time.local.to_unix_f, "queues" => ["default", "critical"]}.to_json, "beat" => Time.local.to_unix_f, "busy" => 4})
-      m.hmset("#{key}:workers", {"1001" => msg})
+      m.hset(key, {
+        "info" => {
+          "concurrency" => 25,
+          "identity"    => key,
+          "pid"         => Process.pid,
+          "hostname"    => "foo",
+          "started_at"  => Time.local.to_unix_f,
+          "queues"      => ["default", "critical"],
+        }.to_json,
+        "beat" => Time.local.to_unix_f.to_s,
+        "busy" => "4",
+      })
+      m.hset("#{key}:workers", {"1001" => msg})
     end
   end
   key

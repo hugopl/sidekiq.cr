@@ -18,7 +18,7 @@ require "../src/sidekiq/server/cli"
 puts "Compiled with #{{{`crystal -v`.stringify}}}"
 puts "Running on #{`uname -a`}"
 
-r = Redis.new
+r = Redis::Client.new
 r.flushdb
 
 s = Sidekiq::CLI.new
