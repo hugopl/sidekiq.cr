@@ -6,10 +6,10 @@ module Sidekiq
 
       # Pre-allocated bucket field names for Redis storage
       # This eliminates string interpolation overhead during metrics recording
-      BUCKET_FIELDS = [
+      BUCKET_FIELDS = {
         "h0", "h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8",
         "h9", "h10", "h11", "h12", "h13", "h14", "h15", "h16", "h17",
-      ]
+      }
 
       # Bucket boundaries in milliseconds
       # Each boundary represents the upper limit of the previous bucket
