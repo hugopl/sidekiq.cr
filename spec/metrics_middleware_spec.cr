@@ -5,7 +5,7 @@ class SlowWorker
   include Sidekiq::Worker
 
   def perform
-    sleep(0.01) # 10ms
+    sleep(10.milliseconds)
   end
 end
 
@@ -26,7 +26,7 @@ describe Sidekiq::Middleware::Metrics do
       job.klass = "SlowWorker"
 
       result = middleware.call(job, ctx) do
-        sleep(0.005) # 5ms
+        sleep(5.milliseconds)
         true
       end
 
