@@ -3,8 +3,8 @@ require "uri"
 
 module Sidekiq
   module WebHelpers
-    LANGS        = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
-    LOCALE_PATHS = ["../web/locales"]
+    LANGS        = {"cs", "da", "de", "el", "en", "es", "fr", "hi", "it", "ja", "ko", "nb", "nl", "pl", "pt-br", "pt", "ru", "sv", "ta", "uk", "zh-cn", "zh-tw"}
+    LOCALE_PATHS = {"../web/locales"}
 
     @locale : String?
 
@@ -110,7 +110,7 @@ module Sidekiq
       [score.to_f, jid]
     end
 
-    SAFE_QPARAMS = %w(page poll)
+    SAFE_QPARAMS = {"page", "poll"}
 
     # Merge options with current params, filter safe params, and stringify to query string
     def qparams(newparams)

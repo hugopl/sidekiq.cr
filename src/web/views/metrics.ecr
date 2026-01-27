@@ -1,0 +1,86 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="<%= root_path %>javascripts/metrics.js"></script>
+
+<div class="metrics clearfix">
+  <h3>
+    <%= x.t("Metrics") %>
+    <span style="margin-left: 20px; font-size: 14px; font-weight: normal;">
+      Filter:
+      <select id="metricsFilter" style="margin-left: 5px;">
+        <option value="">Name</option>
+        <% job_classes.each do |jc| %>
+          <option value="<%= jc %>"><%= jc %></option>
+        <% end %>
+      </select>
+    </span>
+    <span style="float: right; font-size: 14px; font-weight: normal;">
+      <% unless job_classes.empty? %>
+        <a href="<%= root_path %>metrics/export.csv?period=<%= period %>" class="btn btn-sm btn-success" style="margin-right: 10px;" title="Export as CSV">
+          Export CSV
+        </a>
+        <a href="<%= root_path %>metrics/export.json?period=<%= period %>" class="btn btn-sm btn-info" style="margin-right: 10px;" title="Export as JSON">
+          Export JSON
+        </a>
+      <% end %>
+      <% [1, 2, 4, 8, 24, 48, 72].each do |p| %>
+        <a href="<%= root_path %>metrics?period=<%= p %>" class="btn btn-sm <%= period == p ? "btn-primary" : "btn-default" %>" style="margin-left: 3px;">
+          <%= p %>h
+        </a>
+      <% end %>
+    </span>
+  </h3>
+</div>
+
+<% if job_classes.empty? %>
+  <div class="alert alert-info">
+    <strong>No metrics data yet.</strong>
+    <p>Metrics will appear here once jobs have been processed with metrics enabled.</p>
+    <p>To enable metrics, set <code>server.metrics_enabled = true</code> in your Sidekiq configuration.</p>
+  </div>
+<% else %>
+  <div class="row" style="margin-bottom: 30px;">
+    <div class="col-sm-12">
+      <div id="timeSeriesData"
+           data-job-classes="<%= x.h job_classes.to_json %>"
+           data-series="<%= x.h series_data.to_json %>">
+      </div>
+      <canvas id="timeSeriesChart" height="80"></canvas>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th style="width: 30px;"></th>
+            <th>Name</th>
+            <th class="text-right">Success</th>
+            <th class="text-right">Failure</th>
+            <th class="text-right">Total Execution Time (Seconds)</th>
+            <th class="text-right">Average Execution Time (Seconds)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% metrics_data.each do |job_class, data| %>
+            <% total = data[:success] + data[:failure] %>
+            <% avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0 %>
+            <% total_seconds = data[:total_ms] / 1000.0 %>
+            <tr class="metrics-row" data-job-class="<%= job_class %>">
+              <td>
+                <input type="checkbox" class="job-class-checkbox" value="<%= job_class %>" checked>
+              </td>
+              <td>
+                <a href="<%= root_path %>metrics/<%= job_class %>?period=<%= period %>"><%= job_class %></a>
+              </td>
+              <td class="text-right"><%= x.number_with_delimiter(data[:success]) %></td>
+              <td class="text-right"><%= x.number_with_delimiter(data[:failure]) %></td>
+              <td class="text-right"><%= "%.2f" % total_seconds %></td>
+              <td class="text-right"><%= "%.2f" % avg_seconds %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

@@ -2,6 +2,7 @@ require "../sidekiq"
 require "./api"
 require "./web_helpers"
 require "./web_fs"
+require "./metrics"
 
 require "kemal"
 require "kemal-session"
@@ -18,6 +19,7 @@ module Sidekiq
       "Retries"   => "retries",
       "Scheduled" => "scheduled",
       "Dead"      => "morgue",
+      "Metrics"   => "metrics",
     }
 
     def self.default_tabs
@@ -256,6 +258,241 @@ post "/scheduled/:key" do |x|
   job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
   delete_or_add_queue job, x.params.body if job
   x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
+end
+
+# Metrics routes
+get "/metrics" do |x|
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  job_classes = Sidekiq::Metrics::Query.job_classes
+  metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
+  series_data = Hash(String, Array(NamedTuple(time: Int64, count: Int64))).new
+
+  # Fetch data once and build both metrics_data and series_data
+  job_classes.each do |job_class|
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Aggregate for table display
+    metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build time series for chart
+    # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
+    # Send Unix timestamps to client for formatting (reduces JSON size and server CPU)
+    series = Array(NamedTuple(time: Int64, count: Int64)).new
+    data.each do |ts, metrics|
+      count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+      series << {time: ts, count: count}
+    end
+    series_data[job_class] = series
+  end
+
+  ecr("metrics")
+end
+
+get "/metrics/data" do |x|
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  job_class = x.params.query["job_class"]?
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  x.response.content_type = "application/json"
+
+  if job_class
+    # Fetch data for a specific job class
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Build series data for chart
+    # Note: Hash maintains insertion order in Crystal, and data is inserted in timestamp order
+    # Send Unix timestamps to client for formatting (reduces JSON size and server CPU)
+    series = [] of NamedTuple(time: Int64, s: Int64, f: Int64, ms: Float64)
+    data.each do |ts, metrics|
+      series << {
+        time: ts,
+        s:    metrics["s"]?.try(&.to_i64) || 0_i64,
+        f:    metrics["f"]?.try(&.to_i64) || 0_i64,
+        ms:   metrics["ms"]?.try(&.to_f64) || 0.0,
+      }
+    end
+
+    totals = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build histogram data
+    histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
+    data.each_value do |metrics|
+      (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
+        bucket_val = metrics[Sidekiq::Metrics::Histogram::BUCKET_FIELDS[i]]?.try(&.to_i64) || 0_i64
+        histogram[i] += bucket_val
+      end
+    end
+
+    {
+      job_class: job_class,
+      period:    period,
+      series:    series,
+      totals:    totals,
+      histogram: histogram,
+    }.to_json
+  else
+    # Fetch aggregate data for all job classes
+    job_classes = Sidekiq::Metrics::Query.job_classes
+    summary = [] of NamedTuple(job_class: String, success: Int64, failure: Int64, total_ms: Float64, avg_ms: Float64, series: Array(NamedTuple(time: Int64, count: Int64)))
+
+    job_classes.each do |jc|
+      data = Sidekiq::Metrics::Query.fetch(jc, start_time, end_time)
+      totals = Sidekiq::Metrics::Query.aggregate(data)
+      total_jobs = totals[:success] + totals[:failure]
+      avg_ms = total_jobs > 0 ? totals[:total_ms] / totals[:success] : 0.0
+
+      # Build time series for this job class
+      series = Array(NamedTuple(time: Int64, count: Int64)).new
+      data.each do |ts, metrics|
+        count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+        series << {time: ts, count: count}
+      end
+
+      summary << {
+        job_class: jc,
+        success:   totals[:success],
+        failure:   totals[:failure],
+        total_ms:  totals[:total_ms],
+        avg_ms:    avg_ms,
+        series:    series,
+      }
+    end
+
+    {
+      period:  period,
+      summary: summary,
+    }.to_json
+  end
+end
+
+get "/metrics/export.:format" do |x|
+  format = x.params.url["format"]
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  job_classes = Sidekiq::Metrics::Query.job_classes
+  metrics_data = Hash(String, NamedTuple(success: Int64, failure: Int64, total_ms: Float64)).new
+  series_data = Hash(String, Array(NamedTuple(time: Int64, count: Int64))).new
+
+  # Fetch data once and build both metrics_data and series_data
+  job_classes.each do |job_class|
+    data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+
+    # Aggregate for table display
+    metrics_data[job_class] = Sidekiq::Metrics::Query.aggregate(data)
+
+    # Build time series for chart
+    series = Array(NamedTuple(time: Int64, count: Int64)).new
+    data.each do |ts, metrics|
+      count = (metrics["s"]?.try(&.to_i64) || 0_i64) + (metrics["f"]?.try(&.to_i64) || 0_i64)
+      series << {time: ts, count: count}
+    end
+    series_data[job_class] = series
+  end
+
+  case format
+  when "csv"
+    # Generate CSV export
+    x.response.content_type = "text/csv"
+    x.response.headers["Content-Disposition"] = "attachment; filename=\"sidekiq-metrics-#{period}h-#{Time.utc.to_unix}.csv\""
+
+    csv_content = String.build do |str|
+      # Header row
+      str << "Job Class,Success Count,Failure Count,Total Execution Time (s),Average Execution Time (s)\n"
+
+      # Data rows
+      metrics_data.each do |job_class, data|
+        total_seconds = data[:total_ms] / 1000.0
+        avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0
+
+        str << "\"#{job_class}\","
+        str << "#{data[:success]},"
+        str << "#{data[:failure]},"
+        str << "#{total_seconds.round(2)},"
+        str << "#{avg_seconds.round(2)}\n"
+      end
+    end
+
+    csv_content
+  when "json"
+    # Generate JSON export
+    x.response.content_type = "application/json"
+    x.response.headers["Content-Disposition"] = "attachment; filename=\"sidekiq-metrics-#{period}h-#{Time.utc.to_unix}.json\""
+
+    export_data = {
+      exported_at: Time.utc.to_rfc3339,
+      period_hours: period,
+      start_time: start_time.to_rfc3339,
+      end_time: end_time.to_rfc3339,
+      summary: metrics_data.map do |job_class, data|
+        total_seconds = data[:total_ms] / 1000.0
+        avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0
+
+        {
+          job_class: job_class,
+          success: data[:success],
+          failure: data[:failure],
+          total_execution_time_seconds: total_seconds.round(2),
+          average_execution_time_seconds: avg_seconds.round(2),
+        }
+      end,
+      time_series: series_data.map do |job_class, series|
+        {
+          job_class: job_class,
+          data_points: series.map do |point|
+            {
+              timestamp: Time.unix(point[:time]).to_rfc3339,
+              count: point[:count],
+            }
+          end,
+        }
+      end,
+    }
+
+    export_data.to_json
+  else
+    x.response.status_code = 400
+    x.response.content_type = "text/plain"
+    "Invalid export format. Use 'csv' or 'json'"
+  end
+end
+
+get "/metrics/:job_class" do |x|
+  job_class = x.params.url["job_class"]
+  period = x.params.query.fetch("period", "1").to_i
+  period = 1 if period < 1
+  period = 72 if period > 72
+
+  end_time = Time.utc
+  start_time = end_time - period.hours
+
+  data = Sidekiq::Metrics::Query.fetch(job_class, start_time, end_time)
+  totals = Sidekiq::Metrics::Query.aggregate(data)
+
+  # Build histogram data
+  histogram = Array(Int64).new(Sidekiq::Metrics::Histogram::BUCKET_COUNT, 0_i64)
+  data.each_value do |metrics|
+    (0...Sidekiq::Metrics::Histogram::BUCKET_COUNT).each do |i|
+      bucket_val = metrics[Sidekiq::Metrics::Histogram::BUCKET_FIELDS[i]]?.try(&.to_i64) || 0_i64
+      histogram[i] += bucket_val
+    end
+  end
+
+  ecr("metrics_job")
 end
 
 Sidekiq::Filesystem.files.each do |file|

@@ -1,5 +1,7 @@
 <% if x.current_path != "" && x.params.query["poll"]? == "true" %>
-  <script>
-    updatePage("<%= x.root_path + x.current_path %>")
-  </script>
+  <% unless x.current_path == "metrics" %>
+    <script>
+      updatePage("<%= x.root_path + x.current_path %>")
+    </script>
+  <% end %>
 <% end %>

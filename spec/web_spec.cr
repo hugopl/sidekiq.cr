@@ -461,6 +461,71 @@ describe "sidekiq web" do
       assert_match(/#{params[1]}/, last_response.body)
     end
   end
+
+  describe "metrics export" do
+    it "exports metrics as CSV" do
+      # Record some test metrics
+      timestamp = Sidekiq::Metrics.minute_timestamp
+      Sidekiq::Metrics::Query.record("ExportTestWorker", 100.0, true, timestamp)
+      Sidekiq::Metrics::Query.record("ExportTestWorker", 200.0, true, timestamp)
+      Sidekiq::Metrics::Query.record("ExportTestWorker", 50.0, false, timestamp)
+
+      # Request CSV export
+      resp = get("/metrics/export.csv", {"period" => "1"})
+
+      resp.status_code.should eq(200)
+      resp.headers["Content-Type"]?.should eq("text/csv")
+      resp.headers["Content-Disposition"]?.should_not be_nil
+      resp.headers["Content-Disposition"].should contain("attachment")
+      resp.headers["Content-Disposition"].should contain(".csv")
+
+      # Verify CSV content
+      body = resp.body
+      body.should contain("Job Class,Success Count,Failure Count")
+      body.should contain("ExportTestWorker")
+      body.should contain("2") # success count
+      body.should contain("1") # failure count
+    end
+
+    it "exports metrics as JSON" do
+      # Record some test metrics
+      timestamp = Sidekiq::Metrics.minute_timestamp
+      Sidekiq::Metrics::Query.record("JsonExportWorker", 150.0, true, timestamp)
+      Sidekiq::Metrics::Query.record("JsonExportWorker", 250.0, true, timestamp)
+
+      # Request JSON export
+      resp = get("/metrics/export.json", {"period" => "1"})
+
+      resp.status_code.should eq(200)
+      resp.headers["Content-Type"]?.should eq("application/json")
+      resp.headers["Content-Disposition"]?.should_not be_nil
+      resp.headers["Content-Disposition"].should contain("attachment")
+      resp.headers["Content-Disposition"].should contain(".json")
+
+      # Verify JSON content
+      body = resp.body
+      data = JSON.parse(body)
+
+      data["exported_at"]?.should_not be_nil
+      data["period_hours"]?.should eq(1)
+      data["summary"]?.should_not be_nil
+      data["time_series"]?.should_not be_nil
+
+      # Check that our test worker is in the summary
+      summary = data["summary"].as_a
+      worker_data = summary.find { |item| item["job_class"]? == "JsonExportWorker" }
+      worker_data.should_not be_nil
+      worker_data.not_nil!["success"]?.should eq(2)
+      worker_data.not_nil!["failure"]?.should eq(0)
+    end
+
+    it "returns 400 for invalid export format" do
+      resp = get("/metrics/export.xml", {"period" => "1"})
+
+      resp.status_code.should eq(400)
+      resp.body.should contain("Invalid export format")
+    end
+  end
 end
 
 private def add_scheduled
