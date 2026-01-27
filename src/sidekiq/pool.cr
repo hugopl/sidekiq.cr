@@ -87,7 +87,7 @@ module Sidekiq
     #       end => ["OK", "mike"]
     #     end
     #
-    def redis
+    def redis(&)
       conn = @pool.checkout
       yield conn
     ensure

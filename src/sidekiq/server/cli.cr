@@ -43,7 +43,7 @@ module Sidekiq
       Sidekiq::Server.new(concurrency: @concurrency, queues: @queues, logger: logger)
     end
 
-    def configure(logger = @logger)
+    def configure(logger = @logger, &)
       x = create(logger)
       yield x
       Sidekiq::Client.default_context = Sidekiq::Client::Context.new(pool: x.pool, logger: x.logger)

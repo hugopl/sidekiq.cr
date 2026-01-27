@@ -2,7 +2,7 @@ require "./spec_helper"
 require "../src/sidekiq/server"
 
 class Foo < Sidekiq::Middleware::ServerEntry
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     yield
   end
 end

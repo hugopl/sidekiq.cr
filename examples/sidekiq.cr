@@ -19,7 +19,7 @@ class CrystalWorker
 end
 
 class SomeClientMiddleware < Sidekiq::Middleware::ClientEntry
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     ctx.logger.info { "Pushing job #{job.jid}" }
     yield
     true
@@ -27,7 +27,7 @@ class SomeClientMiddleware < Sidekiq::Middleware::ClientEntry
 end
 
 class SomeServerMiddleware < Sidekiq::Middleware::ServerEntry
-  def call(job, ctx) : Bool
+  def call(job, ctx, &) : Bool
     ctx.logger.info { "Executing job #{job.jid}" }
     yield
     true
