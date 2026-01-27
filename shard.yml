@@ -18,9 +18,6 @@ dependencies:
   kemal-session:
     github: kemalcr/kemal-session
     version: ">= 1.0.0"
-  kemal-csrf:
-    github: kemalcr/kemal-csrf
-    version: ">= 1.0.0"
   baked_file_system:
     github: schovi/baked_file_system
     version: ">= 0.10.0"
