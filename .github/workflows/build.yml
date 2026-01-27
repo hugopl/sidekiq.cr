@@ -19,29 +19,28 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v6
 
       - name: Crystal Ameba Linter
-        uses: crystal-ameba/github-action@v0.9.0
+        uses: crystal-ameba/github-action@v0.12.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Crystal
-        uses: MeilCli/setup-crystal-action@master
+        uses: crystal-lang/install-crystal@v1
         with:
-          crystal_version: latest
-          shards_version: latest
-
-      - name: Install dependencies
-        run: shards install --ignore-crystal-version
+          crystal: latest
 
       - name: Check Formatting
         run: crystal tool format --check
 
+      - name: Install dependencies
+        run: shards install
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: 3.4.7
 
       - name: Install Redis Gem
         run: gem install redis
