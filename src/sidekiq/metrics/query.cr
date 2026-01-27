@@ -7,6 +7,7 @@ module Sidekiq
       # Cache entries expire after 60 seconds
       @@cache = Hash(String, NamedTuple(data: Hash(Int64, Hash(String, String)), expires_at: Time)).new
       @@cache_mutex = Mutex.new
+
       # Record job execution metrics to Redis
       # - job_class: The worker class name (e.g., "HardWorker")
       # - duration_ms: Execution time in milliseconds

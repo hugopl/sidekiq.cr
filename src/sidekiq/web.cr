@@ -434,29 +434,29 @@ get "/metrics/export.:format" do |x|
     x.response.headers["Content-Disposition"] = "attachment; filename=\"sidekiq-metrics-#{period}h-#{Time.utc.to_unix}.json\""
 
     export_data = {
-      exported_at: Time.utc.to_rfc3339,
+      exported_at:  Time.utc.to_rfc3339,
       period_hours: period,
-      start_time: start_time.to_rfc3339,
-      end_time: end_time.to_rfc3339,
-      summary: metrics_data.map do |job_class, data|
+      start_time:   start_time.to_rfc3339,
+      end_time:     end_time.to_rfc3339,
+      summary:      metrics_data.map do |job_class, data|
         total_seconds = data[:total_ms] / 1000.0
         avg_seconds = data[:success] > 0 ? (data[:total_ms] / data[:success]) / 1000.0 : 0.0
 
         {
-          job_class: job_class,
-          success: data[:success],
-          failure: data[:failure],
-          total_execution_time_seconds: total_seconds.round(2),
+          job_class:                      job_class,
+          success:                        data[:success],
+          failure:                        data[:failure],
+          total_execution_time_seconds:   total_seconds.round(2),
           average_execution_time_seconds: avg_seconds.round(2),
         }
       end,
       time_series: series_data.map do |job_class, series|
         {
-          job_class: job_class,
+          job_class:   job_class,
           data_points: series.map do |point|
             {
               timestamp: Time.unix(point[:time]).to_rfc3339,
-              count: point[:count],
+              count:     point[:count],
             }
           end,
         }
