@@ -7,7 +7,6 @@ Kemal::Session.config do |config|
 end
 
 Kemal.config do |config|
-  config.logger = Kemal::NullLogHandler.new
   config.env = "test"
   # Uncomment this and all POSTs in the test suite will fail since
   # the tests don't round trip the session cookies.
@@ -577,7 +576,7 @@ class WebWorker
 end
 
 private def get(path, params = nil, headers = nil)
-  resource = "#{path}?#{params.try(&.join("&") { |k, v| "#{URI.encode(k)}=#{URI.encode(v)}" })}"
+  resource = "#{path}?#{params.try(&.join("&") { |k, v| "#{URI.encode_path(k)}=#{URI.encode_path(v)}" })}"
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v
@@ -594,7 +593,7 @@ end
 
 private def post(path, params = nil, headers = nil)
   resource = path
-  body = params.try(&.join("&") { |k, v| "#{URI.encode(string: k, space_to_plus: true)}=#{URI.encode(string: v, space_to_plus: true)}" })
+  body = params.try(&.join("&") { |k, v| "#{URI.encode_www_form(string: k, space_to_plus: true)}=#{URI.encode_www_form(string: v, space_to_plus: true)}" })
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v

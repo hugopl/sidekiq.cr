@@ -5,7 +5,7 @@ module Sidekiq
   # are piped into here.
   module ExceptionHandler
     abstract class Base
-      abstract def call(ex : Exception, ctxHash : Hash(String, JSON::Any)?)
+      abstract def call(ex : Exception, ctx_hash : Hash(String, JSON::Any)?)
     end
   end
 

@@ -10,8 +10,8 @@ module Sidekiq
       def initialize(@output)
       end
 
-      def call(ex : Exception, ctx : Hash(String, JSON::Any)? = nil)
-        @output.warn(exception: ex) { ctx.try(&.to_json) }
+      def call(ex : Exception, ctx_hash : Hash(String, JSON::Any)? = nil)
+        @output.warn(exception: ex) { ctx_hash.try(&.to_json) }
       end
     end
 

@@ -69,11 +69,11 @@ module Sidekiq
       end
     end
 
-    def bulk_requeue(ctx, inprogress : Array(Sidekiq::UnitOfWork)) : Int32
-      return 0 if inprogress.empty?
+    def bulk_requeue(ctx, jobs : Array(Sidekiq::UnitOfWork)) : Int32
+      return 0 if jobs.empty?
 
       jobs_to_requeue = {} of String => Array(String)
-      inprogress.each do |unit_of_work|
+      jobs.each do |unit_of_work|
         jobs_to_requeue[unit_of_work.queue_name] ||= [] of String
         jobs_to_requeue[unit_of_work.queue_name] << unit_of_work.job
       end
@@ -81,12 +81,12 @@ module Sidekiq
       count = 0
       ctx.pool.redis do |conn|
         conn.pipelined do |pipeline|
-          jobs_to_requeue.each do |queue, jobs|
-            jobs.each do |job|
+          jobs_to_requeue.each do |queue, r_jobs|
+            r_jobs.each do |job|
               # Crystal-Redis sends array as one value, we are unable to do rpush("queue", jobs)
               pipeline.rpush("queue:#{queue}", job)
             end
-            count += jobs.size
+            count += r_jobs.size
           end
         end
       end
