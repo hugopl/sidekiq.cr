@@ -1,6 +1,9 @@
 require "spec"
+require "log"
+require "log/spec"
 require "timecop"
 require "../src/sidekiq"
+require "../src/sidekiq/server"
 
 Timecop.safe_mode = true
 
@@ -9,18 +12,11 @@ POOL = Sidekiq::Pool.new(2)
 
 class MockContext < Sidekiq::Context
   getter pool : Sidekiq::Pool
-  getter logger : ::Log
   getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
 
   def initialize
     @pool = POOL
-    @logger = ::Log.for("Sidekiq-test", :debug)
-    @logger.backend = ::Log::MemoryBackend.new
     @error_handlers = [] of Sidekiq::ExceptionHandler::Base
-  end
-
-  def log_entries
-    @logger.backend.as(::Log::MemoryBackend).entries
   end
 end
 

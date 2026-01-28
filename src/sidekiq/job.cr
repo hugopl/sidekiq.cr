@@ -83,7 +83,6 @@ module Sidekiq
       worker = prc.call
       worker.jid = self.jid
       worker.bid = self.bid
-      worker.logger = ctx.logger
       worker._perform(self.args)
       nil
     end

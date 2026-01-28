@@ -42,12 +42,6 @@ module Sidekiq
 
     property! jid : String
     property bid : String?
-    property! logger : ::Log
-
-    def logger
-      @logger ||= Sidekiq::Client.default_context.logger
-      @logger.not_nil!
-    end
 
     macro included
       extend Sidekiq::Worker::ClassMethods

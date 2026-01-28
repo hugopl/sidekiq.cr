@@ -92,7 +92,7 @@ module Sidekiq
         ::Process.signal(Signal.parse(msgs), ::Process.pid)
       rescue e
         # ignore all redis/network issues
-        svr.logger.error { "heartbeat: #{e.message}" }
+        Log.error { "heartbeat: #{e.message}" }
         # don"t lose the counts if there was a network issue
         Processor.reset_counts(procd, fails)
       end

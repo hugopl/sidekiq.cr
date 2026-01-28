@@ -14,7 +14,6 @@ module Sidekiq
     getter server_middleware : Sidekiq::Middleware::Chain(Sidekiq::Middleware::ServerEntry)
     getter error_handlers : Array(Sidekiq::ExceptionHandler::Base)
     getter processors : Array(Sidekiq::Processor)
-    getter logger : ::Log
     getter labels : Array(String)
     getter queues : Array(String)
     getter tag : String
@@ -23,12 +22,11 @@ module Sidekiq
     @metrics_enabled : Bool = false
     property metrics_retention : Int32 = 259200 # 72 hours in seconds
 
-    def initialize(@queues = ["default"],
-                   @concurrency = 25, @logger = Sidekiq::Logger.build)
+    def initialize(@queues = ["default"], *,
+                   @concurrency = 25, @tag : String = "")
       @hostname = ENV["DYNO"]? || System.hostname
       nonce = Random::Secure.hex(6)
       @identity = "#{@hostname}:#{::Process.pid}:#{nonce}"
-      @tag = ""
       @labels = ["crystal"]
       @alive = true
       @server_middleware = Sidekiq::Middleware::Chain(Sidekiq::Middleware::ServerEntry).new.tap do |c|
@@ -37,7 +35,7 @@ module Sidekiq
       end
 
       @error_handlers = [] of Sidekiq::ExceptionHandler::Base
-      @error_handlers << Sidekiq::ExceptionHandler::Logger.new(@logger)
+      @error_handlers << Sidekiq::ExceptionHandler::Logger.new
 
       @pool = Sidekiq::Pool.new(@concurrency + 2)
       @processors = [] of Sidekiq::Processor
