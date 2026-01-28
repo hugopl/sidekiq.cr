@@ -6,7 +6,6 @@ require "./metrics"
 
 require "kemal"
 require "kemal-session"
-require "kemal-csrf"
 
 module Sidekiq
   module Web
