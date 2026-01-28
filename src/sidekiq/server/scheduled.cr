@@ -69,7 +69,7 @@ module Sidekiq
             enqueue(ctx)
             wait
           end
-          ctx.logger.info { "Scheduler exiting..." }
+          Log.info { "Scheduler exiting..." }
         end
       end
 

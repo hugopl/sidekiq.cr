@@ -14,13 +14,13 @@ class CrystalWorker
   end
 
   def perform(x : Int64)
-    logger.info { "hello!" }
+    Log.info { "hello!" }
   end
 end
 
 class SomeClientMiddleware < Sidekiq::Middleware::ClientEntry
   def call(job, ctx, &) : Bool
-    ctx.logger.info { "Pushing job #{job.jid}" }
+    Log.info { "Pushing job #{job.jid}" }
     yield
     true
   end
@@ -28,7 +28,7 @@ end
 
 class SomeServerMiddleware < Sidekiq::Middleware::ServerEntry
   def call(job, ctx, &) : Bool
-    ctx.logger.info { "Executing job #{job.jid}" }
+    Log.info { "Executing job #{job.jid}" }
     yield
     true
   end
@@ -55,6 +55,8 @@ server = cli.configure do |config|
   #
   # Redis location can also be set using the API
   config.redis = Sidekiq::RedisConfig.new("localhost", 6379)
+  # Enable metrics middleware
+  config.metrics_enabled = true
 end
 
 # Push some jobs

@@ -63,7 +63,7 @@ module Sidekiq
     private def get_one
       work = @mgr.fetcher.retrieve_work(@mgr)
       if @down
-        @mgr.logger.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }
+        Log.info { "Redis is online, #{Time.local - @down.not_nil!} sec downtime" }
         @down = nil
       end
       work
@@ -84,7 +84,7 @@ module Sidekiq
     private def handle_fetch_exception(ex)
       if !@down
         @down = Time.local
-        @mgr.logger.error(exception: ex) { "Error fetching job: #{ex}" }
+        Log.error(exception: ex) { "Error fetching job: #{ex}" }
       end
       sleep(1.second)
     end

@@ -5,11 +5,11 @@ require "./sidekiq/middleware"
 require "./sidekiq/types"
 require "./sidekiq/client"
 require "./sidekiq/worker"
-require "./sidekiq/logger"
 
 module Sidekiq
   NAME    = "Sidekiq"
   LICENSE = "Licensed for use under the terms of the GNU LGPL-3.0 license."
+  Log     = ::Log.for(self)
 
   def self.redis(&)
     Sidekiq::Client.default_context.pool.redis do |conn|
