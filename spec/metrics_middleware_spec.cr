@@ -106,10 +106,7 @@ describe Sidekiq::Middleware::Metrics do
       timestamp = Sidekiq::Metrics.minute_timestamp
       key = Sidekiq::Metrics.key_for("BucketTestWorker", timestamp)
 
-      Sidekiq.redis do |conn|
-        # Very fast job should be in bucket 0
-        conn.hget(key, "h0").should eq("1")
-      end
+      Sidekiq.redis(&.hget(key, "h0").should(eq("1")))
     end
 
     it "does not fail job execution if metrics recording fails" do

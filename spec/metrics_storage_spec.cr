@@ -8,9 +8,7 @@ describe Sidekiq::Metrics::Query do
       Sidekiq::Metrics::Query.record("TestWorker", 100.0, true, timestamp)
 
       key = Sidekiq::Metrics.key_for("TestWorker", timestamp)
-      Sidekiq.redis do |conn|
-        conn.hget(key, "s").should eq("1")
-      end
+      Sidekiq.redis(&.hget(key, "s").should(eq("1")))
     end
 
     it "increments failure count for failed jobs" do
@@ -18,9 +16,7 @@ describe Sidekiq::Metrics::Query do
       Sidekiq::Metrics::Query.record("TestWorker", 100.0, false, timestamp)
 
       key = Sidekiq::Metrics.key_for("TestWorker", timestamp)
-      Sidekiq.redis do |conn|
-        conn.hget(key, "f").should eq("1")
-      end
+      Sidekiq.redis(&.hget(key, "f").should(eq("1")))
     end
 
     it "accumulates total execution time in milliseconds" do
@@ -41,9 +37,7 @@ describe Sidekiq::Metrics::Query do
       Sidekiq::Metrics::Query.record("TestWorker", 100.0, true, timestamp)
 
       key = Sidekiq::Metrics.key_for("TestWorker", timestamp)
-      Sidekiq.redis do |conn|
-        conn.hget(key, "h4").should eq("1")
-      end
+      Sidekiq.redis(&.hget(key, "h4").should(eq("1")))
     end
 
     it "sets TTL on the metrics key" do

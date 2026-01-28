@@ -35,9 +35,7 @@ describe "Sidekiq::Server metrics configuration" do
       server.metrics_enabled = false
 
       # Check middleware chain doesn't contain Metrics
-      has_metrics = server.server_middleware.entries.any? do |entry|
-        entry.is_a?(Sidekiq::Middleware::Metrics)
-      end
+      has_metrics = server.server_middleware.entries.any?(Sidekiq::Middleware::Metrics)
       has_metrics.should be_false
     end
 
@@ -46,9 +44,7 @@ describe "Sidekiq::Server metrics configuration" do
       server.metrics_enabled = true
 
       # Check middleware chain contains Metrics
-      has_metrics = server.server_middleware.entries.any? do |entry|
-        entry.is_a?(Sidekiq::Middleware::Metrics)
-      end
+      has_metrics = server.server_middleware.entries.any?(Sidekiq::Middleware::Metrics)
       has_metrics.should be_true
     end
 
@@ -70,7 +66,7 @@ describe "Sidekiq::Server metrics configuration" do
       job.klass = "ConfigTestWorker"
       ctx = MockContext.new
 
-      processor = Sidekiq::Processor.new(server)
+      Sidekiq::Processor.new(server)
 
       # Execute job through middleware chain
       result = server.server_middleware.invoke(job, ctx) { true }
@@ -80,9 +76,7 @@ describe "Sidekiq::Server metrics configuration" do
       timestamp = Sidekiq::Metrics.minute_timestamp
       key = Sidekiq::Metrics.key_for("ConfigTestWorker", timestamp)
 
-      Sidekiq.redis do |conn|
-        conn.hget(key, "s").should eq("1")
-      end
+      Sidekiq.redis(&.hget(key, "s").should(eq("1")))
     end
 
     it "does not record metrics for jobs when disabled" do
@@ -93,7 +87,7 @@ describe "Sidekiq::Server metrics configuration" do
       job.klass = "DisabledMetricsWorker"
       ctx = MockContext.new
 
-      processor = Sidekiq::Processor.new(server)
+      Sidekiq::Processor.new(server)
 
       # Execute job through middleware chain
       result = server.server_middleware.invoke(job, ctx) { true }
@@ -103,9 +97,7 @@ describe "Sidekiq::Server metrics configuration" do
       timestamp = Sidekiq::Metrics.minute_timestamp
       key = Sidekiq::Metrics.key_for("DisabledMetricsWorker", timestamp)
 
-      Sidekiq.redis do |conn|
-        conn.hget(key, "s").should be_nil
-      end
+      Sidekiq.redis(&.hget(key, "s").should(be_nil))
     end
   end
 end
