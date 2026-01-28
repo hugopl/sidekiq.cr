@@ -14,7 +14,7 @@ module Sidekiq
         json = server_json(svr)
         loop do
           ❤(svr, json)
-          sleep 5
+          sleep(5.seconds)
         end
       end
     end

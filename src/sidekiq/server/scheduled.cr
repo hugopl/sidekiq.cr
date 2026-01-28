@@ -83,7 +83,7 @@ module Sidekiq
       end
 
       private def wait
-        sleep(random_poll_interval)
+        sleep(random_poll_interval.seconds)
       end
 
       # Calculates a random interval that is ±50% the desired average.
@@ -99,7 +99,7 @@ module Sidekiq
         total += INITIAL_WAIT
         total += (5 * rand)
 
-        sleep total
+        sleep(total.seconds)
       end
     end
   end

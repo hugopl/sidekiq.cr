@@ -80,7 +80,7 @@ module Sidekiq
 
       deadline = shutdown_started_at.not_nil! + @timeout.seconds
       while Time.local < deadline && !svr.processors.empty?
-        sleep 0.1
+        sleep(0.1.seconds)
       end
 
       if !svr.processors.empty?
