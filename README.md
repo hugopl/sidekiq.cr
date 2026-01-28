@@ -1,6 +1,6 @@
 # Sidekiq.cr
 
-[![Build Status](https://github.com/mperham/sidekiq.cr/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/mperham/sidekiq.cr/actions/workflows/build.yml)
+[![Build Status](https://github.com/hugopl/sidekiq.cr/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/hugopl/sidekiq.cr/actions/workflows/build.yml)
 
 Sidekiq is a well-regarded background job framework for Ruby.  Now we're
 bringing the awesomeness to Crystal, a Ruby-like language.  Why?  To
@@ -22,7 +22,7 @@ compiles to a single executable so deployment is much easier than Ruby.
 
 ## Getting Started
 
-Please see the [wiki](https://github.com/mperham/sidekiq.cr/wiki) for in-depth documentation and how to get
+Please see the [wiki](https://github.com/hugopl/sidekiq.cr/wiki) for in-depth documentation and how to get
 started using Sidekiq.cr in your own app.
 
 ## Support
@@ -32,7 +32,7 @@ General maintenance and bug fixes are always welcomed.
 
 ## Help wanted
 
-See [the issues](https://github.com/mperham/sidekiq.cr/issues) for chores and other ideas to help.
+See [the issues](https://github.com/hugopl/sidekiq.cr/issues) for chores and other ideas to help.
 
 Things that do not exist and probably won't ever:
 
