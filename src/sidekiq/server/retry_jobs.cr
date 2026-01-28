@@ -104,7 +104,7 @@ module Sidekiq
 
         if count < max_retry_attempts
           delay = delay_for(job, count, exception)
-          ctx.logger.debug { "Failure! Retry #{count} in #{delay} seconds" }
+          Log.debug { "Failure! Retry #{count} in #{delay} seconds" }
           retry_at = Time.local + delay.seconds
           payload = job.to_json
           ctx.pool.redis do |conn|
@@ -119,13 +119,13 @@ module Sidekiq
       end
 
       def retries_exhausted(job, ctx, exception)
-        ctx.logger.debug { "Retries exhausted for job" }
+        Log.debug { "Retries exhausted for job" }
 
         send_to_morgue(job, ctx) if job.dead?
       end
 
       def send_to_morgue(job, ctx)
-        ctx.logger.info { "Adding dead #{job.klass} job #{job.jid}" }
+        Log.info { "Adding dead #{job.klass} job #{job.jid}" }
         payload = job.to_json
         now = Time.local
         ctx.pool.redis do |conn|

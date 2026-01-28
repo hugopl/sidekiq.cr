@@ -5,13 +5,8 @@ require "../middleware"
 module Sidekiq
   module ExceptionHandler
     class Logger < Base
-      @output : ::Log
-
-      def initialize(@output)
-      end
-
       def call(ex : Exception, ctx_hash : Hash(String, JSON::Any)? = nil)
-        @output.warn(exception: ex) { ctx_hash.try(&.to_json) }
+        Log.warn(exception: ex) { ctx_hash.try(&.to_json) }
       end
     end
 
@@ -20,7 +15,7 @@ module Sidekiq
         begin
           handler.call(ex, ctx_hash)
         rescue e
-          ctx.logger.error(exception: e) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
+          Log.error(exception: e) { "!!! ERROR HANDLER THREW AN ERROR !!!" }
         end
       end
     end

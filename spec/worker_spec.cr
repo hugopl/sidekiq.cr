@@ -97,10 +97,9 @@ describe Sidekiq::Worker do
   end
 
   describe "server-side" do
-    it "can access jid and logger" do
+    it "can access jid" do
       work = MyWorker.new
       work.jid = "123456789abcdef"
-      work.logger.info { "Hello world" }
       work.jid.should eq("123456789abcdef")
       work.bid.should be_nil
     end

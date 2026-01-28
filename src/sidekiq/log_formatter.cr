@@ -1,7 +1,7 @@
 require "log"
 
 module Sidekiq
-  class Logger
+  class LogFormatter
     NO_TS = ::Log::Formatter.new do |entry, io|
       io << ::Process.pid
       io << " TID-"
@@ -21,15 +21,6 @@ module Sidekiq
       NO_TS.format(entry, io)
     end
 
-    def self.build(backend : Log::Backend? = nil)
-      logger = ::Log.for("Sidekiq", :info)
-      logger.backend = if backend
-                         backend
-                       else
-                         formatter = ENV["DYNO"]? ? NO_TS : PRETTY
-                         Log::IOBackend.new(formatter: formatter)
-                       end
-      logger
-    end
+    AUTO = ENV["DYNO"]? ? NO_TS : PRETTY
   end
 end

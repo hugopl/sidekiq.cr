@@ -5,56 +5,53 @@ require "../server"
 
 module Sidekiq
   class CLI
-    getter logger : ::Log
+    @server : Sidekiq::Server
+    delegate concurrency, to: @server
+    delegate queues, to: @server
+    delegate tag, to: @server
 
     def initialize(args = ARGV)
-      @concurrency = 25
-      @queues = [] of String
+      concurrency = 25
+      queues = [] of String
       @timeout = 8
       @environment = "development"
-      @tag = ""
-      @logger = Sidekiq::Logger.build
+      tag = ""
 
       OptionParser.parse(args) do |parser|
         parser.banner = "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}\n#{Sidekiq::LICENSE}\n\
                         Usage: sidekiq [arguments]"
-        parser.on("-c NUM", "Number of workers") { |c| @concurrency = c.to_i }
+        parser.on("-c NUM", "Number of workers") { |c| concurrency = c.to_i }
         parser.on("-e ENV", "Application environment") { |e| @environment = e }
-        parser.on("-g TAG", "Process description") { |e| @tag = e }
+        parser.on("-g TAG", "Process description") { |e| tag = e }
         parser.on("-q NAME,[WEIGHT]", "Process queue NAME, with optional weight") do |q|
           ary = q.split(',', 2)
           if ary.size == 2
             name, weight = ary
-            weight.to_i.times { @queues << name }
+            weight.to_i.times { queues << name }
           else
-            @queues << ary[0]
+            queues << ary[0]
           end
         end
         parser.on("-t SEC", "Shutdown timeout") { |t| @timeout = t.to_i }
-        parser.on("-v", "Enable verbose logging") { @logger.level = :debug }
         parser.on("-V", "Print version and exit") { puts "Sidekiq #{Sidekiq::VERSION}"; exit }
         parser.on("-h", "--help", "Show this help") { puts parser; exit }
       end
 
-      @queues = ["default"] if @queues.empty?
+      queues = ["default"] if queues.empty?
+      @server = Sidekiq::Server.new(queues, concurrency: concurrency, tag: tag)
     end
 
-    def create(logger = @logger) : Sidekiq::Server
-      Sidekiq::Server.new(concurrency: @concurrency, queues: @queues, logger: logger)
-    end
-
-    def configure(logger = @logger, &)
-      x = create(logger)
-      yield x
-      Sidekiq::Client.default_context = Sidekiq::Client::Context.new(pool: x.pool, logger: x.logger)
-      x
+    def configure(&) : Sidekiq::Server
+      yield @server
+      Sidekiq::Client.default_context = Sidekiq::Client::Context.new(pool: @server.pool)
+      @server
     end
 
     def run(svr)
       print_banner
-      logger.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
-      logger.info { Sidekiq::LICENSE }
-      logger.info { "Starting processing with #{@concurrency} workers" }
+      Log.info { "Sidekiq v#{Sidekiq::VERSION} in Crystal #{Crystal::VERSION}" }
+      Log.info { Sidekiq::LICENSE }
+      Log.info { "Starting processing with #{concurrency} workers" }
 
       svr.start
       shutdown_started_at = nil
@@ -74,7 +71,7 @@ module Sidekiq
         svr.request_stop
       end
 
-      logger.info { "Press Ctrl-C to stop" }
+      Log.info { "Press Ctrl-C to stop" }
       # We block here infinitely until signalled to shutdown
       channel.receive
 
@@ -84,11 +81,11 @@ module Sidekiq
       end
 
       if !svr.processors.empty?
-        logger.info { "Re-enqueuing #{svr.processors.size} busy jobs" }
+        Log.info { "Re-enqueuing #{svr.processors.size} busy jobs" }
         svr.fetcher.bulk_requeue(svr, svr.processors.compact_map(&.work))
       end
 
-      logger.info { "Done, bye!" }
+      Log.info { "Done, bye!" }
       exit(0)
     end
 
