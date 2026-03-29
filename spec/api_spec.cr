@@ -128,14 +128,14 @@ describe "api" do
 
     it "unwraps ActiveJob wrapper for display_class" do
       payload = {
-        "class"      => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-        "wrapped"    => "MyMailer",
-        "queue"      => "default",
-        "args"       => [{"job_class" => "MyMailer", "arguments" => [1, "hello"]}],
-        "jid"        => "wrapped1",
-        "created_at" => Time.local.to_unix_f,
+        "class"       => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+        "wrapped"     => "MyMailer",
+        "queue"       => "default",
+        "args"        => [{"job_class" => "MyMailer", "arguments" => [1, "hello"]}],
+        "jid"         => "wrapped1",
+        "created_at"  => Time.local.to_unix_f,
         "retry_count" => 0,
-        "failed_at"  => Time.local.to_unix_f,
+        "failed_at"   => Time.local.to_unix_f,
       }.to_json
 
       Sidekiq.redis do |conn|
@@ -150,13 +150,13 @@ describe "api" do
 
     it "unwraps ActiveJob wrapper using args when wrapped key is missing" do
       payload = {
-        "class"      => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-        "queue"      => "default",
-        "args"       => [{"job_class" => "MyJob", "arguments" => ["test"]}],
-        "jid"        => "wrapped2",
-        "created_at" => Time.local.to_unix_f,
+        "class"       => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+        "queue"       => "default",
+        "args"        => [{"job_class" => "MyJob", "arguments" => ["test"]}],
+        "jid"         => "wrapped2",
+        "created_at"  => Time.local.to_unix_f,
         "retry_count" => 0,
-        "failed_at"  => Time.local.to_unix_f,
+        "failed_at"   => Time.local.to_unix_f,
       }.to_json
 
       Sidekiq.redis do |conn|
