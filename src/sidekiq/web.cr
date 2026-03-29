@@ -35,8 +35,6 @@ class HTTP::Server::Context
   include Sidekiq::WebHelpers
 end
 
-root_path = ""
-
 macro ecr(xxx)
   {% if xxx.starts_with?('_') %}
     render "#{{{__DIR__}}}/../web/views/#{{{xxx}}}.ecr"
@@ -104,7 +102,7 @@ post "/busy" do |x|
       pro.stop! if x.params.body["stop"]?
     end
   end
-  x.redirect "/busy"
+  x.redirect "#{x.root_path}busy"
 end
 
 get "/queues" do |x|
@@ -145,7 +143,7 @@ get "/morgue/:key" do |x|
   element = x.params.url["key"]
   score, jid = element.split("-")
   dead = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first
-  x.redirect "#{root_path}morgue" if dead.nil?
+  x.redirect "#{x.root_path}morgue" if dead.nil?
   ecr("dead")
 end
 
@@ -237,7 +235,7 @@ get "/scheduled/:key" do |x|
   if job
     ecr("scheduled_job_info")
   else
-    x.redirect "#{root_path}scheduled"
+    x.redirect "#{x.root_path}scheduled"
   end
 end
 

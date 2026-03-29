@@ -1,4 +1,5 @@
 require "./spec_helper"
+require "../src/sidekiq/server/server"
 
 class SomeMiddleware < Sidekiq::Middleware::ClientEntry
   def call(job, ctx, &) : Bool
@@ -98,7 +99,8 @@ describe Sidekiq::Middleware do
     end
     x = c.push(job)
     x.should_not be_nil
-    server = Sidekiq::Server.new
+    server = Sidekiq::Server.new(concurrency: 2)
+    server.redis = Sidekiq::RedisConfig.new(db: TEST_REDIS_DB, pool_size: 5)
     server_middleware = ExtraParamsServerMiddleware.new
     server.server_middleware.add(server_middleware)
     processor = Sidekiq::Processor.new(server)

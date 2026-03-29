@@ -39,7 +39,7 @@
               </label>
             </td>
             <td>
-              <a href="<%= root_path %>retries/<%= x.job_params(entry, entry.score) %>"><%= x.relative_time(entry.at) %></a>
+              <a href="<%= x.root_path %>retries/<%= x.job_params(entry, entry.score) %>"><%= x.relative_time(entry.at) %></a>
             </td>
             <td><%= entry.retry_count %></td>
             <td>

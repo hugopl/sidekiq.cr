@@ -85,12 +85,27 @@ module Sidekiq
       Sidekiq.redis(&.info)
     end
 
+    @@root_path : String?
+
     def root_path
-      "/"
+      @@root_path ||= begin
+        path = ENV["SIDEKIQ_WEB_ROOT"]? || "/"
+        path = path.chomp("/") + "/"
+        path
+      end
+    end
+
+    def self.root_path=(path : String)
+      @@root_path = path.chomp("/") + "/"
     end
 
     def current_path
-      request.path.gsub(/^\//, "")
+      path = request.path
+      prefix = root_path.chomp("/")
+      if !prefix.empty? && path.starts_with?(prefix)
+        path = path[prefix.size..]
+      end
+      path.gsub(/^\//, "")
     end
 
     def current_status
@@ -134,10 +149,9 @@ module Sidekiq
     end
 
     def display_args(args, truncate_after_chars = 2000)
-      h args[1..-2]
-      # args.map do |arg|
-      # h(truncate(to_display(arg), truncate_after_chars))
-      # end.join(", ")
+      text = args[1..-2]
+      text = truncate(text, truncate_after_chars) if truncate_after_chars
+      h text
     end
 
     def csrf_tag

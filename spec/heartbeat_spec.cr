@@ -1,10 +1,11 @@
 require "json"
 require "./spec_helper"
-require "../src/sidekiq/server/heartbeat"
+require "../src/sidekiq/server/server"
 
 describe Sidekiq::Heartbeat do
   it "beats" do
-    svr = Sidekiq::Server.new
+    svr = Sidekiq::Server.new(concurrency: 2)
+    svr.redis = Sidekiq::RedisConfig.new(db: TEST_REDIS_DB, pool_size: 5)
 
     hb = Sidekiq::Heartbeat.new
     json = hb.server_json(svr)
@@ -16,7 +17,8 @@ describe Sidekiq::Heartbeat do
   end
 
   it "registers number of busy workers based on Processor's worker_state" do
-    svr = Sidekiq::Server.new
+    svr = Sidekiq::Server.new(concurrency: 2)
+    svr.redis = Sidekiq::RedisConfig.new(db: TEST_REDIS_DB, pool_size: 5)
     hb = Sidekiq::Heartbeat.new
 
     json = hb.server_json(svr)

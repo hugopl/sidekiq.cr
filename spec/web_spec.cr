@@ -194,12 +194,12 @@ describe "sidekiq web" do
   end
 
   it "can retry a single retry now" do
-    params = add_retry
+    params = add_retry(queue: "test_retry")
     post "/retries/#{job_params(*params)}", {"retry" => "Retry"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
 
-    get "/queues/default"
+    get "/queues/test_retry"
     assert_equal 200, last_response.status_code
     assert_match(/#{params[1]}/, last_response.body)
   end
@@ -244,12 +244,12 @@ describe "sidekiq web" do
   end
 
   it "can add to queue a single scheduled job" do
-    params = add_scheduled
+    params = add_scheduled(queue: "test_sched")
     post "/scheduled/#{job_params(*params)}", {"add_to_queue" => "true"}
     assert_equal 302, last_response.status_code
     assert_equal "/scheduled", last_response.headers["Location"]
 
-    get "/queues/default"
+    get "/queues/test_sched"
     assert_equal 200, last_response.status_code
     assert_match(/#{params[1]}/, last_response.body)
   end
@@ -276,9 +276,9 @@ describe "sidekiq web" do
     end
   end
 
-  it "can move scheduled to default queue" do
-    q = Sidekiq::Queue.new
-    params = add_scheduled
+  it "can move scheduled to queue" do
+    q = Sidekiq::Queue.new("test_move")
+    params = add_scheduled(queue: "test_move")
     Sidekiq.redis do |conn|
       assert_equal 1, conn.zcard("schedule")
       assert_equal 0, q.size
@@ -287,22 +287,22 @@ describe "sidekiq web" do
       assert_equal "/scheduled", last_response.headers["Location"]
       assert_equal 0, conn.zcard("schedule")
       assert_equal 1, q.size
-      get "/queues/default"
+      get "/queues/test_move"
       assert_equal 200, last_response.status_code
       assert_match(/#{params[1]}/, last_response.body)
     end
   end
 
   it "can retry all retries" do
-    _msg, score = add_retry
-    add_retry
+    _msg, score = add_retry(queue: "test_retryall")
+    add_retry(queue: "test_retryall")
 
     post "/retries/all/retry", {"retry" => "Retry"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
-    assert_equal 2, Sidekiq::Queue.new("default").size
+    assert_equal 2, Sidekiq::Queue.new("test_retryall").size
 
-    get "/queues/default"
+    get "/queues/test_retryall"
     assert_equal 200, last_response.status_code
     assert_match(/#{score}/, last_response.body)
   end
@@ -410,20 +410,20 @@ describe "sidekiq web" do
   describe "stats/queues" do
     it "reports the queue depth" do
       Sidekiq.redis do |conn|
-        conn.sadd("queues", "default")
-        conn.sadd("queues", "queue2")
-        conn.lpush("queue:default", "{}")
-        conn.lpush("queue:default", "{}")
-        conn.lpush("queue:default", "{}")
-        conn.lpush("queue:queue2", "{}")
-        conn.lpush("queue:queue2", "{}")
+        conn.sadd("queues", "test_stats1")
+        conn.sadd("queues", "test_stats2")
+        conn.lpush("queue:test_stats1", "{}")
+        conn.lpush("queue:test_stats1", "{}")
+        conn.lpush("queue:test_stats1", "{}")
+        conn.lpush("queue:test_stats2", "{}")
+        conn.lpush("queue:test_stats2", "{}")
       end
 
       get "/stats/queues"
       response = JSON.parse(last_response.body).as_h
 
-      assert_equal 3, response["default"]
-      assert_equal 2, response["queue2"]
+      assert_equal 3, response["test_stats1"]
+      assert_equal 2, response["test_stats2"]
     end
   end
 
@@ -528,10 +528,10 @@ describe "sidekiq web" do
   end
 end
 
-private def add_scheduled
+private def add_scheduled(queue = "default")
   now = Time.local.to_unix_f
   msg = {"class"      => "HardWorker",
-         "queue"      => "default",
+         "queue"      => queue,
          "created_at" => now,
          "args"       => ["bob", 1, now],
          "jid"        => Random::Secure.hex(12)}
@@ -542,11 +542,11 @@ private def add_scheduled
   {msg, score}
 end
 
-private def add_retry
+private def add_retry(queue = "default")
   now = Time.local.to_unix_f
   msg = {"class"         => "HardWorker",
          "args"          => ["bob", 1, now.to_s],
-         "queue"         => "default",
+         "queue"         => queue,
          "created_at"    => now,
          "error_message" => "Some fake message",
          "error_class"   => "RuntimeError",

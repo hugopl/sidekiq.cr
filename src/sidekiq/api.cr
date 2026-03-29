@@ -213,13 +213,34 @@ module Sidekiq
     delegate extra_params, to: @job
 
     def display_class
-      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      klass
+      if klass == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
+        extra = extra_params
+        if wrapped = extra["wrapped"]?
+          wrapped.as_s
+        else
+          parsed = JSON.parse(args)
+          if parsed.as_a? && (first = parsed[0]?) && (job_class = first["job_class"]?)
+            job_class.as_s
+          else
+            klass
+          end
+        end
+      else
+        klass
+      end
     end
 
     def display_args : String
-      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
-      args
+      if klass == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
+        parsed = JSON.parse(args)
+        if parsed.as_a? && (first = parsed[0]?) && (arguments = first["arguments"]?)
+          arguments.to_json
+        else
+          args
+        end
+      else
+        args
+      end
     end
 
     def latency

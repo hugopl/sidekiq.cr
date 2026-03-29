@@ -6,10 +6,11 @@ describe Sidekiq::BasicFetch do
     it "reenqueue jobs" do
       ctx = MockContext.new
       job = Sidekiq::Job.new
-      unit_of_work = Sidekiq::BasicFetch::UnitOfWork.new("default", job.to_json, ctx)
-      fetcher = Sidekiq::BasicFetch.new ["default"]
+      job.queue = "test_requeue"
+      unit_of_work = Sidekiq::BasicFetch::UnitOfWork.new("test_requeue", job.to_json, ctx)
+      fetcher = Sidekiq::BasicFetch.new ["test_requeue"]
       fetcher.bulk_requeue ctx, [unit_of_work]
-      msg = Sidekiq.redis { |c| c.lpop("queue:default") }
+      msg = Sidekiq.redis { |c| c.lpop("queue:test_requeue") }
       msg.should eq job.to_json
     end
   end
