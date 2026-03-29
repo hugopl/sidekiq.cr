@@ -3,8 +3,8 @@ require "uri"
 
 module Sidekiq
   module WebHelpers
-    LANGS        = {"cs", "da", "de", "el", "en", "es", "fr", "hi", "it", "ja", "ko", "nb", "nl", "pl", "pt-br", "pt", "ru", "sv", "ta", "uk", "zh-cn", "zh-tw"}
-    LOCALE_PATHS = {"../web/locales"}
+    LANGS        = %w(cs da de el en es fr hi it ja ko nb nl pl pt-br pt ru sv ta uk zh-cn zh-tw)
+    LOCALE_PATHS = ["../web/locales"]
 
     @locale : String?
 
@@ -125,7 +125,7 @@ module Sidekiq
       [score.to_f, jid]
     end
 
-    SAFE_QPARAMS = {"page", "poll"}
+    SAFE_QPARAMS = %w(page poll)
 
     # Merge options with current params, filter safe params, and stringify to query string
     def qparams(newparams)
@@ -149,9 +149,10 @@ module Sidekiq
     end
 
     def display_args(args, truncate_after_chars = 2000)
-      text = args[1..-2]
-      text = truncate(text, truncate_after_chars) if truncate_after_chars
-      h text
+      h args[1..-2]
+      # args.map do |arg|
+      # h(truncate(to_display(arg), truncate_after_chars))
+      # end.join(", ")
     end
 
     def csrf_tag

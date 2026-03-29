@@ -7,6 +7,7 @@ Kemal::Session.config do |config|
 end
 
 Kemal.config do |config|
+  config.logger = Kemal::NullLogHandler.new
   config.env = "test"
   # Uncomment this and all POSTs in the test suite will fail since
   # the tests don't round trip the session cookies.
@@ -194,12 +195,12 @@ describe "sidekiq web" do
   end
 
   it "can retry a single retry now" do
-    params = add_retry(queue: "test_retry")
+    params = add_retry
     post "/retries/#{job_params(*params)}", {"retry" => "Retry"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
 
-    get "/queues/test_retry"
+    get "/queues/default"
     assert_equal 200, last_response.status_code
     assert_match(/#{params[1]}/, last_response.body)
   end
@@ -244,12 +245,12 @@ describe "sidekiq web" do
   end
 
   it "can add to queue a single scheduled job" do
-    params = add_scheduled(queue: "test_sched")
+    params = add_scheduled
     post "/scheduled/#{job_params(*params)}", {"add_to_queue" => "true"}
     assert_equal 302, last_response.status_code
     assert_equal "/scheduled", last_response.headers["Location"]
 
-    get "/queues/test_sched"
+    get "/queues/default"
     assert_equal 200, last_response.status_code
     assert_match(/#{params[1]}/, last_response.body)
   end
@@ -276,9 +277,9 @@ describe "sidekiq web" do
     end
   end
 
-  it "can move scheduled to queue" do
-    q = Sidekiq::Queue.new("test_move")
-    params = add_scheduled(queue: "test_move")
+  it "can move scheduled to default queue" do
+    q = Sidekiq::Queue.new
+    params = add_scheduled
     Sidekiq.redis do |conn|
       assert_equal 1, conn.zcard("schedule")
       assert_equal 0, q.size
@@ -287,22 +288,22 @@ describe "sidekiq web" do
       assert_equal "/scheduled", last_response.headers["Location"]
       assert_equal 0, conn.zcard("schedule")
       assert_equal 1, q.size
-      get "/queues/test_move"
+      get "/queues/default"
       assert_equal 200, last_response.status_code
       assert_match(/#{params[1]}/, last_response.body)
     end
   end
 
   it "can retry all retries" do
-    _msg, score = add_retry(queue: "test_retryall")
-    add_retry(queue: "test_retryall")
+    _msg, score = add_retry
+    add_retry
 
     post "/retries/all/retry", {"retry" => "Retry"}
     assert_equal 302, last_response.status_code
     assert_equal "/retries", last_response.headers["Location"]
-    assert_equal 2, Sidekiq::Queue.new("test_retryall").size
+    assert_equal 2, Sidekiq::Queue.new("default").size
 
-    get "/queues/test_retryall"
+    get "/queues/default"
     assert_equal 200, last_response.status_code
     assert_match(/#{score}/, last_response.body)
   end
@@ -410,20 +411,20 @@ describe "sidekiq web" do
   describe "stats/queues" do
     it "reports the queue depth" do
       Sidekiq.redis do |conn|
-        conn.sadd("queues", "test_stats1")
-        conn.sadd("queues", "test_stats2")
-        conn.lpush("queue:test_stats1", "{}")
-        conn.lpush("queue:test_stats1", "{}")
-        conn.lpush("queue:test_stats1", "{}")
-        conn.lpush("queue:test_stats2", "{}")
-        conn.lpush("queue:test_stats2", "{}")
+        conn.sadd("queues", "default")
+        conn.sadd("queues", "queue2")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:default", "{}")
+        conn.lpush("queue:queue2", "{}")
+        conn.lpush("queue:queue2", "{}")
       end
 
       get "/stats/queues"
       response = JSON.parse(last_response.body).as_h
 
-      assert_equal 3, response["test_stats1"]
-      assert_equal 2, response["test_stats2"]
+      assert_equal 3, response["default"]
+      assert_equal 2, response["queue2"]
     end
   end
 
@@ -461,77 +462,12 @@ describe "sidekiq web" do
       assert_match(/#{params[1]}/, last_response.body)
     end
   end
-
-  describe "metrics export" do
-    it "exports metrics as CSV" do
-      # Record some test metrics
-      timestamp = Sidekiq::Metrics.minute_timestamp
-      Sidekiq::Metrics::Query.record("ExportTestWorker", 100.0, true, timestamp)
-      Sidekiq::Metrics::Query.record("ExportTestWorker", 200.0, true, timestamp)
-      Sidekiq::Metrics::Query.record("ExportTestWorker", 50.0, false, timestamp)
-
-      # Request CSV export
-      resp = get("/metrics/export.csv", {"period" => "1"})
-
-      resp.status_code.should eq(200)
-      resp.headers["Content-Type"]?.should eq("text/csv")
-      resp.headers["Content-Disposition"]?.should_not be_nil
-      resp.headers["Content-Disposition"].should contain("attachment")
-      resp.headers["Content-Disposition"].should contain(".csv")
-
-      # Verify CSV content
-      body = resp.body
-      body.should contain("Job Class,Success Count,Failure Count")
-      body.should contain("ExportTestWorker")
-      body.should contain("2") # success count
-      body.should contain("1") # failure count
-    end
-
-    it "exports metrics as JSON" do
-      # Record some test metrics
-      timestamp = Sidekiq::Metrics.minute_timestamp
-      Sidekiq::Metrics::Query.record("JsonExportWorker", 150.0, true, timestamp)
-      Sidekiq::Metrics::Query.record("JsonExportWorker", 250.0, true, timestamp)
-
-      # Request JSON export
-      resp = get("/metrics/export.json", {"period" => "1"})
-
-      resp.status_code.should eq(200)
-      resp.headers["Content-Type"]?.should eq("application/json")
-      resp.headers["Content-Disposition"]?.should_not be_nil
-      resp.headers["Content-Disposition"].should contain("attachment")
-      resp.headers["Content-Disposition"].should contain(".json")
-
-      # Verify JSON content
-      body = resp.body
-      data = JSON.parse(body)
-
-      data["exported_at"]?.should_not be_nil
-      data["period_hours"]?.should eq(1)
-      data["summary"]?.should_not be_nil
-      data["time_series"]?.should_not be_nil
-
-      # Check that our test worker is in the summary
-      summary = data["summary"].as_a
-      worker_data = summary.find { |item| item["job_class"]? == "JsonExportWorker" }
-      worker_data.should_not be_nil
-      worker_data.not_nil!["success"]?.should eq(2)
-      worker_data.not_nil!["failure"]?.should eq(0)
-    end
-
-    it "returns 400 for invalid export format" do
-      resp = get("/metrics/export.xml", {"period" => "1"})
-
-      resp.status_code.should eq(400)
-      resp.body.should contain("Invalid export format")
-    end
-  end
 end
 
-private def add_scheduled(queue = "default")
+private def add_scheduled
   now = Time.local.to_unix_f
   msg = {"class"      => "HardWorker",
-         "queue"      => queue,
+         "queue"      => "default",
          "created_at" => now,
          "args"       => ["bob", 1, now],
          "jid"        => Random::Secure.hex(12)}
@@ -542,11 +478,11 @@ private def add_scheduled(queue = "default")
   {msg, score}
 end
 
-private def add_retry(queue = "default")
+private def add_retry
   now = Time.local.to_unix_f
   msg = {"class"         => "HardWorker",
          "args"          => ["bob", 1, now.to_s],
-         "queue"         => queue,
+         "queue"         => "default",
          "created_at"    => now,
          "error_message" => "Some fake message",
          "error_class"   => "RuntimeError",
@@ -641,7 +577,7 @@ class WebWorker
 end
 
 private def get(path, params = nil, headers = nil)
-  resource = "#{path}?#{params.try(&.join("&") { |k, v| "#{URI.encode_path(k)}=#{URI.encode_path(v)}" })}"
+  resource = "#{path}?#{params.try(&.join("&") { |k, v| "#{URI.encode(k)}=#{URI.encode(v)}" })}"
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v
@@ -658,7 +594,7 @@ end
 
 private def post(path, params = nil, headers = nil)
   resource = path
-  body = params.try(&.join("&") { |k, v| "#{URI.encode_www_form(string: k, space_to_plus: true)}=#{URI.encode_www_form(string: v, space_to_plus: true)}" })
+  body = params.try(&.join("&") { |k, v| "#{URI.encode(string: k, space_to_plus: true)}=#{URI.encode(string: v, space_to_plus: true)}" })
   hdrs = HTTP::Headers.new
   headers.each do |k, v|
     hdrs[k] = v

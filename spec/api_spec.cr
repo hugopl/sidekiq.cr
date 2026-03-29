@@ -114,8 +114,8 @@ describe "api" do
     end
 
     it "can delete jobs" do
-      q = Sidekiq::Queue.new("test_delete")
-      ApiWorker.async { |j| j.queue = "test_delete" }.perform(1_i64, "mike")
+      q = Sidekiq::Queue.new
+      ApiWorker.async.perform(1_i64, "mike")
       q.size.should eq(1)
 
       x = q.first
@@ -126,54 +126,11 @@ describe "api" do
       q.size.should eq(0)
     end
 
-    it "unwraps ActiveJob wrapper for display_class" do
-      payload = {
-        "class"       => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-        "wrapped"     => "MyMailer",
-        "queue"       => "default",
-        "args"        => [{"job_class" => "MyMailer", "arguments" => [1, "hello"]}],
-        "jid"         => "wrapped1",
-        "created_at"  => Time.local.to_unix_f,
-        "retry_count" => 0,
-        "failed_at"   => Time.local.to_unix_f,
-      }.to_json
-
-      Sidekiq.redis do |conn|
-        conn.zadd("retry", Time.local.to_unix_f.to_s, payload)
-      end
-
-      r = Sidekiq::RetrySet.new
-      job = r.find_job("wrapped1").not_nil!
-      job.display_class.should eq("MyMailer")
-      job.display_args.should eq("[1,\"hello\"]")
-    end
-
-    it "unwraps ActiveJob wrapper using args when wrapped key is missing" do
-      payload = {
-        "class"       => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-        "queue"       => "default",
-        "args"        => [{"job_class" => "MyJob", "arguments" => ["test"]}],
-        "jid"         => "wrapped2",
-        "created_at"  => Time.local.to_unix_f,
-        "retry_count" => 0,
-        "failed_at"   => Time.local.to_unix_f,
-      }.to_json
-
-      Sidekiq.redis do |conn|
-        conn.zadd("retry", Time.local.to_unix_f.to_s, payload)
-      end
-
-      r = Sidekiq::RetrySet.new
-      job = r.find_job("wrapped2").not_nil!
-      job.display_class.should eq("MyJob")
-      job.display_args.should eq("[\"test\"]")
-    end
-
     it "can move scheduled job to queue" do
-      remain_id = ApiWorker.async { |j| j.queue = "test_move" }.perform_in(100.seconds, 1_i64, "jason")
-      job_id = ApiWorker.async { |j| j.queue = "test_move" }.perform_in(100.seconds, 1_i64, "jason")
+      remain_id = ApiWorker.async.perform_in(100.seconds, 1_i64, "jason")
+      job_id = ApiWorker.async.perform_in(100.seconds, 1_i64, "jason")
       job = Sidekiq::ScheduledSet.new.find_job(job_id).not_nil!
-      q = Sidekiq::Queue.new("test_move")
+      q = Sidekiq::Queue.new
       job.add_to_queue
       queued_job = q.find_job(job_id).not_nil!
       job_id.should eq(queued_job.jid)
@@ -189,20 +146,20 @@ describe "api" do
     end
 
     it "can find job by id in queues" do
-      q = Sidekiq::Queue.new("test_find")
-      job_id = ApiWorker.async { |j| j.queue = "test_find" }.perform(1_i64, "jason")
+      q = Sidekiq::Queue.new
+      job_id = ApiWorker.async.perform(1_i64, "jason")
       job = q.find_job(job_id).not_nil!
       job.jid.should eq(job_id)
     end
 
     it "can clear a queue" do
-      q = Sidekiq::Queue.new("test_clear")
-      2.times { ApiWorker.async { |j| j.queue = "test_clear" }.perform(1_i64, "mike") }
+      q = Sidekiq::Queue.new
+      2.times { ApiWorker.async.perform(1_i64, "mike") }
       q.clear
 
       Sidekiq.redis do |conn|
-        conn.smembers("queues").should_not contain("test_clear")
-        conn.exists("queue:test_clear").should eq(0)
+        conn.smembers("queues").should_not contain("foo")
+        conn.exists("queue:foo").should eq(0)
       end
     end
 
@@ -265,14 +222,13 @@ describe "api" do
     end
 
     it "can retry a retry" do
-      payload = {"class" => "ApiWorker", "created_at" => Time.local.to_unix_f, "args" => [1, "mike"], "queue" => "test_retry", "jid" => "bob", "retry_count" => 2, "failed_at" => Time.local.to_unix_f}.to_json
-      Sidekiq.redis { |conn| conn.zadd("retry", Time.local.to_unix_f.to_s, payload) }
+      add_retry
       r = Sidekiq::RetrySet.new
       r.size.should eq(1)
       r.first.retry!
       r.size.should eq(0)
-      Sidekiq::Queue.new("test_retry").size.should eq(1)
-      job = Sidekiq::Queue.new("test_retry").first
+      Sidekiq::Queue.new("default").size.should eq(1)
+      job = Sidekiq::Queue.new("default").first
       job.jid.should eq("bob")
       job.retry_count.should eq(1)
     end

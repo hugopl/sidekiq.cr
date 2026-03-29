@@ -213,34 +213,13 @@ module Sidekiq
     delegate extra_params, to: @job
 
     def display_class
-      if klass == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-        extra = extra_params
-        if wrapped = extra["wrapped"]?
-          wrapped.as_s
-        else
-          parsed = JSON.parse(args)
-          if parsed.as_a? && (first = parsed[0]?) && (job_class = first["job_class"]?)
-            job_class.as_s
-          else
-            klass
-          end
-        end
-      else
-        klass
-      end
+      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
+      klass
     end
 
     def display_args : String
-      if klass == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-        parsed = JSON.parse(args)
-        if parsed.as_a? && (first = parsed[0]?) && (arguments = first["arguments"]?)
-          arguments.to_json
-        else
-          args
-        end
-      else
-        args
-      end
+      # TODO Unwrap known wrappers so they show up in a human-friendly manner in the Web UI
+      args
     end
 
     def latency
@@ -314,7 +293,7 @@ module Sidekiq
       Time.local.to_unix_f - was
     end
 
-    def each(&)
+    def each
       initial_size = size
       deleted_size = 0
       page = 0
@@ -415,7 +394,7 @@ module Sidekiq
       end
     end
 
-    private def remove_job(&)
+    private def remove_job
       p = @parent.not_nil!
       arr = [] of String
 
@@ -490,7 +469,7 @@ module Sidekiq
       end
     end
 
-    def each(&)
+    def each
       initial_size = @_size
       offset_size = 0
       page = -1
@@ -743,7 +722,7 @@ module Sidekiq
       count
     end
 
-    def each(&)
+    def each
       Sidekiq.redis do |conn|
         prcs = conn.smembers("processes")
         procs = [] of String
@@ -826,7 +805,7 @@ module Sidekiq
   class Workers
     include Enumerable(WorkerEntry)
 
-    def each(&)
+    def each
       workers_set = [] of Array(String)
       keys = [] of String
       Sidekiq.redis do |conn|

@@ -62,16 +62,16 @@ describe Sidekiq::Worker do
       p2 = Point.new(4.3, 12.5)
       a = [p1, p2]
 
-      ComplexWorker.async { |j| j.queue = "test_complex" }.perform(a, Circle.new(9, 17))
-      msg = Sidekiq.redis(&.lpop("queue:test_complex"))
+      ComplexWorker.async.perform(a, Circle.new(9, 17))
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[[{\"x\":1.0,\"y\":3.0},{\"x\":4.3,\"y\":12.5}],{\"radius\":9,\"diameter\":17}]")
       job.execute(MockContext.new)
     end
 
     it "works without arguments" do
-      NoArgumentsWorker.async { |j| j.queue = "test_noargs" }.perform
-      msg = Sidekiq.redis(&.lpop("queue:test_noargs"))
+      NoArgumentsWorker.async.perform
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.as(String))
       job.args.should eq("[]")
       job.execute(MockContext.new)
@@ -88,9 +88,9 @@ describe Sidekiq::Worker do
 
   describe "round-trip" do
     it "coerces types as necessary" do
-      jid = MyWorker.async { |j| j.queue = "test_roundtrip" }.perform(1, 2, "3")
+      jid = MyWorker.async.perform(1, 2, "3")
       jid.should match /[a-f0-9]{24}/
-      msg = Sidekiq.redis(&.lpop("queue:test_roundtrip"))
+      msg = Sidekiq.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(msg.to_s)
       job.execute(MockContext.new)
     end
@@ -126,24 +126,24 @@ describe Sidekiq::Worker do
     end
 
     it "can execute a persistent job" do
-      jid = MyWorker.async { |j| j.queue = "test_persist" }.perform(1, 2, "3")
+      jid = MyWorker.async.perform(1, 2, "3")
       jid.should_not be_nil
 
-      str = POOL.redis(&.lpop("queue:test_persist"))
+      str = POOL.redis(&.lpop("queue:default"))
       job = Sidekiq::Job.from_json(str.to_s)
       job.execute(MockContext.new)
     end
 
     it "can create jobs in bulk" do
-      count = POOL.redis(&.llen("queue:test_bulk"))
+      count = POOL.redis(&.llen("queue:default"))
       count.should eq(0)
-      MyWorker.async { |j| j.queue = "test_bulk" }.perform_bulk([
+      MyWorker.async.perform_bulk([
         {1, 2, "1"},
         {2, 4, "2"},
         {3, 6, "3"},
         {4, 8, "4"},
       ])
-      count = POOL.redis(&.llen("queue:test_bulk"))
+      count = POOL.redis(&.llen("queue:default"))
       count.should eq(4)
     end
 

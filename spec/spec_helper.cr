@@ -5,9 +5,7 @@ require "../src/sidekiq"
 Timecop.safe_mode = true
 
 # FIXME: spec/web_spec.cr and spec/scheduled_spec.cr are requiring 2 redis connections.
-# Use Redis db 1 for tests to avoid interference from any running Sidekiq workers on db 0.
-TEST_REDIS_DB = (ENV["SIDEKIQ_TEST_DB"]? || "1").to_i
-POOL          = Sidekiq::Pool.new(Sidekiq::RedisConfig.new(db: TEST_REDIS_DB, pool_size: 2))
+POOL = Sidekiq::Pool.new(2)
 
 class MockContext < Sidekiq::Context
   getter pool : Sidekiq::Pool
@@ -39,9 +37,9 @@ def requires_redis(op, ver, &block)
   redis_version = POOL.redis { |c| c.info["redis_version"] }.as(String)
 
   proc = if op == :<
-           -> { redis_version < ver }
+           ->{ redis_version < ver }
          elsif op == :>=
-           -> { redis_version >= ver }
+           ->{ redis_version >= ver }
          else
            raise "No such op: #{op}"
          end
