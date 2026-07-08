@@ -25,6 +25,40 @@ compiles to a single executable so deployment is much easier than Ruby.
 Please see the [wiki](https://github.com/hugopl/sidekiq.cr/wiki) for in-depth documentation and how to get
 started using Sidekiq.cr in your own app.
 
+## Testing
+
+`require "sidekiq/testing"` in your spec helper to enable `Sidekiq.testing`, which
+lets you control how jobs behave when pushed from specs instead of always hitting Redis.
+
+```crystal
+require "sidekiq/testing"
+
+Sidekiq.testing(Sidekiq::TestMode::Inline)
+
+HardWorker.async.perform(1_i64)
+```
+
+`Sidekiq::TestMode` has two values:
+
+* `Disable` - the default, Sidekiq behaves normally and jobs are pushed to Redis.
+* `Inline` - jobs are executed synchronously, in-process, the moment they are
+  pushed instead of being enqueued in Redis. It doesn't make sense to use
+  `perform_at`/`perform_in` while `Inline` is active, doing so raises an exception.
+
+`Sidekiq.testing` also accepts a block, in which case the mode is only active for the
+duration of the block and whatever mode was active before is restored afterwards:
+
+```crystal
+Sidekiq.testing(Sidekiq::TestMode::Inline) do
+  HardWorker.async.perform(1_i64)
+end
+```
+
+> [!WARNING]
+> `Sidekiq.test_mode` is a single, process-wide flag and mutating it isn't thread-safe.
+> Don't run specs that rely on it concurrently across fibers/threads (e.g. with `-Dpreview_mt`
+> or a parallel spec runner), or one spec's mode can leak into another's.
+
 ## Support
 
 Sidekiq.cr is community-supported and **not** commercially supported by @mperham and Contributed Systems.

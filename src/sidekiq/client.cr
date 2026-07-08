@@ -118,7 +118,18 @@ module Sidekiq
     # Returns an array of the of pushed jobs' jids.  The number of jobs pushed can be less
     # than the number given if the middleware stopped processing for one or more jobs.
     def push_bulk(job : Sidekiq::Job, allargs : Array(String))
-      payloads = allargs.compact_map do |args|
+      payloads = build_bulk_payloads(job, allargs)
+
+      raw_push(payloads) if !payloads.empty?
+      payloads.map(&.jid)
+    end
+
+    # #
+    # Builds one Sidekiq::Job copy per element of +allargs+, running each
+    # through the client middleware pipeline. Shared by #push_bulk and by
+    # Sidekiq::TestMode's inline push_bulk override.
+    private def build_bulk_payloads(job : Sidekiq::Job, all_args : Array(String))
+      all_args.compact_map do |args|
         copy = Sidekiq::Job.new
         copy.jid = Random::Secure.hex(12)
         copy.klass = job.klass
@@ -130,9 +141,6 @@ module Sidekiq
         end
         result ? copy : nil
       end
-
-      raw_push(payloads) if !payloads.empty?
-      payloads.map(&.jid)
     end
 
     def raw_push(payloads)
