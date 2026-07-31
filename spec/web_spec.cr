@@ -411,7 +411,7 @@ describe "sidekiq web" do
       assert_equal 0, hash["default_latency"].as_f
       response.keys.should contain "redis"
       hash = response["redis"].as_h
-      hash["redis_version"].as_s.should match /\d\.\d\.\d/
+      hash["redis_version"].as_s.should match /\d+\.\d+\.\d+/
       hash["uptime_in_days"].as_s.to_i.should be >= 0
       hash["connected_clients"].as_s.to_i.should be > 0
       hash["used_memory_human"].should_not be_nil
