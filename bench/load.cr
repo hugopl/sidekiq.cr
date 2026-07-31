@@ -21,8 +21,9 @@ puts "Running on #{`uname -a`}"
 r = Redis.new
 r.flushdb
 
+Log.setup(:none)
+
 s = Sidekiq::CLI.new
-s.logger.backend = Log::IOBackend.new(File.open(File::NULL, "w"))
 x = s.configure do |_config|
   # nothing
 end
@@ -64,7 +65,7 @@ spawn do
       exit
     end
     puts "RSS: #{Process.rss} Pending: #{count}"
-    sleep 0.2
+    sleep 0.2.seconds
   end
 end
 
