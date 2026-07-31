@@ -78,7 +78,7 @@ module Sidekiq
     end
 
     def redis_location
-      Sidekiq.redis(&.url)
+      Sidekiq.redis(&.uri)
     end
 
     def redis_info
@@ -201,20 +201,22 @@ module Sidekiq
         case type
         when "zset"
           rev = opts && opts[:reverse]
-          total_size, items = conn.multi do |m|
+          results = conn.multi do |m|
             m.zcard(key)
             if rev
-              m.zrevrange(key, starting, ending, {"with_scores": true})
+              m.zrevrange(key, starting.to_s, ending.to_s, with_scores: true)
             else
-              m.zrange(key, starting, ending, {"with_scores": true})
+              m.zrange(key, starting.to_s, ending.to_s, with_scores: true)
             end
           end
+          total_size, items = results || raise "Redis transaction was aborted"
           [current_page, total_size, items]
         when "list"
-          total_size, items = conn.multi do |m|
+          results = conn.multi do |m|
             m.llen(key)
             m.lrange(key, starting, ending)
           end
+          total_size, items = results || raise "Redis transaction was aborted"
           [current_page, total_size, items]
         when "none"
           [1, 0, [] of String]

@@ -19,7 +19,7 @@ describe "api" do
 
     describe "processed" do
       it "returns number of processed jobs" do
-        Sidekiq.redis { |conn| conn.set("stat:processed", 5) }
+        Sidekiq.redis { |conn| conn.set("stat:processed", "5") }
         s = Sidekiq::Stats.new
         s.processed.should eq(5)
       end
@@ -27,7 +27,7 @@ describe "api" do
 
     describe "failed" do
       it "returns number of failed jobs" do
-        Sidekiq.redis { |conn| conn.set("stat:failed", 5) }
+        Sidekiq.redis { |conn| conn.set("stat:failed", "5") }
         s = Sidekiq::Stats.new
         s.failed.should eq(5)
       end
@@ -256,7 +256,7 @@ describe "api" do
       Sidekiq.redis do |conn|
         conn.multi do |m|
           m.sadd("processes", odata["key"].to_s)
-          m.hmset(odata["key"].as_s, {"info" => odata.to_json, "busy" => 10, "beat" => time})
+          m.hset(odata["key"].as_s, {"info" => odata.to_json, "busy" => "10", "beat" => time.to_s})
           m.sadd("processes", "fake:pid")
         end
       end
@@ -283,13 +283,13 @@ describe "api" do
       pdata = {"pid" => Process.pid, "hostname" => hn, "started_at" => Time.local.to_unix}
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
-        conn.hmset(key, {"info" => pdata.to_json, "busy" => 0, "beat" => Time.local.to_unix_f})
+        conn.hset(key, {"info" => pdata.to_json, "busy" => "0", "beat" => Time.local.to_unix_f.to_s})
       end
 
       s = "#{key}:workers"
       data = {"payload" => "{}", "queue" => "default", "run_at" => Time.local.to_unix}.to_json
       Sidekiq.redis do |c|
-        c.hmset(s, {"1234" => data})
+        c.hset(s, {"1234" => data})
       end
 
       count = 0
@@ -324,7 +324,7 @@ describe "api" do
       key = "#{data["hostname"]}:#{data["pid"]}"
       Sidekiq.redis do |conn|
         conn.sadd("processes", key)
-        conn.hmset(key, {"info" => data.to_json, "busy" => 0, "beat" => Time.local.to_unix_f})
+        conn.hset(key, {"info" => data.to_json, "busy" => "0", "beat" => Time.local.to_unix_f.to_s})
       end
 
       ps = Sidekiq::ProcessSet.new
@@ -353,7 +353,7 @@ end
 
 def reset_stats
   Sidekiq.redis do |conn|
-    conn.set("stat:processed", 5)
-    conn.set("stat:failed", 10)
+    conn.set("stat:processed", "5")
+    conn.set("stat:failed", "10")
   end
 end
