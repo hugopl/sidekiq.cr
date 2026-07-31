@@ -17,12 +17,13 @@ module Sidekiq
         key = Metrics.key_for(job_class, timestamp)
 
         Sidekiq.redis do |conn|
-          conn.pipelined do |pipe|
+          conn.pipeline do |pipe|
             if success
               # Increment success count
               pipe.hincrby(key, "s", 1)
-              # Add execution time (only for successful jobs)
-              pipe.hincrbyfloat(key, "ms", duration_ms)
+              # Add execution time (only for successful jobs).
+              # The redis shard has no `hincrbyfloat` wrapper, so send it raw.
+              pipe.run({"hincrbyfloat", key, "ms", duration_ms.to_s})
               # Increment histogram bucket
               bucket = Histogram.bucket_for(duration_ms)
               pipe.hincrby(key, Histogram.bucket_field(bucket), 1)
@@ -77,12 +78,12 @@ module Sidekiq
 
         # Fetch all data in a pipeline
         Sidekiq.redis do |conn|
-          pipe_results = conn.pipelined do |pipe|
+          pipe_results = conn.pipeline do |pipe|
             keys.each { |key| pipe.hgetall(key) }
-          end.as(Array(Redis::RedisValue))
+          end
 
           timestamps.each_with_index do |ts, i|
-            raw_data = pipe_results[i].as(Array(Redis::RedisValue))
+            raw_data = pipe_results[i].as(Array(Redis::Value))
             next if raw_data.empty?
 
             # Convert Array to Hash
