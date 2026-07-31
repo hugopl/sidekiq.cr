@@ -50,8 +50,9 @@ module Sidekiq
     end
 
     def retrieve_work(ctx) : Sidekiq::UnitOfWork?
-      arr = ctx.pool.redis(&.brpop(@queues, TIMEOUT)).as(Array)
-      if arr.size == 2
+      # jgaskins/redis returns nil when brpop times out.
+      arr = ctx.pool.redis(&.brpop(@queues, TIMEOUT)).as?(Array)
+      if arr && arr.size == 2
         UnitOfWork.new(arr[0].to_s, arr[1].to_s, ctx)
       end
     end
